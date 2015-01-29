@@ -74,6 +74,12 @@ class CloudFormation(object):
                 artifacts[key] = value
         return artifacts
 
+    def get_artifact_value(self, key):
+        artifacts = self.get_available_artifacts()
+        try:
+            return artifacts[key]
+        except KeyError:
+            return None
 
 
 class StackHandler(object):
@@ -92,3 +98,6 @@ if __name__ == "__main__":
     # print inputs
 
     print cfn.get_available_artifacts()
+    print cfn.get_artifact_value("betasearch-test.S3LogBucket")
+    print cfn.get_artifact_value("betasearch-live.S3LogBucket")
+    print cfn.get_artifact_value("blalbufg")
