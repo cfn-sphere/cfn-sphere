@@ -81,6 +81,8 @@ class CloudFormation(object):
         except KeyError:
             return None
 
+    def create(self, template):
+        self.conn.create_stack("bla", template_body={}, parameters=[])
 
 class StackHandler(object):
     pass
