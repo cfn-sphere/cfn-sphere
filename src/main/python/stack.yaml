@@ -1,0 +1,12 @@
+myapp:
+    myapp-persistent-live:
+        template: myapp-persistent.json
+        parameters:
+            vpc_id: Ref::eu-west-1-vpc.id
+            subnets: Ref::eu-west-1-vpc.subnets
+    myapp-volatile-live:
+        template: myapp-volatile.json
+        parameters:
+            vpc_id: Ref::vpc.id
+            subnets: Ref::subnets
+            default_sg: Ref::security.default_sg
