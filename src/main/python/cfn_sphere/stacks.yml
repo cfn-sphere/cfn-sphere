@@ -1,0 +1,4 @@
+stacks:
+  vpc:
+    parameters:
+      subnet
