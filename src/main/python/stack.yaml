@@ -1,10 +1,16 @@
-myapp:
-    myapp-persistent-live:
+stacks:
+    vpc:
+        template: vpc.json
+        region: eu-west-1
+    baufi-sync-persistent-live:
         template: myapp-persistent.json
         parameters:
-            vpc_id: Ref::eu-west-1-vpc.id
-            subnets: Ref::eu-west-1-vpc.subnets
-    myapp-volatile-live:
+            vpc_id: Ref::vpc.id
+            subnets:
+                Ref::vpc.eu-west-1a,
+                Ref::vpc.eu-west-1b,
+                Ref::vpc.eu-west-1c,
+    baufi-sync-volatile-live:
         template: myapp-volatile.json
         parameters:
             vpc_id: Ref::vpc.id
