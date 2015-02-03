@@ -84,10 +84,6 @@ class CloudFormation(object):
     def create(self, template):
         self.conn.create_stack("bla", template_body={}, parameters=[])
 
-class StackHandler(object):
-    pass
-
-
 
 if __name__ == "__main__":
     cfn = CloudFormation()

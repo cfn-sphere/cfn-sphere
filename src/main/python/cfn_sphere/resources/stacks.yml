@@ -1,4 +1,33 @@
 stacks:
-  vpc:
-    parameters:
-      subnet
+    vpc:
+        template: is24-default-vpc.json
+        region: eu-west-1
+    proxy:
+        template: proxy.json
+        region: eu-west-1
+        parameters:
+            vpc_id: Ref::vpc.id
+            subnets:
+              - Ref::vpc.eu-west-1a
+              - Ref::vpc.eu-west-1b
+              - Ref::vpc.eu-west-1c
+            default-sg: Ref::vpc.default-sg
+    baufi-dns-live:
+        template: baufi-dns.json
+        region: eu-west-1
+        parameters:
+            zone-name: baufinanzierung.immobilienscout24.de
+    baufi-dns-test:
+        template: baufi-dns.json
+        region: eu-west-1
+        parameters:
+            zone-name: baufinanzierung.preview1.de
+    baufi-sync-live:
+        template: baufi-sync.json
+        region: eu-west-1
+        parameters:
+            vpc_id: Ref::vpc.id
+            subnets:
+              - Ref::vpc.eu-west-1a
+              - Ref::vpc.eu-west-1b
+              - Ref::vpc.eu-west-1c

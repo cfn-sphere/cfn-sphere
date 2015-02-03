@@ -1,0 +1,6 @@
+.idea
+.coverage
+target
+*.iml
+*.pyc
+*.pyo
