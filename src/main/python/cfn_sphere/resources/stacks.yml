@@ -17,11 +17,6 @@ stacks:
         region: eu-west-1
         parameters:
             zone-name: baufinanzierung.immobilienscout24.de
-    baufi-dns-test:
-        template: baufi-dns.json
-        region: eu-west-1
-        parameters:
-            zone-name: baufinanzierung.preview1.de
     baufi-sync-live:
         template: baufi-sync.json
         region: eu-west-1
