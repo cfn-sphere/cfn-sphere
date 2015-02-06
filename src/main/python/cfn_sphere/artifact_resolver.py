@@ -11,7 +11,7 @@ class ArtifactResolver(object):
                             datefmt='%d.%m.%Y %H:%M:%S',
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        self.cfn = CloudFormation()
+        self.cfn = CloudFormation(region)
 
     def get_available_artifacts(self):
         artifacts = {}
