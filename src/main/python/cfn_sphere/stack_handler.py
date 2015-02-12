@@ -3,7 +3,6 @@ __author__ = 'mhoyer'
 from cfn_sphere.stack_config import StackConfig
 from cfn_sphere.artifact_resolver import ArtifactResolver
 from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate
-from boto.cloudformation.stack import Stack
 import logging
 
 

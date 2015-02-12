@@ -1,6 +1,5 @@
 __author__ = 'mhoyer'
 
-from urlparse import urlparse
 from boto import cloudformation
 from boto.resultset import ResultSet
 from boto.exception import AWSConnectionError, BotoServerError
@@ -25,16 +24,27 @@ class CloudFormationTemplate(object):
         return self.body
 
     def _load_template(self, url):
-        return self._fs_get_template(url)
+        if url.lower().startswith("s3://"):
+            return self._s3_get_template(url)
+        elif url.lower().startswith("/"):
+            return self._fs_get_template(url)
+        else:
+            raise NotImplementedError("No loader available for {0}".format(url))
 
     def _fs_get_template(self, url):
         try:
-            with open(url, 'r') as file:
-                return json.loads(file.read())
+            with open(url, 'r') as template_file:
+                return json.loads(template_file.read())
         except ValueError as e:
-            self.logger.error("Could not load template from {0}: {1}".format(url, e.message))
-            #TODO: handle error condition
-            raise
+            self.logger.error("Could not load template from {0}: {1}".format(url, e.strerror))
+            # TODO: handle error condition
+            return None
+        except IOError as e:
+            self.logger.error("Could not load template from {0}: {1}".format(url, e.strerror))
+            return None
+
+    def _s3_get_template(self, url):
+        pass
 
 
 class CloudFormation(object):
