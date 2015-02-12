@@ -20,8 +20,8 @@ class StackConfig(object):
 
     def get(self):
         try:
-            with open(self.path, 'r') as file:
-                return yaml.load(file)["stacks"]
+            with open(self.path, 'r') as config_file:
+                return yaml.load(config_file)["stacks"]
         except IOError as e:
             self.logger.error("Could not read yaml file: {0}".format(e))
             raise NoConfigException
