@@ -9,7 +9,7 @@ from mock import patch, MagicMock
 class CloudFormationTemplateTests(unittest2.TestCase):
 
     def setUp(self):
-        self.cfn_template = CloudFormationTemplate("", template_body={"bla":"foo"})
+        self.cfn_template = CloudFormationTemplate("", template_body={"bla": "foo"})
 
     def test_get_protocol_handler_returns_none_for_invalid_protocol(self):
         self.assertIsNone(self.cfn_template._load_template("bbbb://cc.de"))

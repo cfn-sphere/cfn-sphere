@@ -3,60 +3,42 @@ __author__ = 'mhoyer'
 from urlparse import urlparse
 from boto import cloudformation
 from boto.resultset import ResultSet
-from boto.exception import AWSConnectionError
+from boto.exception import AWSConnectionError, BotoServerError
 import json
 import logging
 
 
 class CloudFormationTemplate(object):
-
     def __init__(self, template_url, template_body=None):
         logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
                             datefmt='%d.%m.%Y %H:%M:%S',
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        if not template_body:
-            self.template_body = self._load_template(template_url)
-        else:
-            self.template_body = template_body
+
+        self.url = template_url
+        self.body = template_body
+
+        if not self.body:
+            self.body = self._load_template(self.url)
 
     def get_template_body(self):
-        return self.template_body
+        return self.body
 
     def _load_template(self, url):
-        handler = self._get_template_handler(url)
-        return handler(url)
-
-    def _get_template_handler(self, url):
-        protocol = urlparse(url).scheme
-        print "PROTO: " + protocol
-        if protocol.lower() == "http" or protocol.lower() == "https":
-            self.logger.info("http template source detected")
-            return self._http_get_template
-        elif protocol.lower() == "s3":
-            self.logger.info("S3 template source detected")
-            return self._s3_get_template
-        elif not protocol:
-            self.logger.info("Filesystem template source detected")
-            return self._fs_get_template
-        else:
-            self.logger.error("Unknown template source detected")
-            raise NotImplementedError
-
-    def _s3_get_template(self, url):
-        pass
-
-    def _http_get_template(self, url):
-        pass
+        return self._fs_get_template(url)
 
     def _fs_get_template(self, url):
-        with open(url, 'r') as file:
-            return json.loads(file.read())
+        try:
+            with open(url, 'r') as file:
+                return json.loads(file.read())
+        except ValueError as e:
+            self.logger.error("Could not load template from {0}: {1}".format(url, e.message))
+            #TODO: handle error condition
+            raise
 
 
 class CloudFormation(object):
-
-    def __init__(self, region="eu-west-1", stacks= None):
+    def __init__(self, region="eu-west-1", stacks=None):
         logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
                             datefmt='%d.%m.%Y %H:%M:%S',
                             level=logging.INFO)
@@ -67,7 +49,7 @@ class CloudFormation(object):
             self.logger.error("Could not connect to cloudformation API in {0}. Invalid region?".format(region))
             raise AWSConnectionError("Got None connection object")
 
-        self.logger.info("Connected to cloudformation API at {0} with access key id: {1}".format(
+        self.logger.debug("Connected to cloudformation API at {0} with access key id: {1}".format(
             region, self.conn.aws_access_key_id))
 
         self.stacks = stacks
@@ -89,8 +71,17 @@ class CloudFormation(object):
             stacks_dict[stack.stack_name] = {"parameters": stack.parameters, "outputs": stack.outputs}
         return stacks_dict
 
-    def create_stack(self, template):
-        self.conn.create_stack("bla", template_body={}, parameters=[])
+    def create_stack(self, stack_name, template, parameters):
+        assert isinstance(template, CloudFormationTemplate)
+        try:
+            self.logger.info(
+                "Creating stack {0} from template {1} with parameters: {2}".format(stack_name, template.url,
+                                                                                   parameters))
+            self.conn.create_stack(stack_name, template_body=json.dumps(template.get_template_body()),
+                                   parameters=parameters)
+        except BotoServerError as e:
+            self.logger.error(
+                "Could not create stack {0}. Cloudformation API response: {1}".format(stack_name, e.message))
 
 
 if __name__ == "__main__":

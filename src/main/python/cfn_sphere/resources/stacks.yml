@@ -1,4 +1,15 @@
 stacks:
     vpc:
-        template: vpc.json
+        template: resources/vpc.json
         region: us-east-1
+    cloudtrail:
+        template: resources/cloudtrail-logging.json
+        region: us-east-1
+        parameters:
+            logBucketName: is24-cloudtrail-logs
+            includeGlobalServices: false
+    default-sg:
+        template: resources/default-sg.json
+        region: us-east-1
+        parameters:
+            vpcID: Ref::vpc.id

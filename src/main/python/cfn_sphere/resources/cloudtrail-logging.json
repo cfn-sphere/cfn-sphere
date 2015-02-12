@@ -1,0 +1,29 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Central CloudTrail log bucket where all accounts deliver the audit logs",
+  "Parameters": {
+    "logBucketName": {
+      "Description": "S3 Bucket to put audit logs in",
+      "MinLength": 1,
+      "Default": "is24-cloudtrail-logs",
+      "Type": "String"
+    },
+    "includeGlobalServices": {
+      "Description": "Log events from global services by this cloudtrail",
+      "AllowedValues": ["true", "false"],
+      "Default": "false",
+      "Type": "String",
+      "ConstraintDescription": "Must be true or false"
+    }
+  },
+  "Resources": {
+    "cloudTrailLog" : {
+      "Type" : "AWS::CloudTrail::Trail",
+      "Properties" : {
+        "S3BucketName" : {"Ref":"logBucketName"},
+        "IsLogging" : true,
+        "IncludeGlobalServiceEvents" : {"Ref":"includeGlobalServices"}
+      }
+    }
+  }
+}

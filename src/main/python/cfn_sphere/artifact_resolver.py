@@ -26,6 +26,8 @@ class ArtifactResolver(object):
 
     def get_artifact_value(self, key):
         artifacts = self.get_available_artifacts()
+        self.logger.debug("Looking up key: {0}".format(key))
+        self.logger.debug("Found artifacts: {0}".format(artifacts))
         try:
             return artifacts[key]
         except KeyError:

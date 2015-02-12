@@ -322,19 +322,19 @@
                                 "Ref":"VPC"
                         }
                 },
-                "eu-west-1a":{
+                "subnetA":{
                         "Description":"SubnetId of the subnet A",
                         "Value":{
                                 "Ref":"SubnetA"
                         }
                 },
-                "eu-west-1b":{
+                "subnetB":{
                         "Description":"SubnetId of the subnet B",
                         "Value":{
                                 "Ref":"SubnetB"
                         }
                 },
-                "eu-west-1c":{
+                "subnetC":{
                         "Description":"SubnetId of the subnet C",
                         "Value":{
                                 "Ref":"SubnetC"
