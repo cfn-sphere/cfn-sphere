@@ -16,6 +16,7 @@ default_task = "publish"
 def initialize(project):
     project.depends_on("boto")
     project.depends_on("pyyaml")
+    project.depends_on("treelib")
 
 
 @init

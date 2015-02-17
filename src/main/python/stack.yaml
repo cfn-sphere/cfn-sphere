@@ -1,6 +1,6 @@
 stacks:
     vpc:
-        template: vpc.json
+        template: https://s3-eu-west-1.amazonaws.com/is24-cfn-templates/infrastructure/vpc.json
         region: eu-west-1
     baufi-sync-persistent-live:
         template: myapp-persistent.json

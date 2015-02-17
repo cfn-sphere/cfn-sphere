@@ -3,8 +3,8 @@ __author__ = 'mhoyer'
 from cfn_sphere.stack_config import StackConfig
 from cfn_sphere.artifact_resolver import ArtifactResolver
 from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate
+from treelib import Node, Tree
 import logging
-
 
 class StackHandler(object):
     def __init__(self):
@@ -91,10 +91,30 @@ class StackHandler(object):
 
         return param_list
 
+    def create_action_plan(self, desired_stacks):
+        tree = Tree()
+        tree.create_node('stacks', 1)
+        for name, data in self.desired_stacks.iteritems():
+            print "Working on {0}".format(name)
+            if not data.has_key('parameters'):
+                # no parameters means no dependencies to other stacks, can be on top level
+                tree.create_node(name,data=data, parent=1)
+            else:
+                for parameter in data['parameters']:
+                    if not self.is_parameter_reference(parameter):
+                        tree.create_node(name,data=data, parent=1)
+                        break
+
+        # handle dependencies
+
+        print ""
+        tree.show()
+
 
 if __name__ == "__main__":
     # template = CloudFormationTemplate("resources/vpc.json")
     # print template
 
     stack_handler = StackHandler()
-    stack_handler.sync()
+    stack_handler.create_action_plan(stack_handler.desired_stacks)
+    #stack_handler.sync()
