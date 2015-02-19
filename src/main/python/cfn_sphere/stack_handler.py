@@ -3,8 +3,10 @@ __author__ = 'mhoyer'
 from cfn_sphere.stack_config import StackConfig
 from cfn_sphere.artifact_resolver import ArtifactResolver
 from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate
-from treelib import Node, Tree
+from networkx.exception import NetworkXUnfeasible
 import logging
+import networkx
+
 
 class StackHandler(object):
     def __init__(self):
@@ -13,26 +15,6 @@ class StackHandler(object):
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         self.desired_stacks = StackConfig("resources/stacks.yml").get()
-
-    def sync(self):
-        for name, data in self.desired_stacks.iteritems():
-            self.logger.info("### Working on stack {0} ###".format(name))
-            cfn = CloudFormation(region=data["region"])
-            artifacts_resolver = ArtifactResolver(region=data["region"])
-
-            existing_stacks = cfn.get_stacks_dict()
-
-            if name not in existing_stacks:
-                self.logger.info("Stack <{0}> doesn't exist, will create it".format(name))
-
-                template = CloudFormationTemplate(data["template"])
-                parameters = self.resolve_parameters(artifacts_resolver, data.get("parameters", {}))
-
-                #TODO: make this a synchronous call
-                cfn.create_stack(name, template, parameters)
-            else:
-                self.logger.info("Stack <{0}> exists and probably needs an update".format(name))
-                # TODO: check if stack needs update
 
     @staticmethod
     def get_parameter_key_from_ref_value(value):
@@ -43,7 +25,17 @@ class StackHandler(object):
         return stripped_value
 
     @staticmethod
+    def get_stack_name_from_ref_value(value):
+        assert value, "No value given"
+        assert not value.startswith('.'), "Value should not start with a dot"
+        assert value.__contains__('.'), "Value must contain a dot"
+        return value.split('.')[0]
+
+    @staticmethod
     def is_parameter_reference(value):
+        if not isinstance(value, basestring):
+            return False
+
         if value.lower().startswith("ref::"):
             return True
         else:
@@ -60,6 +52,35 @@ class StackHandler(object):
                 value_string += ','
             value_string += str(item)
         return value_string
+
+    @classmethod
+    def create_stacks_directed_graph(cls, desired_stacks):
+        graph = networkx.DiGraph()
+        for name in desired_stacks:
+            graph.add_node(name)
+        for name, data in desired_stacks.iteritems():
+            if data:
+                for key, value in data.get('parameters', {}).iteritems():
+                    if cls.is_parameter_reference(value):
+                        dependant_stack = cls.get_stack_name_from_ref_value(cls.get_parameter_key_from_ref_value(value))
+                        graph.add_edge(dependant_stack, name)
+
+        return graph
+
+    @classmethod
+    def get_stack_order(cls, desired_stacks):
+        graph = cls.create_stacks_directed_graph(desired_stacks)
+        try:
+            order = networkx.topological_sort_recursive(graph)
+        except NetworkXUnfeasible as e:
+            print "Could not define an order of stacks: {0}".format(e)
+            raise
+
+        for stack in order:
+            if not stack in desired_stacks:
+                raise Exception("Stack {0} found in parameter references but it is not defined".format(stack))
+
+        return order
 
     def resolve_parameters(self, artifacts_resolver, parameters):
         param_list = []
@@ -91,24 +112,29 @@ class StackHandler(object):
 
         return param_list
 
-    def create_action_plan(self, desired_stacks):
-        tree = Tree()
-        tree.create_node('stacks', 1)
-        for name, data in self.desired_stacks.iteritems():
-            print "Working on {0}".format(name)
-            if not data.has_key('parameters'):
-                # no parameters means no dependencies to other stacks, can be on top level
-                tree.create_node(name,data=data, parent=1)
+    def sync(self):
+        order = self.get_stack_order(self.desired_stacks)
+        self.logger.info("Stack processing order: {0}".format(", ".join(order)))
+
+        for stack in order:
+            data = self.desired_stacks[stack]
+
+            cfn = CloudFormation(region=data["region"])
+            artifacts_resolver = ArtifactResolver(region=data["region"])
+
+            existing_stacks = cfn.get_stacks_dict()
+
+            if stack not in existing_stacks:
+                self.logger.info("Stack <{0}> doesn't exist, will create it".format(stack))
+
+                #template = CloudFormationTemplate(data["template"])
+                #parameters = self.resolve_parameters(artifacts_resolver, data.get("parameters", {}))
+
+                #TODO: make this a synchronous call
+                #cfn.create_stack(stack, template, parameters)
             else:
-                for parameter in data['parameters']:
-                    if not self.is_parameter_reference(parameter):
-                        tree.create_node(name,data=data, parent=1)
-                        break
-
-        # handle dependencies
-
-        print ""
-        tree.show()
+                self.logger.info("Stack <{0}> exists and probably needs an update".format(stack))
+                # TODO: check if stack needs update
 
 
 if __name__ == "__main__":
@@ -116,5 +142,6 @@ if __name__ == "__main__":
     # print template
 
     stack_handler = StackHandler()
-    stack_handler.create_action_plan(stack_handler.desired_stacks)
-    #stack_handler.sync()
+    #print stack_handler.get_stack_order(stack_handler.desired_stacks)
+    #stack_handler.create_action_plan(stack_handler.desired_stacks)
+    stack_handler.sync()

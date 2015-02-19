@@ -16,3 +16,6 @@ stacks:
             vpc_id: Ref::vpc.id
             subnets: Ref::subnets
             default_sg: Ref::security.default_sg
+    blafoo:
+        template: test
+        region: eu-west-1

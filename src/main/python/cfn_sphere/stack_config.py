@@ -17,8 +17,10 @@ class StackConfig(object):
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         self.path = path
+        self.config = self._read_config()
+        self._validate()
 
-    def get(self):
+    def _read_config(self):
         try:
             with open(self.path, 'r') as config_file:
                 return yaml.load(config_file)["stacks"]
@@ -31,6 +33,23 @@ class StackConfig(object):
         except ScannerError as e:
             self.logger.error("Could not parse yaml {0}: {1}".format(e.problem_mark, e.problem))
             raise NoConfigException
+
+    def _validate(self):
+        for name, data in self.config.iteritems():
+            try:
+                assert isinstance(name, basestring), "Stackname must be a string!"
+                assert name, "Stackname must not be empty!"
+                assert data["region"], "You need to specify a region for your stack to run in!"
+                assert data["template"], "You need to specify a template source for your stack!"
+            except AssertionError as e:
+                self.logger.error(e)
+                raise NoConfigException
+            except KeyError as e:
+                self.logger.error("You need to specify a {0} for stack {1}".format(e, name))
+                raise NoConfigException
+
+    def get(self):
+        return self.config
 
 
 if __name__ == "__main__":

@@ -1,15 +1,22 @@
 stacks:
     vpc:
-        template: resources/vpc.json
-        region: us-east-1
-    cloudtrail:
-        template: resources/cloudtrail-logging.json
-        region: us-east-1
+        template: https://s3-eu-west-1.amazonaws.com/is24-cfn-templates/infrastructure/vpc.json
+        region: eu-west-1
+    baufi-sync-persistent-live:
+        region: eu-west-1
+        template: myapp-persistent.json
         parameters:
-            logBucketName: is24-cloudtrail-logs
-            includeGlobalServices: false
-    default-sg:
-        template: resources/default-sg.json
-        region: us-east-1
+            vpc_id: Ref::vpc.id
+            subnets:
+                Ref::vpc.eu-west-1a,
+                Ref::vpc.eu-west-1b,
+                Ref::vpc.eu-west-1c,
+    baufi-sync-volatile-live:
+        region: eu-west-1
+        template: myapp-volatile.json
         parameters:
-            vpcID: Ref::vpc.id
+            vpc_id: Ref::vpc.id
+            subnets: Ref::vpc.subnets
+    blafoo:
+        template: test
+        region: eu-west-1
