@@ -1,22 +1,14 @@
 {
         "AWSTemplateFormatVersion":"2010-09-09",
-        "Description":"AWS CloudFormation Template for a VPC in eu-west-1 with 3 subnets, one per AZ",
+        "Description":"AWS CloudFormation Template for a VPC in eu-west-1 with one subnet",
         "Mappings":{
                 "SubnetConfig":{
                         "VPC-Values":{
-                                "CIDR":"10.41.0.0/16"
+                                "CIDR":"10.55.0.0/16"
                         },
-                        "SubnetA-Values":{
-                                "CIDR":"10.41.0.0/18",
+                        "Subnet-Values":{
+                                "CIDR":"10.55.0.0/18",
                                 "AZ":"us-east-1a"
-                        },
-                        "SubnetB-Values":{
-                                "CIDR":"10.41.64.0/18",
-                                "AZ":"us-east-1b"
-                        },
-                        "SubnetC-Values":{
-                                "CIDR":"10.41.128.0/18",
-                                "AZ":"us-east-1d"
                         }
                 }
         },
@@ -32,24 +24,16 @@
                                                 "VPC-Values",
                                                 "CIDR"
                                         ]
-                                },
-                                "Tags":[
-                                        {
-                                                "Key":"Application",
-                                                "Value":{
-                                                        "Ref":"AWS::StackName"
-                                                }
-                                        }
-                                ]
+                                }
                         }
                 },
-                "SubnetA":{
+                "Subnet":{
                         "Type":"AWS::EC2::Subnet",
                         "Properties":{
                                 "AvailabilityZone":{
                                         "Fn::FindInMap":[
                                                 "SubnetConfig",
-                                                "SubnetA-Values",
+                                                "Subnet-Values",
                                                 "AZ"
                                         ]
                                 },
@@ -59,258 +43,9 @@
                                 "CidrBlock":{
                                         "Fn::FindInMap":[
                                                 "SubnetConfig",
-                                                "SubnetA-Values",
+                                                "Subnet-Values",
                                                 "CIDR"
                                         ]
-                                },
-                                "Tags":[
-                                        {
-                                                "Key":"Application",
-                                                "Value":{
-                                                        "Ref":"AWS::StackName"
-                                                }
-                                        },
-                                        {
-                                                "Key":"Network",
-                                                "Value":"SubnetA"
-                                        }
-                                ]
-                        }
-                },
-                "SubnetB":{
-                        "Type":"AWS::EC2::Subnet",
-                        "Properties":{
-                                "AvailabilityZone":{
-                                        "Fn::FindInMap":[
-                                                "SubnetConfig",
-                                                "SubnetB-Values",
-                                                "AZ"
-                                        ]
-                                },
-                                "VpcId":{
-                                        "Ref":"VPC"
-                                },
-                                "CidrBlock":{
-                                        "Fn::FindInMap":[
-                                                "SubnetConfig",
-                                                "SubnetB-Values",
-                                                "CIDR"
-                                        ]
-                                },
-                                "Tags":[
-                                        {
-                                                "Key":"Application",
-                                                "Value":{
-                                                        "Ref":"AWS::StackName"
-                                                }
-                                        },
-                                        {
-                                                "Key":"Network",
-                                                "Value":"SubnetB"
-                                        }
-                                ]
-                        }
-                },
-                "SubnetC":{
-                        "Type":"AWS::EC2::Subnet",
-                        "Properties":{
-                                "AvailabilityZone":{
-                                        "Fn::FindInMap":[
-                                                "SubnetConfig",
-                                                "SubnetC-Values",
-                                                "AZ"
-                                        ]
-                                },
-                                "VpcId":{
-                                        "Ref":"VPC"
-                                },
-                                "CidrBlock":{
-                                        "Fn::FindInMap":[
-                                                "SubnetConfig",
-                                                "SubnetC-Values",
-                                                "CIDR"
-                                        ]
-                                },
-                                "Tags":[
-                                        {
-                                                "Key":"Application",
-                                                "Value":{
-                                                        "Ref":"AWS::StackName"
-                                                }
-                                        },
-                                        {
-                                                "Key":"Network",
-                                                "Value":"SubnetC"
-                                        }
-                                ]
-                        }
-                },
-                "IGW":{
-                        "Type":"AWS::EC2::InternetGateway",
-                        "Properties":{
-                                "Tags":[
-                                        {
-                                                "Key":"Application",
-                                                "Value":{
-                                                        "Ref":"AWS::StackName"
-                                                }
-                                        }
-                                ]
-                        }
-                },
-                "igwAttachment":{
-                        "Type":"AWS::EC2::VPCGatewayAttachment",
-                        "Properties":{
-                                "VpcId":{
-                                        "Ref":"VPC"
-                                },
-                                "InternetGatewayId":{
-                                        "Ref":"IGW"
-                                }
-                        }
-                },
-                "vpcRouteTable":{
-                        "Type":"AWS::EC2::RouteTable",
-                        "Properties":{
-                                "VpcId":{
-                                        "Ref":"VPC"
-                                },
-                                "Tags":[
-                                        {
-                                                "Key":"Application",
-                                                "Value":{
-                                                        "Ref":"AWS::StackName"
-                                                }
-                                        }
-                                ]
-                        }
-                },
-                "generalRoute":{
-                        "Type":"AWS::EC2::Route",
-                        "DependsOn":"igwAttachment",
-                        "Properties":{
-                                "RouteTableId":{
-                                        "Ref":"vpcRouteTable"
-                                },
-                                "DestinationCidrBlock":"0.0.0.0/0",
-                                "GatewayId":{
-                                        "Ref":"IGW"
-                                }
-                        }
-                },
-                "RouteTableAssociationSubnetA":{
-                        "Type":"AWS::EC2::SubnetRouteTableAssociation",
-                        "Properties":{
-                                "SubnetId":{
-                                        "Ref":"SubnetA"
-                                },
-                                "RouteTableId":{
-                                        "Ref":"vpcRouteTable"
-                                }
-                        }
-                },
-                "RouteTableAssociationSubnetB":{
-                        "Type":"AWS::EC2::SubnetRouteTableAssociation",
-                        "Properties":{
-                                "SubnetId":{
-                                        "Ref":"SubnetB"
-                                },
-                                "RouteTableId":{
-                                        "Ref":"vpcRouteTable"
-                                }
-                        }
-                },
-                "RouteTableAssociationSubnetC":{
-                        "Type":"AWS::EC2::SubnetRouteTableAssociation",
-                        "Properties":{
-                                "SubnetId":{
-                                        "Ref":"SubnetC"
-                                },
-                                "RouteTableId":{
-                                        "Ref":"vpcRouteTable"
-                                }
-                        }
-                },
-                "ACL1":{
-                        "Type":"AWS::EC2::NetworkAcl",
-                        "Properties":{
-                                "VpcId":{
-                                        "Ref":"VPC"
-                                },
-                                "Tags":[
-                                        {
-                                                "Key":"Application",
-                                                "Value":{
-                                                        "Ref":"AWS::StackName"
-                                                }
-                                        }
-                                ]
-                        }
-                },
-                "ACLEntryInboundAllTraffic":{
-                        "Type":"AWS::EC2::NetworkAclEntry",
-                        "Properties":{
-                                "NetworkAclId":{
-                                        "Ref":"ACL1"
-                                },
-                                "RuleNumber":"100",
-                                "Protocol":"-1",
-                                "RuleAction":"allow",
-                                "Egress":"false",
-                                "CidrBlock":"0.0.0.0/0",
-                                "PortRange":{
-                                        "From":"0",
-                                        "To":"65535"
-                                }
-                        }
-                },
-                "ACLEntryOutboundAllTraffic":{
-                        "Type":"AWS::EC2::NetworkAclEntry",
-                        "Properties":{
-                                "NetworkAclId":{
-                                        "Ref":"ACL1"
-                                },
-                                "RuleNumber":"100",
-                                "Protocol":"-1",
-                                "RuleAction":"allow",
-                                "Egress":"true",
-                                "CidrBlock":"0.0.0.0/0",
-                                "PortRange":{
-                                        "From":"0",
-                                        "To":"65535"
-                                }
-                        }
-                },
-                "ACL1AssociationToSubnetA":{
-                        "Type":"AWS::EC2::SubnetNetworkAclAssociation",
-                        "Properties":{
-                                "SubnetId":{
-                                        "Ref":"SubnetA"
-                                },
-                                "NetworkAclId":{
-                                        "Ref":"ACL1"
-                                }
-                        }
-                },
-                "ACL1AssociationToSubnetB":{
-                        "Type":"AWS::EC2::SubnetNetworkAclAssociation",
-                        "Properties":{
-                                "SubnetId":{
-                                        "Ref":"SubnetB"
-                                },
-                                "NetworkAclId":{
-                                        "Ref":"ACL1"
-                                }
-                        }
-                },
-                "ACL1AssociationToSubnetC":{
-                        "Type":"AWS::EC2::SubnetNetworkAclAssociation",
-                        "Properties":{
-                                "SubnetId":{
-                                        "Ref":"SubnetC"
-                                },
-                                "NetworkAclId":{
-                                        "Ref":"ACL1"
                                 }
                         }
                 }
@@ -322,22 +57,10 @@
                                 "Ref":"VPC"
                         }
                 },
-                "subnetA":{
-                        "Description":"SubnetId of the subnet A",
+                "subnet":{
+                        "Description":"SubnetId of the subnet",
                         "Value":{
-                                "Ref":"SubnetA"
-                        }
-                },
-                "subnetB":{
-                        "Description":"SubnetId of the subnet B",
-                        "Value":{
-                                "Ref":"SubnetB"
-                        }
-                },
-                "subnetC":{
-                        "Description":"SubnetId of the subnet C",
-                        "Value":{
-                                "Ref":"SubnetC"
+                                "Ref":"Subnet"
                         }
                 }
         }

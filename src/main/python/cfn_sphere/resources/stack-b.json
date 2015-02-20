@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Central CloudTrail log bucket where all accounts deliver the audit logs",
+  "Description": "Test Security Group",
   "Parameters": {
     "vpcID": {
       "Description": "Target VPC id",
