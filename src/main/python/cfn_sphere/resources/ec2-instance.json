@@ -1,0 +1,30 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Test Security Group",
+  "Parameters": {
+    "subnetID": {
+      "Description": "Target VPC id",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "securityGroupID": {
+      "Description": "Target VPC id",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "sshKeyName": {
+      "Description": "Target VPC id",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "WebServerInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-6e7bd919",
+        "SecurityGroupIds": [{"Ref": "securityGroupID"}],
+        "SubnetId": {"Ref": "subnetID"},
+        "InstanceType": "t2.micro",
+        "KeyName": {"Ref": "sshKeyName"}
+      }
+    }
+  }
+}

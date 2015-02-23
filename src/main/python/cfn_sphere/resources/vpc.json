@@ -8,7 +8,7 @@
                         },
                         "Subnet-Values":{
                                 "CIDR":"10.55.0.0/18",
-                                "AZ":"us-east-1a"
+                                "AZ":"eu-west-1a"
                         }
                 }
         },

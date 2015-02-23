@@ -5,6 +5,7 @@ from boto.resultset import ResultSet
 from boto.exception import AWSConnectionError, BotoServerError
 import json
 import logging
+import os
 
 
 class CloudFormationTemplate(object):
@@ -24,12 +25,11 @@ class CloudFormationTemplate(object):
         return self.body
 
     def _load_template(self, url):
+        self.logger.debug("Working in {0}".format(os.getcwd()))
         if url.lower().startswith("s3://"):
             return self._s3_get_template(url)
-        elif url.lower().startswith("/"):
-            return self._fs_get_template(url)
         else:
-            raise NotImplementedError("No loader available for {0}".format(url))
+            return self._fs_get_template(url)
 
     def _fs_get_template(self, url):
         try:
@@ -38,10 +38,10 @@ class CloudFormationTemplate(object):
         except ValueError as e:
             self.logger.error("Could not load template from {0}: {1}".format(url, e.strerror))
             # TODO: handle error condition
-            return None
+            raise
         except IOError as e:
             self.logger.error("Could not load template from {0}: {1}".format(url, e.strerror))
-            return None
+            raise
 
     def _s3_get_template(self, url):
         pass

@@ -127,11 +127,11 @@ class StackHandler(object):
             if stack not in existing_stacks:
                 self.logger.info("Stack <{0}> doesn't exist, will create it".format(stack))
 
-                #template = CloudFormationTemplate(data["template"])
-                #parameters = self.resolve_parameters(artifacts_resolver, data.get("parameters", {}))
+                template = CloudFormationTemplate(data["template"])
+                parameters = self.resolve_parameters(artifacts_resolver, data.get("parameters", {}))
 
                 #TODO: make this a synchronous call
-                #cfn.create_stack(stack, template, parameters)
+                cfn.create_stack(stack, template, parameters)
             else:
                 self.logger.info("Stack <{0}> exists and probably needs an update".format(stack))
                 # TODO: check if stack needs update

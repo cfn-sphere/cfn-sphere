@@ -1,22 +1,16 @@
 stacks:
     vpc:
-        template: https://s3-eu-west-1.amazonaws.com/is24-cfn-templates/infrastructure/vpc.json
+        template: resources/vpc.json
         region: eu-west-1
-    baufi-sync-persistent-live:
+    default-security:
         region: eu-west-1
-        template: myapp-persistent.json
+        template: resources/security_group.json
         parameters:
-            vpc_id: Ref::vpc.id
-            subnets:
-                Ref::vpc.eu-west-1a,
-                Ref::vpc.eu-west-1b,
-                Ref::vpc.eu-west-1c,
-    baufi-sync-volatile-live:
+            vpcID: Ref::vpc.id
+    test-app:
         region: eu-west-1
-        template: myapp-volatile.json
+        template: resources/ec2-instance.json
         parameters:
-            vpc_id: Ref::vpc.id
-            subnets: Ref::vpc.subnets
-    blafoo:
-        template: test
-        region: eu-west-1
+            subnetID: Ref::vpc.subnet
+            securityGroupID: Ref::default-security.id
+            sshKeyName: team_rz_strategie
