@@ -5,6 +5,7 @@ from boto.resultset import ResultSet
 from boto.exception import AWSConnectionError, BotoServerError
 import json
 import logging
+import time
 import os
 
 
@@ -87,11 +88,27 @@ class CloudFormation(object):
             self.logger.info(
                 "Creating stack {0} from template {1} with parameters: {2}".format(stack_name, template.url,
                                                                                    parameters))
-            self.conn.create_stack(stack_name, template_body=json.dumps(template.get_template_body()),
+            self.conn.create_stack(stack_name,
+                                   template_body=json.dumps(template.get_template_body()),
                                    parameters=parameters)
+            self.wait_for_update_complete(stack_name)
         except BotoServerError as e:
             self.logger.error(
                 "Could not create stack {0}. Cloudformation API response: {1}".format(stack_name, e.message))
+
+    def wait_for_update_complete(self, stack_name, timeout=600):
+        start = time.time()
+        while time.time() < (start + timeout):
+            for event in self.get_stack_events(stack_name):
+                print event
+                if event.resource_status.endswith("_COMPLETE"):
+                    return True
+            time.sleep(5)
+        return False
+
+
+    def get_stack_events(self, stack_name):
+        return self.conn.describe_stack_events(stack_name)
 
 
 if __name__ == "__main__":

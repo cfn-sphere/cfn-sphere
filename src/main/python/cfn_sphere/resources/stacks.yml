@@ -1,14 +1,14 @@
 stacks:
     vpc:
         template: resources/vpc.json
-        region: eu-west-1
+        region: us-east-1
     default-security:
-        region: eu-west-1
+        region: us-east-1
         template: resources/security_group.json
         parameters:
             vpcID: Ref::vpc.id
     test-app:
-        region: eu-west-1
+        region: us-east-1
         template: resources/ec2-instance.json
         parameters:
             subnetID: Ref::vpc.subnet
