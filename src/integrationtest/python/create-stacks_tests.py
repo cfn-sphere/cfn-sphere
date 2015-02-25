@@ -1,6 +1,5 @@
 __author__ = 'mhoyer'
 
-import unittest2
 import os
 from cfn_sphere.stack_handler import StackHandler
 

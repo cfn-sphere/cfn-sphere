@@ -99,6 +99,7 @@ class CloudFormation(object):
         except BotoServerError as e:
             self.logger.error(
                 "Could not create stack {0}. Cloudformation API response: {1}".format(stack_name, e.message))
+            raise
 
     def wait_to_complete(self, stack_name, timeout=600):
         seen_events = []
@@ -118,13 +119,15 @@ class CloudFormation(object):
                     elif event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
                         self.logger.warn("Rolling back {0}".format(event.logical_resource_id))
                     elif event.resource_status.endswith("ROLLBACK_COMPLETE"):
-                        self.logger.error("Rollback of {0} completed".format(event.logical_resource_id))
-                        return False
+                        self.logger.info("Rollback of {0} completed".format(event.logical_resource_id))
+                        raise Exception("Failed to create stack, terminating")
                     elif event.resource_status.endswith("ROLLBACK_FAILED"):
                         self.logger.error("Rollback of {0} failed".format(event.logical_resource_id))
-                        return False
+                        raise Exception("Failed to create stack, terminating")
                     else:
                         pass
+
+            # TODO: sleep could be longer on machine interaction level to save some api calls, decide dynamically
             time.sleep(10)
         return False
 
