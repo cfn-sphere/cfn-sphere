@@ -10,12 +10,13 @@ import os
 
 
 class CloudFormationTemplate(object):
-    def __init__(self, template_url, template_body=None):
+    def __init__(self, template_url, template_body=None, config_dir=None):
         logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
                             datefmt='%d.%m.%Y %H:%M:%S',
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
+        self.config_dir = config_dir
         self.url = template_url
         self.body = template_body
 
@@ -33,6 +34,9 @@ class CloudFormationTemplate(object):
             return self._fs_get_template(url)
 
     def _fs_get_template(self, url):
+        if not os.path.isabs(url) and self.config_dir:
+            url = os.path.join(self.config_dir, url)
+
         try:
             with open(url, 'r') as template_file:
                 return json.loads(template_file.read())
@@ -45,7 +49,7 @@ class CloudFormationTemplate(object):
             raise
 
     def _s3_get_template(self, url):
-        pass
+        raise NotImplementedError
 
 
 class CloudFormation(object):
