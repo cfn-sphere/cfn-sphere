@@ -95,24 +95,38 @@ class CloudFormation(object):
             self.conn.create_stack(stack_name,
                                    template_body=json.dumps(template.get_template_body()),
                                    parameters=parameters)
-            self.wait_for_update_complete(stack_name)
+            self.wait_to_complete(stack_name)
         except BotoServerError as e:
             self.logger.error(
                 "Could not create stack {0}. Cloudformation API response: {1}".format(stack_name, e.message))
 
-    def wait_for_update_complete(self, stack_name, timeout=600):
+    def wait_to_complete(self, stack_name, timeout=600):
+        seen_events = []
         start = time.time()
+
         while time.time() < (start + timeout):
-            for event in self.get_stack_events(stack_name):
-                print event
-                if event.resource_status.endswith("_COMPLETE"):
-                    return True
-            time.sleep(5)
+            for event in self.conn.describe_stack_events(stack_name):
+                if event.event_id not in seen_events:
+                    seen_events.append(event.event_id)
+                    if event.resource_type is "AWS::CloudFormation::Stack" and event.resource_status.endswith("CREATE_COMPLETE"):
+                        self.logger.info("Stack {0} created!".format(event.logical_resource_id))
+                        return True
+                    elif event.resource_status.endswith("CREATE_COMPLETE"):
+                        self.logger.info("Created {0}".format(event.logical_resource_id))
+                    elif event.resource_status.endswith("CREATE_FAILED"):
+                        self.logger.error("Could not create {0}: {1}".format(event.logical_resource_id, event.resource_status_reason))
+                    elif event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
+                        self.logger.warn("Rolling back {0}".format(event.logical_resource_id))
+                    elif event.resource_status.endswith("ROLLBACK_COMPLETE"):
+                        self.logger.error("Rollback of {0} completed".format(event.logical_resource_id))
+                        return False
+                    elif event.resource_status.endswith("ROLLBACK_FAILED"):
+                        self.logger.error("Rollback of {0} failed".format(event.logical_resource_id))
+                        return False
+                    else:
+                        pass
+            time.sleep(10)
         return False
-
-
-    def get_stack_events(self, stack_name):
-        return self.conn.describe_stack_events(stack_name)
 
 
 if __name__ == "__main__":
