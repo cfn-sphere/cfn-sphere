@@ -11,18 +11,18 @@ class NoConfigException(Exception):
 
 
 class StackConfig(object):
-    def __init__(self, path):
+    def __init__(self, stack_config_file):
         logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
                             datefmt='%d.%m.%Y %H:%M:%S',
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        self.path = path
+        self.stack_config_file = stack_config_file
         self.config = self._read_config()
         self._validate()
 
     def _read_config(self):
         try:
-            with open(self.path, 'r') as config_file:
+            with open(self.stack_config_file, 'r') as config_file:
                 return yaml.load(config_file)["stacks"]
         except IOError as e:
             self.logger.error("Could not read yaml file: {0}".format(e))

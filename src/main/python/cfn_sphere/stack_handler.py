@@ -9,12 +9,15 @@ import networkx
 
 
 class StackHandler(object):
-    def __init__(self):
+    def __init__(self, stack_config_file, config_dir):
         logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
                             datefmt='%d.%m.%Y %H:%M:%S',
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        self.desired_stacks = StackConfig("resources/stacks.yml").get()
+
+        stack_config = StackConfig(stack_config_file)
+        self.desired_stacks = stack_config.get()
+        self.config_dir = config_dir
 
     @staticmethod
     def get_parameter_key_from_ref_value(value):
@@ -127,10 +130,11 @@ class StackHandler(object):
             if stack not in existing_stacks:
                 self.logger.info("Stack <{0}> doesn't exist, will create it".format(stack))
 
-                template = CloudFormationTemplate(data["template"])
+                # TODO: injecting a suspect config_dir into a CloudFormationTemplate feels bad, should get refactored
+                template = CloudFormationTemplate(data["template"], config_dir=self.config_dir)
                 parameters = self.resolve_parameters(artifacts_resolver, data.get("parameters", {}))
 
-                #TODO: make this a synchronous call
+                # TODO: make this a synchronous call
                 cfn.create_stack(stack, template, parameters)
             else:
                 self.logger.info("Stack <{0}> exists and probably needs an update".format(stack))
@@ -141,7 +145,7 @@ if __name__ == "__main__":
     # template = CloudFormationTemplate("resources/vpc.json")
     # print template
 
-    stack_handler = StackHandler()
+    stack_handler = StackHandler("resources/vpc.json")
     #print stack_handler.get_stack_order(stack_handler.desired_stacks)
     #stack_handler.create_action_plan(stack_handler.desired_stacks)
-    stack_handler.sync()
+    #stack_handler.sync()
