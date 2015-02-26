@@ -23,7 +23,7 @@ class StackConfig(object):
     def _read_config(self):
         try:
             with open(self.stack_config_file, 'r') as config_file:
-                return yaml.load(config_file)["stacks"]
+                return yaml.load(config_file.read())["stacks"]
         except IOError as e:
             self.logger.error("Could not read yaml file: {0}".format(e))
             raise NoConfigException

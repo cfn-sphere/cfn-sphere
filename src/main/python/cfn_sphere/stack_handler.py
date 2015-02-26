@@ -119,26 +119,30 @@ class StackHandler(object):
         order = self.get_stack_order(self.desired_stacks)
         self.logger.info("Stack processing order: {0}".format(", ".join(order)))
 
-        for stack in order:
-            data = self.desired_stacks[stack]
+        for stack_name in order:
+            data = self.desired_stacks[stack_name]
 
             cfn = CloudFormation(region=data["region"])
             artifacts_resolver = ArtifactResolver(region=data["region"])
 
             existing_stacks = cfn.get_stacks_dict()
 
-            if stack not in existing_stacks:
-                self.logger.info("Stack <{0}> doesn't exist, will create it".format(stack))
+            if stack_name not in existing_stacks:
+                self.logger.info("Stack {0} doesn't exist, will create it".format(stack_name))
 
                 # TODO: injecting a suspect config_dir into a CloudFormationTemplate feels bad, should get refactored
                 template = CloudFormationTemplate(data["template"], config_dir=self.config_dir)
                 parameters = self.resolve_parameters(artifacts_resolver, data.get("parameters", {}))
 
                 # TODO: make this a synchronous call
-                cfn.create_stack(stack, template, parameters)
+                cfn.create_stack(stack_name, template, parameters)
             else:
-                self.logger.info("Stack <{0}> exists and probably needs an update".format(stack))
+                # TODO: check if the stack is in a good state, not something like rollback_complete
+                self.logger.info("Stack {0} exists and probably needs an update".format(stack_name))
                 # TODO: check if stack needs update
+                # could be changes in:
+                # - template itself
+                # - parameters
 
 
 if __name__ == "__main__":

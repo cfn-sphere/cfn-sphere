@@ -26,5 +26,5 @@ class CloudFormationTemplateTests(unittest2.TestCase):
 
     def test_load_template_raises_exception_on_unknown_protocol(self):
         URL = "xxx://foo.json"
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(IOError):
             self.cfn_template._load_template(URL)
