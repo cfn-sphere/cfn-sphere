@@ -52,6 +52,11 @@ class CloudFormationTemplate(object):
         raise NotImplementedError
 
 
+class CloudFormationStack(object):
+    def __init__(self, stack):
+        self.stack = stack
+
+
 class CloudFormation(object):
     def __init__(self, region="eu-west-1", stacks=None):
         logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
@@ -86,6 +91,22 @@ class CloudFormation(object):
             stacks_dict[stack.stack_name] = {"parameters": stack.parameters, "outputs": stack.outputs}
         return stacks_dict
 
+    def get_stack(self, stack_name):
+        return self.conn.describe_stacks(stack_name)[0]
+
+    def stack_is_good(self, stack_name):
+        stack = self.get_stack(stack_name)
+        if stack.stack_status in ["CREATE_COMPLETE", "UPDATE_COMPLETE"]:
+            return True
+        else:
+            self.logger.error("Stack {0} is in {1} state, because of: {2}".format(stack.stack_name, stack.stack_status,
+                                                                                  stack.stack_status_reason))
+            raise Exception("Broken stack found")
+
+    def get_stack_state(self, stack_name):
+        stack = self.conn.describe_stacks(stack_name)
+        return stack.status
+
     def create_stack(self, stack_name, template, parameters):
         assert isinstance(template, CloudFormationTemplate)
         try:
@@ -109,13 +130,15 @@ class CloudFormation(object):
             for event in self.conn.describe_stack_events(stack_name):
                 if event.event_id not in seen_events:
                     seen_events.append(event.event_id)
-                    if event.resource_type is "AWS::CloudFormation::Stack" and event.resource_status.endswith("CREATE_COMPLETE"):
+                    if event.resource_type is "AWS::CloudFormation::Stack" and event.resource_status.endswith(
+                            "CREATE_COMPLETE"):
                         self.logger.info("Stack {0} created!".format(event.logical_resource_id))
                         return True
                     elif event.resource_status.endswith("CREATE_COMPLETE"):
                         self.logger.info("Created {0}".format(event.logical_resource_id))
                     elif event.resource_status.endswith("CREATE_FAILED"):
-                        self.logger.error("Could not create {0}: {1}".format(event.logical_resource_id, event.resource_status_reason))
+                        self.logger.error(
+                            "Could not create {0}: {1}".format(event.logical_resource_id, event.resource_status_reason))
                     elif event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
                         self.logger.warn("Rolling back {0}".format(event.logical_resource_id))
                     elif event.resource_status.endswith("ROLLBACK_COMPLETE"):
@@ -134,3 +157,4 @@ class CloudFormation(object):
 
 if __name__ == "__main__":
     cfn = CloudFormation()
+    print cfn.get_stacks_dict()

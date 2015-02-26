@@ -137,7 +137,9 @@ class StackHandler(object):
                 # TODO: make this a synchronous call
                 cfn.create_stack(stack_name, template, parameters)
             else:
-                # TODO: check if the stack is in a good state, not something like rollback_complete
+                if not cfn.stack_is_good(stack_name):
+                    self.logger.error("Stack {0} is in bad state".format(stack_name))
+
                 self.logger.info("Stack {0} exists and probably needs an update".format(stack_name))
                 # TODO: check if stack needs update
                 # could be changes in:
