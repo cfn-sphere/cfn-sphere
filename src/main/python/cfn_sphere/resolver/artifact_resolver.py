@@ -7,6 +7,7 @@ import logging
 class ArtifactResolverException(Exception):
     pass
 
+
 class ArtifactResolver(object):
 
     def __init__(self, region="eu-west-1", stacks= None):

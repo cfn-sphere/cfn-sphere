@@ -1,11 +1,10 @@
 __author__ = 'mhoyer'
 
-from cfn_sphere.stack_config import StackConfig
-from cfn_sphere.artifact_resolver import ArtifactResolver
-from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate
-from networkx.exception import NetworkXUnfeasible
 import logging
-import networkx
+
+from cfn_sphere.stack_config import StackConfig
+from cfn_sphere.resolver.artifact_resolver import ArtifactResolver
+from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate
 
 
 class StackHandler(object):
@@ -20,31 +19,6 @@ class StackHandler(object):
         self.config_dir = config_dir
 
     @staticmethod
-    def get_parameter_key_from_ref_value(value):
-        if not value:
-            return ""
-
-        stripped_value = value.partition('::')[2]
-        return stripped_value
-
-    @staticmethod
-    def get_stack_name_from_ref_value(value):
-        assert value, "No value given"
-        assert not value.startswith('.'), "Value should not start with a dot"
-        assert value.__contains__('.'), "Value must contain a dot"
-        return value.split('.')[0]
-
-    @staticmethod
-    def is_parameter_reference(value):
-        if not isinstance(value, basestring):
-            return False
-
-        if value.lower().startswith("ref::"):
-            return True
-        else:
-            return False
-
-    @staticmethod
     def convert_list_to_string(value):
         if not value:
             return ""
@@ -56,34 +30,15 @@ class StackHandler(object):
             value_string += str(item)
         return value_string
 
-    @classmethod
-    def create_stacks_directed_graph(cls, desired_stacks):
-        graph = networkx.DiGraph()
-        for name in desired_stacks:
-            graph.add_node(name)
-        for name, data in desired_stacks.iteritems():
-            if data:
-                for key, value in data.get('parameters', {}).iteritems():
-                    if cls.is_parameter_reference(value):
-                        dependant_stack = cls.get_stack_name_from_ref_value(cls.get_parameter_key_from_ref_value(value))
-                        graph.add_edge(dependant_stack, name)
+    @staticmethod
+    def is_parameter_reference(value):
+        if not isinstance(value, basestring):
+            return False
 
-        return graph
-
-    @classmethod
-    def get_stack_order(cls, desired_stacks):
-        graph = cls.create_stacks_directed_graph(desired_stacks)
-        try:
-            order = networkx.topological_sort_recursive(graph)
-        except NetworkXUnfeasible as e:
-            print "Could not define an order of stacks: {0}".format(e)
-            raise
-
-        for stack in order:
-            if not stack in desired_stacks:
-                raise Exception("Stack {0} found in parameter references but it is not defined".format(stack))
-
-        return order
+        if value.lower().startswith("ref::"):
+            return True
+        else:
+            return False
 
     def resolve_parameters(self, artifacts_resolver, parameters):
         param_list = []
