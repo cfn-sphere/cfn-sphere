@@ -4,6 +4,7 @@ import logging
 
 from cfn_sphere.stack_config import StackConfig
 from cfn_sphere.resolver.artifact_resolver import ArtifactResolver
+from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate
 
 
@@ -30,16 +31,6 @@ class StackHandler(object):
             value_string += str(item)
         return value_string
 
-    @staticmethod
-    def is_parameter_reference(value):
-        if not isinstance(value, basestring):
-            return False
-
-        if value.lower().startswith("ref::"):
-            return True
-        else:
-            return False
-
     def resolve_parameters(self, artifacts_resolver, parameters):
         param_list = []
         for key, value in parameters.iteritems():
@@ -54,8 +45,8 @@ class StackHandler(object):
 
                 self.logger.debug("String parameter found for {0}".format(key))
 
-                if self.is_parameter_reference(value):
-                    stripped_value = self.get_parameter_key_from_ref_value(value)
+                if DependencyResolver.is_parameter_reference(value):
+                    stripped_value = DependencyResolver.get_parameter_key_from_ref_value(value)
                     self.logger.debug(
                         "Resolved artifact value: ".format(artifacts_resolver.get_artifact_value(stripped_value)))
                     param_list.append((key, artifacts_resolver.get_artifact_value(stripped_value)))
