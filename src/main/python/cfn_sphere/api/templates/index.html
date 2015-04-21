@@ -1,0 +1,33 @@
+{% extends "template.html" %}
+
+{% block title %}Index{% endblock %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+
+
+<div class="container">
+    <div class="jumbotron">
+        <h1>CfnSphere API</h1>
+
+        <p class="lead">
+            Cloudformation stack management api
+        </p>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block footer %}
+<hr>
+<div id="footer">
+    <div class="container">
+        <p class="text-muted credit">
+            {{ super() }}
+        </p>
+    </div>
+</div>
+{% endblock %}
