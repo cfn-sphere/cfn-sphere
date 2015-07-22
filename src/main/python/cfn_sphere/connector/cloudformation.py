@@ -157,4 +157,4 @@ class CloudFormation(object):
 
 if __name__ == "__main__":
     cfn = CloudFormation()
-    print cfn.get_stacks_dict()
+    print(cfn.get_stacks_dict())

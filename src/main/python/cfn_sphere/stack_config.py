@@ -3,7 +3,6 @@ __author__ = 'mhoyer'
 from yaml.scanner import ScannerError
 import yaml
 import logging
-import os
 
 
 class NoConfigException(Exception):
@@ -35,9 +34,9 @@ class StackConfig(object):
             raise NoConfigException
 
     def _validate(self):
-        for name, data in self.config.iteritems():
+        for name, data in self.config.items():
             try:
-                assert isinstance(name, basestring), "Stackname must be a string!"
+                assert isinstance(name, str), "Stackname must be a string!"
                 assert name, "Stackname must not be empty!"
                 assert data["region"], "You need to specify a region for your stack to run in!"
                 assert data["template"], "You need to specify a template source for your stack!"
@@ -53,5 +52,5 @@ class StackConfig(object):
 
 
 if __name__ == "__main__":
-    reader = StackConfig("resources/stacks.yml")
-    print reader.get()
+    reader = StackConfig("resources/myapp.yml")
+    print(reader.get())

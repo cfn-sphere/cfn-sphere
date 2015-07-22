@@ -1,0 +1,13 @@
+stacks:
+  myapp-persistence:
+    region: eu-west-1
+    template: myapp-persistence.json
+    parameters:
+      vpcID: Ref::vpc.id
+  myapp:
+    region: eu-west-1
+    template: myapp.json
+    parameters:
+      subnetID: Ref::vpc.subnets
+      securityGroupID: Ref::myapp-persistence.id
+      sshKeyName: team_rz_strategie

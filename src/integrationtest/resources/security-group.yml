@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Test Security Group"
+Parameters:
+  vpcID:
+    Description: "Target VPC id"
+    Type: "AWS::EC2::VPC::Id"
+Resources:
+  sg:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "BetaSearch Stack"
+      VpcId:
+        Ref: "vpcID"
+Outputs:
+  id:
+    Description: "ID of the newly created security group"
+    Value:
+      Ref: "sg"

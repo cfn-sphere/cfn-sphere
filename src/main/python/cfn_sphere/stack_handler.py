@@ -33,7 +33,7 @@ class StackHandler(object):
 
     def resolve_parameters(self, artifacts_resolver, parameters):
         param_list = []
-        for key, value in parameters.iteritems():
+        for key, value in parameters.items():
 
             if isinstance(value, list):
 
@@ -41,7 +41,7 @@ class StackHandler(object):
                 value_string = self.convert_list_to_string(value)
                 param_list.append((key, value_string))
 
-            elif isinstance(value, basestring):
+            elif isinstance(value, str):
 
                 self.logger.debug("String parameter found for {0}".format(key))
 
@@ -62,7 +62,7 @@ class StackHandler(object):
         return param_list
 
     def sync(self):
-        order = self.get_stack_order(self.desired_stacks)
+        order = DependencyResolver.get_stack_order(self.desired_stacks)
         self.logger.info("Stack processing order: {0}".format(", ".join(order)))
 
         for stack_name in order:

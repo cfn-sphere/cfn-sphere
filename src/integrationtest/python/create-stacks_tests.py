@@ -8,7 +8,7 @@ class CreateStacksTest(object):
 
     def test_sync_creates_stacks(self):
         test_resources_dir = os.path.join(os.path.dirname(__file__), '../resources')
-        stack_handler = StackHandler(os.path.join(test_resources_dir, "stacks.yml"), test_resources_dir)
+        stack_handler = StackHandler(os.path.join(test_resources_dir, "myapp.yml"), test_resources_dir)
         stack_handler.sync()
 
 
