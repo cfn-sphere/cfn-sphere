@@ -1,15 +1,17 @@
 __author__ = 'mhoyer'
 
 import os
-from cfn_sphere.stack_handler import StackHandler
+from cfn_sphere.main import StackActionHandler
+from cfn_sphere.stack_config import StackConfig
 
 
 class CreateStacksTest(object):
 
     def test_sync_creates_stacks(self):
         test_resources_dir = os.path.join(os.path.dirname(__file__), '../resources')
-        stack_handler = StackHandler(os.path.join(test_resources_dir, "myapp.yml"), test_resources_dir)
-        stack_handler.sync()
+        config = StackConfig(os.path.join(test_resources_dir, "myapp.yml"))
+        stack_handler = StackActionHandler(config)
+        stack_handler.create_or_update_stacks()
 
 
 if __name__ == "__main__":
