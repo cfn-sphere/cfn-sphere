@@ -25,7 +25,7 @@ class DependencyResolver(object):
     @staticmethod
     def get_parameter_key_from_ref_value(value):
         if not value:
-            return ""
+            return None
 
         stripped_value = value.partition('::')[2]
         return stripped_value
@@ -50,12 +50,11 @@ class DependencyResolver(object):
         try:
             order = networkx.topological_sort_recursive(graph)
         except NetworkXUnfeasible as e:
-            print("Could not define an order of stacks: {0}".format(e))
-            raise
+            raise Exception("Could not define an order of stacks: {0}".format(e))
 
         for stack in order:
             if stack not in desired_stacks:
-                raise Exception("Stack {0} is referenced as value but it is not defined".format(stack))
+                raise Exception("Stack {} is referenced as value but it is not defined".format(stack))
 
         return order
 

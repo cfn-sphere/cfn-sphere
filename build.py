@@ -23,7 +23,7 @@ def set_properties(project):
     project.depends_on('ordereddict')
     project.depends_on('aws-ha-updater')
     project.set_property('install_dependencies_upgrade', True)
-    project.set_property('install_dependencies_index_url', 'http://devppp01.rz.is:5000/dev/dev')
+    #project.set_property('install_dependencies_index_url', 'http://devppp01.rz.is:5000/dev/dev')
 
 @init(environments='teamcity')
 def set_properties_for_teamcity_builds(project):

@@ -22,30 +22,23 @@ class StackConfig(object):
     def _read_config(self):
         try:
             with open(self.stack_config_file, 'r') as config_file:
-                return yaml.load(config_file.read())["stacks"]
+                return yaml.load(config_file.read())
         except IOError as e:
-            self.logger.error("Could not read yaml file: {0}".format(e))
-            raise NoConfigException
-        except KeyError as e:
-            self.logger.error("Yaml file does not contain stacks as first key")
-            raise NoConfigException
+            raise NoConfigException("Could not read yaml file: {0}".format(e))
         except ScannerError as e:
-            self.logger.error("Could not parse yaml {0}: {1}".format(e.problem_mark, e.problem))
-            raise NoConfigException
+            raise NoConfigException("Could not parse yaml {0}: {1}".format(e.problem_mark, e.problem))
 
     def _validate(self):
-        for name, data in self.config.items():
-            try:
-                assert isinstance(name, str), "Stackname must be a string!"
-                assert name, "Stackname must not be empty!"
-                assert data["region"], "You need to specify a region for your stack to run in!"
-                assert data["template"], "You need to specify a template source for your stack!"
-            except AssertionError as e:
-                self.logger.error(e)
-                raise NoConfigException
-            except KeyError as e:
-                self.logger.error("You need to specify a {0} for stack {1}".format(e, name))
-                raise NoConfigException
+        try:
+            assert (self.config.get('region')), "Missing required property 'region'"
+            assert (self.config.get('stacks')), "Missing required property 'stacks'"
+
+            for key, value in self.config['stacks'].items():
+                assert value, "No configuration found for stack '{}'".format(key)
+                assert (value.get('template')), "Missing required property 'template' in stack '{}'".format(key)
+        except AssertionError as e:
+            self.logger.error(e)
+            raise NoConfigException
 
     def get(self):
         return self.config

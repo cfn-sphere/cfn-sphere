@@ -1,6 +1,7 @@
 __author__ = 'mhoyer'
 
 from cfn_sphere.connector.cloudformation import CloudFormation
+from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 import logging
 
 
@@ -19,6 +20,18 @@ class ArtifactResolver(object):
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         self.cfn = CloudFormation(region)
+
+    @staticmethod
+    def convert_list_to_string(value):
+        if not value:
+            return ""
+
+        value_string = ""
+        for item in value:
+            if value_string:
+                value_string += ','
+            value_string += str(item)
+        return value_string
 
     def get_available_artifacts(self):
         """
@@ -50,6 +63,36 @@ class ArtifactResolver(object):
             return artifact
         except Exception:
             raise ArtifactResolverException("Could not get a valid value for {0}".format(key))
+
+    def resolve_parameters(self, parameters):
+        param_list = []
+        for key, value in parameters.items():
+
+            if isinstance(value, list):
+
+                self.logger.debug("List parameter found for {0}".format(key))
+                value_string = self.convert_list_to_string(value)
+                param_list.append((key, value_string))
+
+            elif isinstance(value, str):
+
+                self.logger.debug("String parameter found for {0}".format(key))
+
+                if DependencyResolver.is_parameter_reference(value):
+                    stripped_value = DependencyResolver.get_parameter_key_from_ref_value(value)
+                    self.logger.debug(
+                        "Resolved artifact value: ".format(self.get_artifact_value(stripped_value)))
+                    param_list.append((key, self.get_artifact_value(stripped_value)))
+                else:
+                    param_list.append((key, str(value)))
+            elif isinstance(value, bool):
+
+                self.logger.debug("Boolean parameter found for {0}".format(key))
+                param_list.append((key, str(value).lower()))
+            else:
+                raise NotImplementedError("Cannot handle {0} value for key: {1}".format(type(value), key))
+
+        return param_list
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ Description: "Test Security Group"
 Parameters:
   vpcID:
     Description: "Target VPC id"
-    Type: "AWS::EC2::VPC::Id"
+    Type: "String"
 Resources:
   sg:
     Type: "AWS::EC2::SecurityGroup"
