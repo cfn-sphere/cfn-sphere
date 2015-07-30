@@ -146,52 +146,48 @@ class CloudFormation(object):
                 self.logger.error("Stack '{0}' does not exist.".format(self.stack_name))
                 raise Exception("{0}: {1}.".format(error_code, error_message))
 
-    def wait_for_stack_event(self, stack_name, expected_event, timeout=120):
+    def wait_for_stack_event(self, stack_name, expected_event, timeout):
         start = time.time()
         while time.time() < (start + timeout):
             for event in self.conn.describe_stack_events(stack_name):
                 if event.resource_type == "AWS::CloudFormation::Stack" and event.resource_status == expected_event:
+                    logging.info("Found {} event with timestamp {} for stack {}".format(expected_event, stack_name,
+                                                                                        event.timestamp))
                     return
                 time.sleep(10)
         raise Exception("Timeout occurred waiting for '{}' event on stack {}".format(expected_event, stack_name))
 
-
     def wait_for_stack_action_to_complete(self, stack_name, timeout=600):
         seen_events = []
         start = time.time()
+        self.wait_for_stack_event(stack_name, "UPDATE_IN_PROGRESS", timeout=120)
+        self.wait_for_stack_event(stack_name, "CREATE_COMPLETE", timeout=600)
 
-        while time.time() < (start + timeout):
-            for event in self.conn.describe_stack_events(stack_name):
-                print("Event: {}".format(event))
-                print("Event: {}".format(vars(event)))
-                if event.event_id not in seen_events:
-                    print("New event: {}".format(event))
-                    print("New event: {}".format(vars(event)))
-                    seen_events.append(event.event_id)
-                    if event.resource_type == "AWS::CloudFormation::Stack" and event.resource_status.endswith(
-                            "_COMPLETE"):
-                        self.logger.info("Action on stack {} completed successfully!".format(event.logical_resource_id))
-                        return
-                    elif event.resource_status.endswith("CREATE_COMPLETE"):
-                        self.logger.info("Created resource: {}".format(event.logical_resource_id))
-                    elif event.resource_status.endswith("CREATE_FAILED"):
-                        self.logger.error(
-                            "Could not create {}: {}".format(event.logical_resource_id, event.resource_status_reason))
-                    elif event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
-                        self.logger.warn("Rolling back {}".format(event.logical_resource_id))
-                    elif event.resource_status.endswith("ROLLBACK_COMPLETE"):
-                        self.logger.info("Rollback of {} completed".format(event.logical_resource_id))
-                        raise Exception("Failed to create stack, terminating")
-                    elif event.resource_status.endswith("ROLLBACK_FAILED"):
-                        self.logger.error("Rollback of {} failed".format(event.logical_resource_id))
-                        raise Exception("Failed to create stack, terminating")
-                    else:
-                        pass
 
-            # TODO: sleep could be longer on machine interaction level to save some api calls, decide dynamically
-            time.sleep(10)
-
-        raise Exception("Timeout occured!")
+        # seen_events.append(event.event_id)
+        # if event.resource_type == "AWS::CloudFormation::Stack" and event.resource_status.endswith(
+        #         "_COMPLETE"):
+        #     self.logger.info("Action on stack {} completed successfully!".format(event.logical_resource_id))
+        #     return
+        # elif event.resource_status.endswith("CREATE_COMPLETE"):
+        #     self.logger.info("Created resource: {}".format(event.logical_resource_id))
+        # elif event.resource_status.endswith("CREATE_FAILED"):
+        #     self.logger.error(
+        #         "Could not create {}: {}".format(event.logical_resource_id, event.resource_status_reason))
+        # elif event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
+        #     self.logger.warn("Rolling back {}".format(event.logical_resource_id))
+        # elif event.resource_status.endswith("ROLLBACK_COMPLETE"):
+        #     self.logger.info("Rollback of {} completed".format(event.logical_resource_id))
+        #     raise Exception("Failed to create stack, terminating")
+        # elif event.resource_status.endswith("ROLLBACK_FAILED"):
+        #     self.logger.error("Rollback of {} failed".format(event.logical_resource_id))
+        #     raise Exception("Failed to create stack, terminating")
+        # else:
+        #     pass
+        #     # TODO: sleep could be longer on machine interaction level to save some api calls, decide dynamically
+        #     time.sleep(10)
+        #
+        # raise Exception("Timeout occured!")
 
 
 if __name__ == "__main__":
