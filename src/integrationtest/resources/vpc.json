@@ -16,7 +16,7 @@
                 "VPC":{
                         "Type":"AWS::EC2::VPC",
                         "Properties":{
-                                "EnableDnsSupport":"true",
+                                "EnableDnsSupport":"false",
                                 "EnableDnsHostnames":"true",
                                 "CidrBlock":{
                                         "Fn::FindInMap":[

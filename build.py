@@ -14,14 +14,14 @@ default_task = "publish"
 
 @init
 def set_properties(project):
+    project.build_depends_on("unittest2")
+    project.build_depends_on("mock")
+    project.depends_on("click")
     project.depends_on("boto")
     project.depends_on("pyyaml")
     project.depends_on("networkx")
-    project.depends_on('argparse')
-    project.depends_on('flask')
-    project.depends_on('flask-restful')
     project.depends_on('ordereddict')
-    project.depends_on('aws-ha-updater')
+    project.set_property('coverage_break_build', False)
     project.set_property('install_dependencies_upgrade', True)
     #project.set_property('install_dependencies_index_url', 'http://devppp01.rz.is:5000/dev/dev')
 

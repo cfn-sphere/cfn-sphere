@@ -20,7 +20,7 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertEqual("", DependencyResolver.get_parameter_key_from_ref_value("Ref:vpc.id"))
 
     def test_get_parameter_key_from_ref_value_returns_empty_string_if_none(self):
-        self.assertEqual("", DependencyResolver.get_parameter_key_from_ref_value(None))
+        self.assertEqual(None, DependencyResolver.get_parameter_key_from_ref_value(None))
 
     def test_is_ref_value_returns_true_for_uppercase_ref(self):
         self.assertTrue(DependencyResolver.is_parameter_reference("Ref::vpc.id"))

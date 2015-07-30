@@ -1,7 +1,7 @@
 __author__ = 'mhoyer'
 
 import unittest2
-from cfn_sphere.connector.cloudformation import CloudFormationTemplate
+from cfn_sphere.connector.cloudformation import CloudFormationTemplate, NoTemplateFoundException
 from mock import patch, Mock
 
 
@@ -26,5 +26,5 @@ class CloudFormationTemplateTests(unittest2.TestCase):
 
     def test_load_template_raises_exception_on_unknown_protocol(self):
         URL = "xxx://foo.json"
-        with self.assertRaises(IOError):
+        with self.assertRaises(NoTemplateFoundException):
             self.cfn_template._load_template(URL)

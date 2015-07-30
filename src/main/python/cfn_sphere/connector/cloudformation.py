@@ -15,13 +15,13 @@ class NoTemplateFoundException(Exception):
 
 
 class CloudFormationTemplate(object):
-    def __init__(self, template_url, template_body=None, config_dir=None):
+    def __init__(self, template_url, template_body=None, working_dir=None):
         logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
                             datefmt='%d.%m.%Y %H:%M:%S',
                             level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
-        self.config_dir = config_dir
+        self.working_dir = working_dir
         self.url = template_url
         self.body = template_body
 
@@ -46,8 +46,8 @@ class CloudFormationTemplate(object):
         :return: dict repr of cfn template
         """
 
-        if not os.path.isabs(url) and self.config_dir:
-            url = os.path.join(self.config_dir, url)
+        if not os.path.isabs(url) and self.working_dir:
+            url = os.path.join(self.working_dir, url)
 
         try:
             with open(url, 'r') as template_file:
@@ -146,18 +146,31 @@ class CloudFormation(object):
                 self.logger.error("Stack '{0}' does not exist.".format(self.stack_name))
                 raise Exception("{0}: {1}.".format(error_code, error_message))
 
+    def wait_for_stack_event(self, stack_name, expected_event, timeout=120):
+        start = time.time()
+        while time.time() < (start + timeout):
+            for event in self.conn.describe_stack_events(stack_name):
+                if event.resource_type == "AWS::CloudFormation::Stack" and event.resource_status == expected_event:
+                    return
+                time.sleep(10)
+        raise Exception("Timeout occurred waiting for '{}' event on stack {}".format(expected_event, stack_name))
+
+
     def wait_for_stack_action_to_complete(self, stack_name, timeout=600):
         seen_events = []
         start = time.time()
 
         while time.time() < (start + timeout):
             for event in self.conn.describe_stack_events(stack_name):
-
+                print("Event: {}".format(event))
+                print("Event: {}".format(vars(event)))
                 if event.event_id not in seen_events:
+                    print("New event: {}".format(event))
+                    print("New event: {}".format(vars(event)))
                     seen_events.append(event.event_id)
                     if event.resource_type == "AWS::CloudFormation::Stack" and event.resource_status.endswith(
                             "_COMPLETE"):
-                        self.logger.info("Stack {} successfully created!".format(event.logical_resource_id))
+                        self.logger.info("Action on stack {} completed successfully!".format(event.logical_resource_id))
                         return
                     elif event.resource_status.endswith("CREATE_COMPLETE"):
                         self.logger.info("Created resource: {}".format(event.logical_resource_id))

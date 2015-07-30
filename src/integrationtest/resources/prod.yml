@@ -1,8 +1,8 @@
 region: eu-west-1
 stacks:
-  test-vpc:
-    template: /Users/mhoyer/workspace/myapp/vpc.yml
-  test-stack:
-    template: /Users/mhoyer/workspace/myapp/app.yml
+  test2-vpc:
+    template: vpc.yml
+  test2-stack:
+    template: app.yml
     parameters:
-      vpcID: "ref::test-vpc.id"
+      vpcID: "ref::test2-vpc.id"

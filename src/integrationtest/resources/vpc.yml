@@ -3,15 +3,15 @@
   Mappings:
     SubnetConfig:
       VPC-Values:
-        CIDR: "10.55.0.0/16"
+        CIDR: "10.10.0.0/16"
       Subnet-Values:
-        CIDR: "10.55.0.0/18"
+        CIDR: "10.10.0.0/18"
         AZ: "eu-west-1a"
   Resources:
     VPC:
       Type: "AWS::EC2::VPC"
       Properties:
-        EnableDnsSupport: "false"
+        EnableDnsSupport: "true"
         EnableDnsHostnames: "true"
         CidrBlock:
           Fn::FindInMap:
