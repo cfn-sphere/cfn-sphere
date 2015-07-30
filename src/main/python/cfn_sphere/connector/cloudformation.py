@@ -1,12 +1,15 @@
 __author__ = 'mhoyer'
 
-from boto import cloudformation
-from boto.resultset import ResultSet
-from boto.exception import AWSConnectionError, BotoServerError
 import json
 import logging
 import time
+import datetime
 import os
+
+from datetime import timedelta
+
+from boto import cloudformation
+from boto.exception import BotoServerError
 import yaml
 
 
@@ -18,7 +21,7 @@ class CloudFormationTemplate(object):
     def __init__(self, template_url, template_body=None, working_dir=None):
         logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
                             datefmt='%d.%m.%Y %H:%M:%S',
-                            level=logging.INFO)
+                            level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
 
         self.working_dir = working_dir
@@ -76,13 +79,19 @@ class CloudFormation(object):
         self.conn = cloudformation.connect_to_region(region)
         if not self.conn:
             self.logger.error("Could not connect to cloudformation API in {0}. Invalid region?".format(region))
-            raise AWSConnectionError("Got None connection object")
+            raise Exception("Got None connection object")
 
         self.logger.debug("Connected to cloudformation API at {0} with access key id: {1}".format(
             region, self.conn.aws_access_key_id))
 
     def get_stacks(self):
-        return self.conn.describe_stacks()
+        result = []
+        response = self.conn.describe_stacks()
+        result.extend(response)
+        while response.next_token:
+            response = self.cfconn.describe_stacks(next_token=response.next_token)
+        result.extend(response)
+        return result
 
     def get_stack_names(self):
         return [stack.stack_name for stack in self.get_stacks()]
@@ -120,6 +129,7 @@ class CloudFormation(object):
                                    template_body=json.dumps(template.get_template_body()),
                                    parameters=parameters)
             self.wait_for_stack_action_to_complete(stack_name)
+            self.logger.info("Create completed for {}".format(stack_name))
         except BotoServerError as e:
             self.logger.error(
                 "Could not create stack {0}. Cloudformation API response: {1}".format(stack_name, e.message))
@@ -135,7 +145,9 @@ class CloudFormation(object):
             self.conn.update_stack(stack_name,
                                    template_body=json.dumps(template.get_template_body()),
                                    parameters=parameters)
+
             self.wait_for_stack_action_to_complete(stack_name)
+            self.logger.info("Update completed for {}".format(stack_name))
         except BotoServerError as e:
             error = json.loads(e.body).get("Error", "{}")
             error_message = error.get("Message")
@@ -146,48 +158,39 @@ class CloudFormation(object):
                 self.logger.error("Stack '{0}' does not exist.".format(self.stack_name))
                 raise Exception("{0}: {1}.".format(error_code, error_message))
 
-    def wait_for_stack_event(self, stack_name, expected_event, timeout):
+    def wait_for_stack_events(self, stack_name: str, expected_events: list, valid_from_timestamp: datetime,
+                              timeout: int):
+
+        logging.debug("Waiting for {} events, newer than {}".format(expected_events, valid_from_timestamp))
+
+        seen_event_ids = []
         start = time.time()
         while time.time() < (start + timeout):
+
             for event in self.conn.describe_stack_events(stack_name):
-                if event.resource_type == "AWS::CloudFormation::Stack" and event.resource_status == expected_event:
-                    logging.info("Found {} event with timestamp {} for stack {}".format(expected_event, stack_name,
-                                                                                        event.timestamp))
-                    return
-                time.sleep(10)
-        raise Exception("Timeout occurred waiting for '{}' event on stack {}".format(expected_event, stack_name))
+                if event.event_id not in seen_event_ids:
+                    seen_event_ids.append(event.event_id)
+                    if event.timestamp > valid_from_timestamp:
+                        self.logger.info(event)
 
-    def wait_for_stack_action_to_complete(self, stack_name, timeout=600):
-        seen_events = []
-        start = time.time()
-        self.wait_for_stack_event(stack_name, "UPDATE_IN_PROGRESS", timeout=120)
-        self.wait_for_stack_event(stack_name, "CREATE_COMPLETE", timeout=600)
+                        if event.resource_type == "AWS::CloudFormation::Stack":
 
+                            if event.resource_status in expected_events:
+                                return event
+                            if event.resource_status.endswith("_FAILED"):
+                                raise Exception("Stack is in {} state".format(event.resource_status))
+                            if event.resource_status.startswith("ROLLBACK_"):
+                                raise Exception("Rollback occured")
 
-        # seen_events.append(event.event_id)
-        # if event.resource_type == "AWS::CloudFormation::Stack" and event.resource_status.endswith(
-        #         "_COMPLETE"):
-        #     self.logger.info("Action on stack {} completed successfully!".format(event.logical_resource_id))
-        #     return
-        # elif event.resource_status.endswith("CREATE_COMPLETE"):
-        #     self.logger.info("Created resource: {}".format(event.logical_resource_id))
-        # elif event.resource_status.endswith("CREATE_FAILED"):
-        #     self.logger.error(
-        #         "Could not create {}: {}".format(event.logical_resource_id, event.resource_status_reason))
-        # elif event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
-        #     self.logger.warn("Rolling back {}".format(event.logical_resource_id))
-        # elif event.resource_status.endswith("ROLLBACK_COMPLETE"):
-        #     self.logger.info("Rollback of {} completed".format(event.logical_resource_id))
-        #     raise Exception("Failed to create stack, terminating")
-        # elif event.resource_status.endswith("ROLLBACK_FAILED"):
-        #     self.logger.error("Rollback of {} failed".format(event.logical_resource_id))
-        #     raise Exception("Failed to create stack, terminating")
-        # else:
-        #     pass
-        #     # TODO: sleep could be longer on machine interaction level to save some api calls, decide dynamically
-        #     time.sleep(10)
-        #
-        # raise Exception("Timeout occured!")
+            time.sleep(10)
+        raise Exception("Timeout occurred waiting for events: '{}' on stack {}".format(expected_events, stack_name))
+
+    def wait_for_stack_action_to_complete(self, stack_name):
+
+        start_event = self.wait_for_stack_events(stack_name, ["UPDATE_IN_PROGRESS"],
+                                                 datetime.datetime.utcnow() - timedelta(seconds=10), timeout=120)
+        self.wait_for_stack_events(stack_name, ["CREATE_COMPLETE", "UPDATE_COMPLETE"], start_event.timestamp,
+                                   timeout=600)
 
 
 if __name__ == "__main__":

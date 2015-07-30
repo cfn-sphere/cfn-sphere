@@ -5,11 +5,11 @@ from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 import logging
 
 
-class ArtifactResolverException(Exception):
+class ParameterResolverException(Exception):
     pass
 
 
-class ArtifactResolver(object):
+class ParameterResolver(object):
     """
     Resolves a given artifact identifier to the value of a stacks output.
     """
@@ -62,7 +62,7 @@ class ArtifactResolver(object):
             assert artifact, "No value found"
             return artifact
         except Exception:
-            raise ArtifactResolverException("Could not get a valid value for {0}".format(key))
+            raise ParameterResolverException("Could not get a valid value for {0}".format(key))
 
     def resolve_parameters(self, parameters):
         param_list = []
@@ -96,7 +96,7 @@ class ArtifactResolver(object):
 
 
 if __name__ == "__main__":
-    cfn = ArtifactResolver()
+    cfn = ParameterResolver()
 
     print(cfn.get_available_artifacts())
     print(cfn.get_artifact_value("simple-cloud-rest-api.WebsiteURL"))

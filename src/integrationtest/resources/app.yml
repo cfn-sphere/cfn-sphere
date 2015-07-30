@@ -8,7 +8,7 @@ Resources:
   sg:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupDescription: "BetaSearch Stack foo"
+      GroupDescription: "Stack"
       VpcId:
         Ref: "vpcID"
 Outputs:

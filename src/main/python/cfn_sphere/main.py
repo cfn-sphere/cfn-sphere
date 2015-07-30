@@ -1,5 +1,5 @@
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
-from cfn_sphere.resolver.artifact_resolver import ArtifactResolver
+from cfn_sphere.resolver.parameter_resolver import ParameterResolver
 from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate
 from cfn_sphere.util import get_logger
 
@@ -11,7 +11,7 @@ class StackActionHandler(object):
         self.config = config.get()
         self.region = self.config.get('region')
         self.cfn = CloudFormation(region=self.region)
-        self.ar = ArtifactResolver(region=self.region)
+        self.parameter_resolver = ParameterResolver(region=self.region)
 
     def create_or_update_stacks(self):
         existing_stacks = self.cfn.get_stack_names()
@@ -27,7 +27,7 @@ class StackActionHandler(object):
             template_url = stack_config.get('template')
             template = CloudFormationTemplate(template_url, working_dir=self.working_dir)
 
-            parameters = self.ar.resolve_parameters(stack_config.get('parameters', {}))
+            parameters = self.parameter_resolver.resolve_parameters(stack_config.get('parameters', {}))
 
             if stack_name in existing_stacks:
 
