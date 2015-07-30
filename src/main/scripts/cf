@@ -19,6 +19,10 @@ def sync(filename):
     stack_config = StackConfig(filename)
     StackActionHandler(stack_config, working_dir).create_or_update_stacks()
 
+@cli.command(help="Convert JSON to YAML or vice versa")
+@click.argument('filename', type=click.Path(exists=True))
+def convert(filename):
+    pass
 
 if __name__ == '__main__':
     cli()
