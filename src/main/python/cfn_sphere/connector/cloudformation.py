@@ -128,7 +128,7 @@ class CloudFormation(object):
             self.conn.create_stack(stack_name,
                                    template_body=json.dumps(template.get_template_body()),
                                    parameters=parameters)
-            self.wait_for_stack_action_to_complete(stack_name)
+            self.wait_for_stack_event(stack_name, "create")
             self.logger.info("Create completed for {}".format(stack_name))
         except BotoServerError as e:
             self.logger.error(
@@ -146,7 +146,7 @@ class CloudFormation(object):
                                    template_body=json.dumps(template.get_template_body()),
                                    parameters=parameters)
 
-            self.wait_for_stack_action_to_complete(stack_name)
+            self.wait_for_stack_event(stack_name, "update")
             self.logger.info("Update completed for {}".format(stack_name))
         except BotoServerError as e:
             error = json.loads(e.body).get("Error", "{}")
@@ -158,10 +158,9 @@ class CloudFormation(object):
                 self.logger.error("Stack '{0}' does not exist.".format(self.stack_name))
                 raise Exception("{0}: {1}.".format(error_code, error_message))
 
-    def wait_for_stack_events(self, stack_name: str, expected_events: list, valid_from_timestamp: datetime,
-                              timeout: int):
+    def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
 
-        logging.debug("Waiting for {} events, newer than {}".format(expected_events, valid_from_timestamp))
+        logging.debug("Waiting for {} events, newer than {}".format(expected_event, valid_from_timestamp))
 
         seen_event_ids = []
         start = time.time()
@@ -175,7 +174,7 @@ class CloudFormation(object):
 
                         if event.resource_type == "AWS::CloudFormation::Stack":
 
-                            if event.resource_status in expected_events:
+                            if event.resource_status == expected_event:
                                 return event
                             if event.resource_status.endswith("_FAILED"):
                                 raise Exception("Stack is in {} state".format(event.resource_status))
@@ -183,14 +182,34 @@ class CloudFormation(object):
                                 raise Exception("Rollback occured")
 
             time.sleep(10)
-        raise Exception("Timeout occurred waiting for events: '{}' on stack {}".format(expected_events, stack_name))
+        raise Exception("Timeout occurred waiting for events: '{}' on stack {}".format(expected_event, stack_name))
 
-    def wait_for_stack_action_to_complete(self, stack_name):
+    def wait_for_stack_event(self, stack_name, action, timeout=600):
 
-        start_event = self.wait_for_stack_events(stack_name, ["UPDATE_IN_PROGRESS"],
-                                                 datetime.datetime.utcnow() - timedelta(seconds=10), timeout=120)
-        self.wait_for_stack_events(stack_name, ["CREATE_COMPLETE", "UPDATE_COMPLETE"], start_event.timestamp,
-                                   timeout=600)
+        allowed_actions = ["create", "update", "delete"]
+        assert action.lower() in allowed_actions, "action argument must be one of {}".format(allowed_actions)
+
+        time_jitter_window = timedelta(seconds=10)
+        minimum_event_timestamp = datetime.datetime.utcnow() - time_jitter_window
+        expected_start_event = action.upper() + "_IN_PROGRESS"
+
+        start_event = self.wait_for_stack_events(stack_name,
+                                                 expected_start_event,
+                                                 minimum_event_timestamp,
+                                                 timeout=120)
+
+        logging.info("Stack {} started".format(action))
+
+        minimum_event_timestamp = start_event.timestamp
+        expected_complete_event = action.upper() + "_COMPLETE"
+
+        end_event = self.wait_for_stack_events(stack_name,
+                                               expected_complete_event,
+                                               minimum_event_timestamp,
+                                               timeout)
+
+        elapsed = end_event.timestamp - start_event.timestamp
+        self.logger.info("Stack {} completed after {}s".format(action, elapsed.seconds))
 
 
 if __name__ == "__main__":

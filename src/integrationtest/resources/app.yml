@@ -8,7 +8,7 @@ Resources:
   sg:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupDescription: "Stack"
+      GroupDescription: "Stack foo"
       VpcId:
         Ref: "vpcID"
 Outputs:
