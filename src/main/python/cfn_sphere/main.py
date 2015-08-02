@@ -1,6 +1,6 @@
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 from cfn_sphere.resolver.parameter_resolver import ParameterResolver
-from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate
+from cfn_sphere.cloudformation.api import CloudFormation, CloudFormationTemplate
 from cfn_sphere.util import get_logger
 
 

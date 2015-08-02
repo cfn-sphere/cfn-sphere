@@ -4,7 +4,7 @@ import datetime
 import unittest2
 from datetime import timedelta
 from boto.cloudformation.stack import StackEvent
-from cfn_sphere.connector.cloudformation import CloudFormation, CloudFormationTemplate, NoTemplateFoundException
+from cfn_sphere.cloudformation.api import CloudFormation, CloudFormationTemplate, NoTemplateException
 from mock import patch, Mock
 
 
@@ -12,14 +12,14 @@ class CloudFormationTemplateTests(unittest2.TestCase):
     def setUp(self):
         self.cfn_template = CloudFormationTemplate("", template_body={"bla": "foo"})
 
-    @patch("cfn_sphere.connector.cloudformation.CloudFormationTemplate._fs_get_template")
+    @patch("cfn_sphere.cloudformation.cloudformation.CloudFormationTemplate._fs_get_template")
     def test_load_template_calls_fs_get_template_for_fs_url(self, mock):
         URL = "/tmp/template.json"
 
         self.cfn_template._load_template(URL)
         mock.assert_called_with(URL)
 
-    @patch("cfn_sphere.connector.cloudformation.CloudFormationTemplate._s3_get_template")
+    @patch("cfn_sphere.cloudformation.cloudformation.CloudFormationTemplate._s3_get_template")
     def test_load_template_calls_s3_get_template_for_s3_url(self, mock):
         URL = "s3://my-bucket.amazon.com/foo.json"
 
@@ -28,12 +28,12 @@ class CloudFormationTemplateTests(unittest2.TestCase):
 
     def test_load_template_raises_exception_on_unknown_protocol(self):
         URL = "xxx://foo.json"
-        with self.assertRaises(NoTemplateFoundException):
+        with self.assertRaises(NoTemplateException):
             self.cfn_template._load_template(URL)
 
 class CloudFormationTests(unittest2.TestCase):
 
-    @patch('cfn_sphere.connector.cloudformation.cloudformation')
+    @patch('cfn_sphere.cloudformation.cloudformation.cloudformation')
     def test_wait_for_stack_event_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
@@ -59,7 +59,7 @@ class CloudFormationTests(unittest2.TestCase):
 
         self.assertEqual(timestamp, event.timestamp)
 
-    @patch('cfn_sphere.connector.cloudformation.cloudformation')
+    @patch('cfn_sphere.cloudformation.cloudformation.cloudformation')
     def test_wait_for_stack_event_returns_on_update_complete(self, cloudformation_mock):
         template_mock = Mock(spec=CloudFormationTemplate)
         template_mock.url = "foo.yml"
@@ -80,7 +80,7 @@ class CloudFormationTests(unittest2.TestCase):
         cfn.wait_for_stack_events("foo", ["UPDATE_COMPLETE"], datetime.datetime.utcnow() - timedelta(seconds=10),
                                   timeout=10)
 
-    @patch('cfn_sphere.connector.cloudformation.cloudformation')
+    @patch('cfn_sphere.cloudformation.cloudformation.cloudformation')
     def test_wait_for_stack_event_raises_exception_on_rollback(self, cloudformation_mock):
         template_mock = Mock(spec=CloudFormationTemplate)
         template_mock.url = "foo.yml"
@@ -102,7 +102,7 @@ class CloudFormationTests(unittest2.TestCase):
             cfn.wait_for_stack_events("foo", ["UPDATE_COMPLETE"], datetime.datetime.utcnow() - timedelta(seconds=10),
                                       timeout=10)
 
-    @patch('cfn_sphere.connector.cloudformation.cloudformation')
+    @patch('cfn_sphere.cloudformation.cloudformation.cloudformation')
     def test_wait_for_stack_event_raises_exception_on_update_failure(self, cloudformation_mock):
         template_mock = Mock(spec=CloudFormationTemplate)
         template_mock.url = "foo.yml"

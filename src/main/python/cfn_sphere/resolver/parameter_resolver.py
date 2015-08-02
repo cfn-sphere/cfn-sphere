@@ -1,6 +1,6 @@
 __author__ = 'mhoyer'
 
-from cfn_sphere.connector.cloudformation import CloudFormation
+from cfn_sphere.cloudformation.api import CloudFormation
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 import logging
 
