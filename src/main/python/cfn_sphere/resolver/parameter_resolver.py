@@ -1,8 +1,6 @@
-__author__ = 'mhoyer'
-
+from cfn_sphere.util import get_logger
 from cfn_sphere.cloudformation.api import CloudFormation
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
-import logging
 
 
 class ParameterResolverException(Exception):
@@ -15,10 +13,7 @@ class ParameterResolver(object):
     """
 
     def __init__(self, region="eu-west-1"):
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
-                            datefmt='%d.%m.%Y %H:%M:%S',
-                            level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger()
         self.cfn = CloudFormation(region)
 
     @staticmethod
@@ -100,4 +95,4 @@ if __name__ == "__main__":
 
     print(cfn.get_available_artifacts())
     print(cfn.get_artifact_value("simple-cloud-rest-api.WebsiteURL"))
-    #print(cfn.get_artifact_value("blalbufg"))
+    # print(cfn.get_artifact_value("blalbufg"))

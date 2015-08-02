@@ -3,10 +3,12 @@
 import os
 import sys
 import click
-from cfn_sphere.util import convert_file
+import logging
+from cfn_sphere.util import convert_file, get_logger
 from cfn_sphere.stack_config import StackConfig
 from cfn_sphere.main import StackActionHandler
 
+LOGGER = get_logger(root=True)
 
 @click.group(help="This tool manages AWS CloudFormation templates "
                   "and stacks by providing an application scope and useful tooling.")
@@ -16,24 +18,34 @@ def cli():
 
 @cli.command(help="Create an applications infrastructure")
 @click.argument('filename', type=click.Path(exists=True))
-def sync(filename):
+@click.option('--debug', is_flag=True, default=False, help="Debug output")
+def sync(filename, debug):
+    if debug:
+        LOGGER.setLevel(logging.DEBUG)
+
     try:
         working_dir = os.path.dirname(os.path.realpath(filename))
 
         stack_config = StackConfig(filename)
         StackActionHandler(stack_config, working_dir).create_or_update_stacks()
     except Exception as e:
-        click.echo("Error syncinc stacks: {}".format(e))
+        LOGGER.error("Error syncing {}:".format(filename))
+        LOGGER.error(e)
         sys.exit(1)
 
 
 @cli.command(help="Convert JSON to YAML or vice versa")
 @click.argument('filename', type=click.Path(exists=True))
-def convert(filename):
+@click.option('--debug', is_flag=True, default=False, help="Debug output")
+def convert(filename, debug):
+    if debug:
+        LOGGER.setLevel(logging.DEBUG)
+
     try:
         click.echo(convert_file(filename))
     except Exception as e:
-        click.echo("Error converting file: {}".format(e))
+        LOGGER.error("Error converting {}:".format(filename))
+        LOGGER.error(e)
         sys.exit(1)
 
 

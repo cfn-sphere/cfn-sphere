@@ -7,17 +7,14 @@ import datetime
 from datetime import timedelta
 from boto import cloudformation, s3
 from boto.exception import BotoServerError
+from cfn_sphere.util import get_logger
 from cfn_sphere.cloudformation.template import CloudFormationTemplate
 
 
 class CloudFormation(object):
     def __init__(self, region="eu-west-1", stacks=None):
         logging.getLogger('boto').setLevel(logging.FATAL)
-
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
-                            datefmt='%d.%m.%Y %H:%M:%S',
-                            level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger()
 
         self.conn = cloudformation.connect_to_region(region)
         if not self.conn:
@@ -113,9 +110,9 @@ class CloudFormation(object):
                 if event.event_id not in seen_event_ids:
                     seen_event_ids.append(event.event_id)
                     if event.timestamp > valid_from_timestamp:
-                        self.logger.info(event)
 
                         if event.resource_type == "AWS::CloudFormation::Stack":
+                            self.logger.debug(event)
 
                             if event.resource_status == expected_event:
                                 return event
@@ -123,6 +120,8 @@ class CloudFormation(object):
                                 raise Exception("Stack is in {} state".format(event.resource_status))
                             if event.resource_status.startswith("ROLLBACK_"):
                                 raise Exception("Rollback occured")
+                        else:
+                            self.logger.info(event)
 
             time.sleep(10)
         raise Exception("Timeout occurred waiting for events: '{}' on stack {}".format(expected_event, stack_name))

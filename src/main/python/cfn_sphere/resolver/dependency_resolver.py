@@ -1,5 +1,3 @@
-__author__ = 'mhoyer'
-
 import networkx
 from networkx.exception import NetworkXUnfeasible
 

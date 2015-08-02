@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import yaml
+from cfn_sphere.util import get_logger
 
 
 class NoTemplateException(Exception):
@@ -12,10 +13,7 @@ class NoTemplateException(Exception):
 
 class CloudFormationTemplate(object):
     def __init__(self, template_url, template_body=None, working_dir=None):
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
-                            datefmt='%d.%m.%Y %H:%M:%S',
-                            level=logging.DEBUG)
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger()
 
         self.working_dir = working_dir
         self.url = template_url
