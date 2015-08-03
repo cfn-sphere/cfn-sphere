@@ -68,7 +68,7 @@ class CloudFormation(object):
             self.conn.create_stack(stack_name,
                                    template_body=json.dumps(template.get_template_body()),
                                    parameters=parameters)
-            self.wait_for_stack_event(stack_name, "create")
+            self.wait_for_stack_action_to_complete(stack_name, "create")
             self.logger.info("Create completed for {}".format(stack_name))
         except BotoServerError as e:
             self.logger.error(
@@ -86,7 +86,7 @@ class CloudFormation(object):
                                    template_body=json.dumps(template.get_template_body()),
                                    parameters=parameters)
 
-            self.wait_for_stack_event(stack_name, "update")
+            self.wait_for_stack_action_to_complete(stack_name, "update")
             self.logger.info("Update completed for {}".format(stack_name))
         except BotoServerError as e:
             error = json.loads(e.body).get("Error", "{}")
@@ -126,7 +126,7 @@ class CloudFormation(object):
             time.sleep(10)
         raise Exception("Timeout occurred waiting for events: '{}' on stack {}".format(expected_event, stack_name))
 
-    def wait_for_stack_event(self, stack_name, action, timeout=600):
+    def wait_for_stack_action_to_complete(self, stack_name, action, timeout=600):
 
         allowed_actions = ["create", "update", "delete"]
         assert action.lower() in allowed_actions, "action argument must be one of {}".format(allowed_actions)
@@ -140,7 +140,7 @@ class CloudFormation(object):
                                                  minimum_event_timestamp,
                                                  timeout=120)
 
-        logging.info("Stack {} started".format(action))
+        self.logger.info("Stack {} started".format(action))
 
         minimum_event_timestamp = start_event.timestamp
         expected_complete_event = action.upper() + "_COMPLETE"
