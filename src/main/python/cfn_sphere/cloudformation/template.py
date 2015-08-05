@@ -1,7 +1,4 @@
-__author__ = 'mhoyer'
-
 import json
-import logging
 import os
 import yaml
 from cfn_sphere.util import get_logger
@@ -50,9 +47,9 @@ class CloudFormationTemplate(object):
                 if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                     return yaml.load(template_file.read())
         except ValueError as e:
-            raise NoTemplateException("Could not load template from {0}: {1}".format(url, e.strerror))
+            raise NoTemplateException("Could not load template from {0}: {1}".format(url, e))
         except IOError as e:
-            raise NoTemplateException("Could not load template from {0}: {1}".format(url, e.strerror))
+            raise NoTemplateException("Could not load template from {0}: {1}".format(url, e))
 
     def _s3_get_template(self, url):
         raise NotImplementedError

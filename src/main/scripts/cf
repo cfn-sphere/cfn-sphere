@@ -29,7 +29,7 @@ def sync(filename, debug, confirm):
 
     if confirm or click.confirm(
             'This tool will modify your infrastructure according to the configuration in {}. Are you sure='.format(
-                    filename), abort=True):
+                filename), abort=True):
         try:
             working_dir = os.path.dirname(os.path.realpath(filename))
 

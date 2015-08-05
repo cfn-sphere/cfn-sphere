@@ -1,18 +1,16 @@
-__author__ = 'mhoyer'
-
 import json
 import logging
 import time
 import datetime
 from datetime import timedelta
-from boto import cloudformation, s3
+from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger
 from cfn_sphere.cloudformation.template import CloudFormationTemplate
 
 
 class CloudFormation(object):
-    def __init__(self, region="eu-west-1", stacks=None):
+    def __init__(self, region="eu-west-1"):
         logging.getLogger('boto').setLevel(logging.FATAL)
         self.logger = get_logger()
 
@@ -29,7 +27,7 @@ class CloudFormation(object):
         response = self.conn.describe_stacks()
         result.extend(response)
         while response.next_token:
-            response = self.cfconn.describe_stacks(next_token=response.next_token)
+            response = self.conn.describe_stacks(next_token=response.next_token)
         result.extend(response)
         return result
 
@@ -87,7 +85,7 @@ class CloudFormation(object):
                                    parameters=parameters)
 
             self.wait_for_stack_action_to_complete(stack_name, "update")
-            self.logger.info("Update completed for {}".format(stack_name))
+            self.logger.info("Update completed for {0}".format(stack_name))
         except BotoServerError as e:
             error = json.loads(e.body).get("Error", "{}")
             error_message = error.get("Message")
@@ -95,12 +93,12 @@ class CloudFormation(object):
                 self.logger.info("Nothing to do: {0}.".format(error_message))
             else:
                 error_code = error.get("Code")
-                self.logger.error("Stack '{0}' does not exist.".format(self.stack_name))
+                self.logger.error("Stack '{0}' does not exist.".format(stack_name))
                 raise Exception("{0}: {1}.".format(error_code, error_message))
 
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
 
-        logging.debug("Waiting for {} events, newer than {}".format(expected_event, valid_from_timestamp))
+        logging.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
 
         seen_event_ids = []
         start = time.time()
@@ -124,12 +122,12 @@ class CloudFormation(object):
                             self.logger.info(event)
 
             time.sleep(10)
-        raise Exception("Timeout occurred waiting for events: '{}' on stack {}".format(expected_event, stack_name))
+        raise Exception("Timeout occurred waiting for events: '{0}' on stack {1}".format(expected_event, stack_name))
 
     def wait_for_stack_action_to_complete(self, stack_name, action, timeout=600):
 
         allowed_actions = ["create", "update", "delete"]
-        assert action.lower() in allowed_actions, "action argument must be one of {}".format(allowed_actions)
+        assert action.lower() in allowed_actions, "action argument must be one of {0}".format(allowed_actions)
 
         time_jitter_window = timedelta(seconds=10)
         minimum_event_timestamp = datetime.datetime.utcnow() - time_jitter_window
@@ -151,7 +149,7 @@ class CloudFormation(object):
                                                timeout)
 
         elapsed = end_event.timestamp - start_event.timestamp
-        self.logger.info("Stack {} completed after {}s".format(action, elapsed.seconds))
+        self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
 
 
 if __name__ == "__main__":

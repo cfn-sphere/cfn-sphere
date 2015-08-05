@@ -1,5 +1,3 @@
-__author__ = 'mhoyer'
-
 from yaml.scanner import ScannerError
 import yaml
 import logging

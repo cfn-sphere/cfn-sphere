@@ -9,10 +9,10 @@ def get_logger(root=False):
     if root:
         return logging.getLogger('cfn_sphere')
     else:
-        return logging.getLogger('cfn_sphere.{}'.format(__name__))
+        return logging.getLogger('cfn_sphere.{0}'.format(__name__))
 
 
-def convert_file(file_path: str):
+def convert_file(file_path):
     if file_path.lower().endswith('.json'):
         convert = convert_json_to_yaml
     elif file_path.lower().endswith('.yml'):
@@ -22,8 +22,8 @@ def convert_file(file_path: str):
     else:
         raise Exception('Unknown file extension. Please use .yaml, .yml or .json!')
 
-    with open(file_path, 'r') as file:
-        return convert(file.read())
+    with open(file_path, 'r') as filestream:
+        return convert(filestream.read())
 
 
 def convert_json_to_yaml(data):
