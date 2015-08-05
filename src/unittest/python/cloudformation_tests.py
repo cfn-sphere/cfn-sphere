@@ -1,5 +1,3 @@
-__author__ = 'mhoyer'
-
 import datetime
 import unittest2
 from datetime import timedelta

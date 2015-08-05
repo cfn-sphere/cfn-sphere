@@ -1,5 +1,3 @@
-__author__ = 'mhoyer'
-
 import unittest2
 from cfn_sphere.stack_config import StackConfig
 from mock import patch, mock_open

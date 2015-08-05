@@ -1,5 +1,3 @@
-__author__ = 'mhoyer'
-
 import unittest2
 
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
