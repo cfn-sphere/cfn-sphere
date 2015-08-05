@@ -38,9 +38,7 @@ class ParameterResolver(object):
         for stack in stacks:
             for output in stack.outputs:
                 key = stack.stack_name + '.' + output.key
-                value = output.value
-
-                artifacts[key] = value
+                artifacts[key] = output.value
         return artifacts
 
     def get_artifact_value(self, key):
