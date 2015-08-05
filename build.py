@@ -23,7 +23,6 @@ def set_properties(project):
     project.depends_on('ordereddict')
     project.set_property('coverage_break_build', False)
     project.set_property('install_dependencies_upgrade', True)
-    #project.set_property('install_dependencies_index_url', 'http://devppp01.rz.is:5000/dev/dev')
 
 @init(environments='teamcity')
 def set_properties_for_teamcity_builds(project):

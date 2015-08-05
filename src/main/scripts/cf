@@ -36,7 +36,7 @@ def sync(filename, debug, confirm):
             stack_config = StackConfig(filename)
             StackActionHandler(stack_config, working_dir).create_or_update_stacks()
         except Exception as e:
-            LOGGER.error("Error syncing {}:".format(filename))
+            LOGGER.error("Error syncing {0}:".format(filename))
             LOGGER.error(e)
             sys.exit(1)
 
@@ -51,7 +51,7 @@ def convert(filename, debug):
     try:
         click.echo(convert_file(filename))
     except Exception as e:
-        LOGGER.error("Error converting {}:".format(filename))
+        LOGGER.error("Error converting {0}:".format(filename))
         LOGGER.error(e)
         sys.exit(1)
 
