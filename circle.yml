@@ -3,9 +3,9 @@ machine:
     version: 2.7.5
 dependencies:
   pre:
-    - pip install --upgrade pip
-    - pip install pybuilder
-    - pyb install_dependencies
+    - "pip install --upgrade pip"
+    - "pip install pybuilder"
+    - "pyb install_dependencies"
 test:
   override:
-    - pyb run_unit_tests
+    - "pyb run_unit_tests"
