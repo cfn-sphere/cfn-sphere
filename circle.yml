@@ -3,4 +3,7 @@ machine:
     version: 2.7.5
 dependencies:
   pre:
-    - sudo pip install pybuilder
+    - pip install pybuilder
+test:
+  override:
+    - pyb run_unit_tests
