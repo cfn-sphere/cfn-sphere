@@ -17,31 +17,33 @@ class ParameterResolverTests(unittest2.TestCase):
     def test_convert_list_to_string_returns_empty_list_on_empty_list(self):
         self.assertEqual("", ParameterResolver.convert_list_to_string([]))
 
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
     @patch('cfn_sphere.resolver.parameter_resolver.ParameterResolver.convert_list_to_string')
-    def test_resolve_parameter_values_calls_convert_list_to_string_on_list_value(self, convert_list_to_string_mock):
+    def test_resolve_parameter_values_calls_convert_list_to_string_on_list_value(self, convert_list_to_string_mock, _):
         ParameterResolver().resolve_parameter_values({'foo': ['a', 'b']})
         convert_list_to_string_mock.assert_called_once_with(['a', 'b'])
 
-    def test_resolve_parameter_values_raises_exception_on_none_value(self):
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
+    def test_resolve_parameter_values_raises_exception_on_none_value(self, _):
         with self.assertRaises(NotImplementedError):
             ParameterResolver().resolve_parameter_values({'foo': None})
 
-    @patch('cfn_sphere.cloudformation.api.CloudFormation')
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
     def test_resolve_parameter_values_returns_list_with_string_value(self, _):
         result = ParameterResolver().resolve_parameter_values({'foo': "baa"})
         self.assertEqual([('foo', 'baa')], result)
 
-    @patch('cfn_sphere.cloudformation.api.CloudFormation')
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
     def test_resolve_parameter_values_returns_str_representation_of_false(self, _):
         result = ParameterResolver().resolve_parameter_values({'foo': False})
         self.assertEqual([('foo', 'false')], result)
 
-    @patch('cfn_sphere.cloudformation.api.CloudFormation')
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
     def test_resolve_parameter_values_returns_str_representation_of_int(self, _):
         result = ParameterResolver().resolve_parameter_values({'foo': 5})
         self.assertEqual([('foo', '5')], result)
 
-    @patch('cfn_sphere.cloudformation.api.CloudFormation')
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
     def test_resolve_parameter_values_returns_str_representation_of_float(self, _):
         result = ParameterResolver().resolve_parameter_values({'foo': 5.555})
         self.assertEqual([('foo', '5.555')], result)
