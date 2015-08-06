@@ -3,6 +3,7 @@ machine:
     version: 2.7.5
 dependencies:
   pre:
+    - pip install --upgrade pip
     - pip install pybuilder
     - pyb install_dependencies
 test:
