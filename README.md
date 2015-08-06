@@ -1,6 +1,8 @@
 # cfn-sphere
 A CLI tool intended to simplify AWS CloudFormation handling.
 
+[![Circle CI](https://circleci.com/gh/marco-hoyer/cfn-sphere.svg?style=svg)](https://circleci.com/gh/marco-hoyer/cfn-sphere)
+
 ## Features
 - a "stack of stacks" model to group multiple cfn stacks
 - cross referencing parameters between stacks
