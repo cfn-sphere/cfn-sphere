@@ -28,9 +28,9 @@ class ParameterResolver(object):
             value_string += str(item)
         return value_string
 
-    def get_available_artifacts(self):
+    def get_stack_outputs(self):
         """
-        Get a list of all available artifacts
+        Get a list of all available stack outputs in format <stack-name>.<output>.
         :return: dict
         """
         artifacts = {}
@@ -41,13 +41,13 @@ class ParameterResolver(object):
                 artifacts[key] = output.value
         return artifacts
 
-    def get_artifact_value(self, key):
+    def get_output_value(self, key):
         """
-        Get value for a specific artifact key in format <stack-name>.<output>.
+        Get value for a specific output key in format <stack-name>.<output>.
         :param key: str <stack-name>.<output>
         :return: str
         """
-        artifacts = self.get_available_artifacts()
+        artifacts = self.get_stack_outputs()
         self.logger.debug("Looking up key: {0}".format(key))
         self.logger.debug("Found artifacts: {0}".format(artifacts))
         try:
@@ -57,7 +57,7 @@ class ParameterResolver(object):
         except Exception:
             raise ParameterResolverException("Could not get a valid value for {0}".format(key))
 
-    def resolve_parameters(self, parameters):
+    def resolve_parameter_values(self, parameters):
         param_list = []
         for key, value in parameters.items():
 
@@ -74,14 +74,18 @@ class ParameterResolver(object):
                 if DependencyResolver.is_parameter_reference(value):
                     stripped_value = DependencyResolver.get_parameter_key_from_ref_value(value)
                     self.logger.debug(
-                        "Resolved artifact value: ".format(self.get_artifact_value(stripped_value)))
-                    param_list.append((key, self.get_artifact_value(stripped_value)))
+                        "Resolved artifact value: ".format(self.get_output_value(stripped_value)))
+                    param_list.append((key, self.get_output_value(stripped_value)))
                 else:
-                    param_list.append((key, str(value)))
+                    param_list.append((key, value))
             elif isinstance(value, bool):
 
                 self.logger.debug("Boolean parameter found for {0}".format(key))
                 param_list.append((key, str(value).lower()))
+            elif isinstance(value, int):
+                param_list.append((key, str(value)))
+            elif isinstance(value, float):
+                param_list.append((key, str(value)))
             else:
                 raise NotImplementedError("Cannot handle {0} value for key: {1}".format(type(value), key))
 
@@ -91,6 +95,6 @@ class ParameterResolver(object):
 if __name__ == "__main__":
     cfn = ParameterResolver()
 
-    print(cfn.get_available_artifacts())
-    print(cfn.get_artifact_value("simple-cloud-rest-api.WebsiteURL"))
+    print(cfn.get_stack_outputs())
+    print(cfn.get_output_value("simple-cloud-rest-api.WebsiteURL"))
     # print(cfn.get_artifact_value("blalbufg"))

@@ -27,7 +27,7 @@ class StackActionHandler(object):
             template_url = stack_config.get('template')
             template = CloudFormationTemplate(template_url, working_dir=self.working_dir)
 
-            parameters = self.parameter_resolver.resolve_parameters(stack_config.get('parameters', {}))
+            parameters = self.parameter_resolver.resolve_parameter_values(stack_config.get('parameters', {}))
 
             if stack_name in existing_stacks:
 
