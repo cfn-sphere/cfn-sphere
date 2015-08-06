@@ -4,6 +4,7 @@ machine:
 dependencies:
   pre:
     - pip install pybuilder
+    - pyb install_dependencies
 test:
   override:
     - pyb run_unit_tests
