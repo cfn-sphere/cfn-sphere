@@ -26,18 +26,22 @@ class ParameterResolverTests(unittest2.TestCase):
         with self.assertRaises(NotImplementedError):
             ParameterResolver().resolve_parameter_values({'foo': None})
 
-    def test_resolve_parameter_values_returns_list_with_string_value(self):
+    @patch('cfn_sphere.cloudformation.api.CloudFormation')
+    def test_resolve_parameter_values_returns_list_with_string_value(self, _):
         result = ParameterResolver().resolve_parameter_values({'foo': "baa"})
         self.assertEqual([('foo', 'baa')], result)
 
-    def test_resolve_parameter_values_returns_str_representation_of_false(self):
+    @patch('cfn_sphere.cloudformation.api.CloudFormation')
+    def test_resolve_parameter_values_returns_str_representation_of_false(self, _):
         result = ParameterResolver().resolve_parameter_values({'foo': False})
         self.assertEqual([('foo', 'false')], result)
 
-    def test_resolve_parameter_values_returns_str_representation_of_int(self):
+    @patch('cfn_sphere.cloudformation.api.CloudFormation')
+    def test_resolve_parameter_values_returns_str_representation_of_int(self, _):
         result = ParameterResolver().resolve_parameter_values({'foo': 5})
         self.assertEqual([('foo', '5')], result)
 
-    def test_resolve_parameter_values_returns_str_representation_of_float(self):
+    @patch('cfn_sphere.cloudformation.api.CloudFormation')
+    def test_resolve_parameter_values_returns_str_representation_of_float(self, _):
         result = ParameterResolver().resolve_parameter_values({'foo': 5.555})
         self.assertEqual([('foo', '5.555')], result)
