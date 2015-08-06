@@ -17,7 +17,7 @@ def cli():
     pass
 
 
-@cli.command(help="Create an applications infrastructure")
+@cli.command(help="Sync AWS resources with definition file")
 @click.argument('filename', type=click.Path(exists=True))
 @click.option('--debug', is_flag=True, default=False, help="Debug output")
 @click.option('--confirm', is_flag=True, default=False, help="Override user confirm dialog with yes")
@@ -28,7 +28,7 @@ def sync(filename, debug, confirm):
         LOGGER.setLevel(logging.INFO)
 
     if confirm or click.confirm(
-            'This tool will modify your infrastructure according to the configuration in {}. Are you sure='.format(
+            'This tool will modify your infrastructure according to the configuration in {0}. Are you sure='.format(
                 filename), abort=True):
         try:
             working_dir = os.path.dirname(os.path.realpath(filename))
