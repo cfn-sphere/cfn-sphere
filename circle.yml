@@ -9,3 +9,8 @@ dependencies:
 test:
   override:
     - "pyb run_unit_tests"
+deployment:
+  production:
+    branch: master
+    commands:
+      - "pyb package"
