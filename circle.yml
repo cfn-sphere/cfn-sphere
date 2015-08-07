@@ -8,7 +8,7 @@ dependencies:
     - "pip install pybuilder"
     - "pyb install_dependencies"
     - "sudo apt-get install rpm"
-    - "rpm --initdb --dbpath /.rpmdb"
+    - "rpm --initdb --dbpath /tmp"
 test:
   override:
     - "pyb run_unit_tests"
