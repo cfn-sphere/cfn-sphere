@@ -3,6 +3,7 @@ machine:
     version: 2.7.5
 dependencies:
   pre:
+    - "gem install package_cloud fpm"
     - "pip install --upgrade pip"
     - "pip install pybuilder"
     - "pyb install_dependencies"
@@ -11,3 +12,9 @@ test:
     - "pyb run_unit_tests"
   post:
     - cp -R target/reports $CIRCLE_ARTIFACTS
+deployment:
+  production:
+    branch: master
+    commands:
+      - "cd target/dist/* && python setup.py bdist_rpm"
+      - "package_cloud push marco-hoyer/cfn-sphere/scientific/6 $(basename $(ls target/dist/*/dist/*.rpm | grep -v 'src.rpm'))"
