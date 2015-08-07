@@ -21,4 +21,4 @@ deployment:
       - "pyb"
       - "cd target/dist/*"
       - "python setup.py bdist_rpm"
-      - "package_cloud push marco-hoyer/cfn-sphere/scientific/6 $(basename $(ls dist/*.rpm | grep -v 'src.rpm'))"
+      - "package_cloud push marco-hoyer/cfn-sphere/scientific/6 $(ls dist/*.rpm | grep -v 'src.rpm')"
