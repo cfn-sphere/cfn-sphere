@@ -23,3 +23,13 @@ Resources:
       InstanceType: "t2.micro"
       KeyName:
         Ref: "sshKeyName"
+      TaupageUserData:
+        application_id:
+          Ref: "AWS::StackName"
+        application_version:
+          Ref: dockerImageVersion
+        environment:
+          SSO_KEY:
+            Ref: mySsoKey
+
+

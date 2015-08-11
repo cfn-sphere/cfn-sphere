@@ -30,15 +30,84 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         with self.assertRaises(NoTemplateException):
             self.cfn_template._load_template(URL)
 
-class CloudFormationApiTests(unittest2.TestCase):
+    def test_transform_dict_executes_value_handler_and_passes_correct_value(self):
+        function_mock = Mock()
+        function_mock.return_value = 'foo_new', 'bla_new'
 
+        mapping = {'foo': function_mock}
+        dict = {'a': {'b': {'foo': 'bla'}}}
+
+        CloudFormationTemplate.transform_dict(dict, mapping)
+
+        function_mock.assert_called_once_with('bla')
+        self.assertEqual({'a': {'b': {'foo_new': 'bla_new'}}}, dict)
+
+    def test_render_taupage_user_data(self):
+        input = {
+            "application_id": {"Ref": "AWS::StackName"},
+            "application_version": {"Ref": "dockerImageVersion"},
+            "environment": {
+                "SSO_KEY": {"Ref": "mySsoKey"}
+            }
+        }
+        expected = {
+            "Fn::Base64": {
+                "Fn::Join": [
+                    "\n",
+                    [
+                        "#taupage-ami-config",
+                        {
+                            "Fn::Join:": [
+                                ":",
+                                [
+                                    "application_id",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        },
+                        {
+                            "Fn::Join:": [
+                                ":",
+                                [
+                                    "application_version",
+                                    {
+                                        "Ref": "dockerImageVersion"
+                                    }
+                                ]
+                            ]
+                        },
+                        {
+                            "Fn::Join:": [
+                                ":",
+                                [
+                                    "environment",
+                                    {
+                                        "SSO_KEY": {
+                                            "Ref": "mySsoKey"
+                                        }
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            }
+        }
+
+        key, value = CloudFormationTemplate.render_taupage_user_data(input)
+        self.assertDictEqual(expected, value)
+
+
+class CloudFormationApiTests(unittest2.TestCase):
     @patch('cfn_sphere.cloudformation.api.cloudformation')
     def test_wait_for_stack_event_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
         template_mock.url = "foo.yml"
-        template_mock.get_template_body.return_value = {}
+        template_mock.get_template_body_dict.return_value = {}
 
         event = StackEvent()
         event.resource_type = "AWS::CloudFormation::Stack"
@@ -64,7 +133,7 @@ class CloudFormationApiTests(unittest2.TestCase):
 
         template_mock = Mock(spec=CloudFormationTemplate)
         template_mock.url = "foo.yml"
-        template_mock.get_template_body.return_value = {}
+        template_mock.get_template_body_dict.return_value = {}
 
         event = StackEvent()
         event.resource_type = "AWS::CloudFormation::Stack"
@@ -87,7 +156,7 @@ class CloudFormationApiTests(unittest2.TestCase):
 
         template_mock = Mock(spec=CloudFormationTemplate)
         template_mock.url = "foo.yml"
-        template_mock.get_template_body.return_value = {}
+        template_mock.get_template_body_dict.return_value = {}
 
         event = StackEvent()
         event.resource_type = "AWS::CloudFormation::Stack"
@@ -111,7 +180,7 @@ class CloudFormationApiTests(unittest2.TestCase):
 
         template_mock = Mock(spec=CloudFormationTemplate)
         template_mock.url = "foo.yml"
-        template_mock.get_template_body.return_value = {}
+        template_mock.get_template_body_dict.return_value = {}
 
         event = StackEvent()
         event.resource_type = "AWS::CloudFormation::Stack"
