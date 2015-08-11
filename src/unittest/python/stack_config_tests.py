@@ -1,9 +1,9 @@
 import unittest2
-from cfn_sphere.stack_config import StackConfig
-from mock import patch, mock_open
 
 
 class StackConfigTests(unittest2.TestCase):
+    def test_foo(self):
+        pass
 
     STACK_CONFIG = """
 stacks:
