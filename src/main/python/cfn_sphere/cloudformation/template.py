@@ -57,7 +57,8 @@ class CloudFormationTemplate(object):
         raise NotImplementedError
 
     def transform_template_body(self):
-        self.transform_dict(self.body_dict, {'TaupageUserData': self.render_taupage_user_data})
+        # Could be a nice dynamic import solution if anybody wants custom handlers
+        self.transform_dict(self.body_dict, {'@TaupageUserData': self.render_taupage_user_data})
 
     @staticmethod
     def render_taupage_user_data(dict_value):
@@ -66,7 +67,7 @@ class CloudFormationTemplate(object):
         kv_pairs = ['#taupage-ami-config']
 
         for key in sorted(dict_value.keys()):
-            kv_pairs.append({'Fn::Join:': [':', [key, dict_value[key]]]})
+            kv_pairs.append({'Fn::Join:': [': ', [key, dict_value[key]]]})
 
         return "UserData", {
             'Fn::Base64': {
@@ -77,12 +78,15 @@ class CloudFormationTemplate(object):
     @classmethod
     def transform_dict(cls, dictionary, key_handlers):
         for key in dictionary:
-            if isinstance(dictionary[key], dict):
-                cls.transform_dict(dictionary[key], key_handlers)
+            value = dictionary[key]
+            if isinstance(value, dict):
+                cls.transform_dict(value, key_handlers)
+            if key.startswith('@'):
+                if key in key_handlers.keys():
+                    key_handler = key_handlers[key]
 
-            if key in key_handlers.keys():
-                key_handler = key_handlers[key]
-
-                new_key, new_value = key_handler(dictionary[key])
-                dictionary[new_key] = new_value
-                dictionary.pop(key)
+                    new_key, new_value = key_handler(value)
+                    dictionary[new_key] = new_value
+                    dictionary.pop(key)
+                else:
+                    raise Exception("No handler defined for key {0}".format(key))

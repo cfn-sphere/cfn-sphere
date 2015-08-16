@@ -34,8 +34,8 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         function_mock = Mock()
         function_mock.return_value = 'foo_new', 'bla_new'
 
-        mapping = {'foo': function_mock}
-        dict = {'a': {'b': {'foo': 'bla'}}}
+        mapping = {'@foo': function_mock}
+        dict = {'a': {'b': {'@foo': 'bla'}}}
 
         CloudFormationTemplate.transform_dict(dict, mapping)
 
@@ -43,6 +43,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         self.assertEqual({'a': {'b': {'foo_new': 'bla_new'}}}, dict)
 
     def test_render_taupage_user_data(self):
+        self.maxDiff = None
         input = {
             "application_id": {"Ref": "AWS::StackName"},
             "application_version": {"Ref": "dockerImageVersion"},
@@ -58,7 +59,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
                         "#taupage-ami-config",
                         {
                             "Fn::Join:": [
-                                ":",
+                                ": ",
                                 [
                                     "application_id",
                                     {
@@ -69,7 +70,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
                         },
                         {
                             "Fn::Join:": [
-                                ":",
+                                ": ",
                                 [
                                     "application_version",
                                     {
@@ -80,7 +81,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
                         },
                         {
                             "Fn::Join:": [
-                                ":",
+                                ": ",
                                 [
                                     "environment",
                                     {
