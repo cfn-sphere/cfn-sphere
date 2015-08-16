@@ -16,7 +16,7 @@ test:
     - cp -R target/reports $CIRCLE_ARTIFACTS
 deployment:
   production:
-    branch: master
+    branch: stable
     commands:
       - "pyb"
       - "cd target/dist/* && python setup.py bdist_rpm --release $CIRCLE_BUILD_NUM"
