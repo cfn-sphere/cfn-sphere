@@ -1,5 +1,6 @@
 import networkx
 from networkx.exception import NetworkXUnfeasible
+from cfn_sphere.config import StackConfig
 
 
 class DependencyResolver(object):
@@ -31,11 +32,11 @@ class DependencyResolver(object):
     @classmethod
     def create_stacks_directed_graph(cls, desired_stacks):
         graph = networkx.DiGraph()
-        for name in desired_stacks:
+        for name in desired_stacks.keys():
             graph.add_node(name)
         for name, data in desired_stacks.items():
             if data:
-                for key, value in data.get('parameters', {}).items():
+                for key, value in data.parameters.items():
                     if cls.is_parameter_reference(value):
                         dependant_stack = cls.get_stack_name_from_ref_value(cls.get_parameter_key_from_ref_value(value))
                         graph.add_edge(dependant_stack, name)
@@ -51,13 +52,13 @@ class DependencyResolver(object):
             raise Exception("Could not define an order of stacks: {0}".format(e))
 
         for stack in order:
-            if stack not in desired_stacks:
-                raise Exception("Stack {} is referenced as value but it is not defined".format(stack))
+            if stack not in desired_stacks.keys():
+                raise Exception("Stack {0} is referenced as value but it is not defined".format(stack))
 
         return order
 
 
 if __name__ == "__main__":
     dr = DependencyResolver()
-    print(dr.get_stack_order({"mystack1": {"parameters": {"ta": "ref::mystack2.da"}},
-                              "mystack2": {"ta": "ref::mystack1.da"}}))
+    print(dr.get_stack_order({"mystack1": StackConfig({"parameters": {"ta": "ref::mystack2.da"}}),
+                              "mystack2": StackConfig({"parameters": {"ta": "foo"}})}))

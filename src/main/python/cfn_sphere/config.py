@@ -1,6 +1,5 @@
 from yaml.scanner import ScannerError
 import yaml
-import logging
 
 
 class NoConfigException(Exception):
@@ -9,11 +8,6 @@ class NoConfigException(Exception):
 
 class Config(object):
     def __init__(self, config_file=None, config_dict=None):
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
-                            datefmt='%d.%m.%Y %H:%M:%S',
-                            level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
-
         if config_dict:
             self.dict = config_dict
         else:
@@ -21,6 +15,16 @@ class Config(object):
 
         self.region = self.dict.get('region')
         self.stacks = self._parse_stack_configs(self.dict)
+
+        self._validate()
+
+    def _validate(self):
+        try:
+            assert self.region, "Please specify region in config file"
+            assert isinstance(self.region, str), "Region must be of type str, not {0}".format(type(self.region))
+            assert self.stacks, "Please specify stacks in config file"
+        except AssertionError as e:
+            raise NoConfigException(e)
 
     @staticmethod
     def _parse_stack_configs(config_dict):
@@ -45,7 +49,7 @@ class Config(object):
 
 class StackConfig(object):
     def __init__(self, stack_config_dict):
-        self.parameters = stack_config_dict.get('parameters')
+        self.parameters = stack_config_dict.get('parameters', {})
         self.template = stack_config_dict.get('template')
 
 
