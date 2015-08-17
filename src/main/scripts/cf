@@ -11,6 +11,10 @@ from cfn_sphere.main import StackActionHandler
 LOGGER = get_logger(root=True)
 
 
+def user_input_handler(message, type):
+    return click.prompt(message, type=type)
+
+
 @click.group(help="This tool manages AWS CloudFormation templates "
                   "and stacks by providing an application scope and useful tooling.")
 def cli():
@@ -34,7 +38,7 @@ def sync(filename, debug, confirm):
             working_dir = os.path.dirname(os.path.realpath(filename))
 
             stack_config = Config(filename)
-            StackActionHandler(stack_config, working_dir).create_or_update_stacks()
+            StackActionHandler(stack_config, working_dir, user_input_handler).create_or_update_stacks()
         except Exception as e:
             LOGGER.error("Error syncing {0}:".format(filename))
             LOGGER.error(e)

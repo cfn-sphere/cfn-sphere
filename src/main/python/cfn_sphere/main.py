@@ -5,13 +5,14 @@ from cfn_sphere.util import get_logger
 
 
 class StackActionHandler(object):
-    def __init__(self, config, working_dir):
+    def __init__(self, config, working_dir, user_input_handler=None):
         self.working_dir = working_dir
         self.logger = get_logger()
         self.config = config
         self.region = config.region
         self.cfn = CloudFormation(region=self.region)
         self.parameter_resolver = ParameterResolver(region=self.region)
+        self.user_input_handler = user_input_handler
 
     def create_or_update_stacks(self):
         existing_stacks = self.cfn.get_stack_names()
@@ -21,7 +22,6 @@ class StackActionHandler(object):
         self.logger.info("Will process stacks in the following order: {0}".format(", ".join(stack_processing_order)))
 
         for stack_name in stack_processing_order:
-
             stack_config = self.config.stacks.get(stack_name)
 
             template_url = stack_config.template
@@ -36,5 +36,4 @@ class StackActionHandler(object):
 
                 self.cfn.update_stack(stack_name=stack_name, template=template, parameters=parameters)
             else:
-
                 self.cfn.create_stack(stack_name=stack_name, template=template, parameters=parameters)
