@@ -18,7 +18,7 @@ class StackActionHandler(object):
         desired_stacks = self.config.get('stacks')
         stack_processing_order = DependencyResolver().get_stack_order(desired_stacks)
 
-        self.logger.info("Will process stacks in the following order: {}".format(", ".join(stack_processing_order)))
+        self.logger.info("Will process stacks in the following order: {0}".format(", ".join(stack_processing_order)))
 
         for stack_name in stack_processing_order:
 
@@ -32,7 +32,7 @@ class StackActionHandler(object):
             if stack_name in existing_stacks:
 
                 if not self.cfn.stack_is_in_good_state(stack_name):
-                    raise Exception("Stack {} is in bad state".format(stack_name))
+                    raise Exception("Stack {0} is in bad state".format(stack_name))
 
                 self.cfn.update_stack(stack_name=stack_name, template=template, parameters=parameters)
             else:

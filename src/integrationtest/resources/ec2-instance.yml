@@ -23,7 +23,7 @@ Resources:
       InstanceType: "t2.micro"
       KeyName:
         Ref: "sshKeyName"
-      TaupageUserData:
+      @TaupageUserData:
         application_id:
           Ref: "AWS::StackName"
         application_version:
