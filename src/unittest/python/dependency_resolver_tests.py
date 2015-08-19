@@ -1,6 +1,7 @@
 import unittest2
 
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
+from cfn_sphere.config import StackConfig
 
 
 class DependencyResolverTests(unittest2.TestCase):
@@ -45,10 +46,10 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertFalse(DependencyResolver.is_parameter_reference(True))
 
     def test_get_stack_order_returns_a_valid_order(self):
-        stacks = {'default-sg': {'parameters': {'a': 'Ref::vpc.id'}},
-                  'app1': {'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}},
-                  'app2': {'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}},
-                  'vpc': {'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}},
+        stacks = {'default-sg': StackConfig({'parameters': {'a': 'Ref::vpc.id'}}),
+                  'app1': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
+                  'app2': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'vpc': StackConfig({'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 
         result = ['vpc', 'default-sg', 'app1', 'app2']
@@ -56,10 +57,10 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertEqual(result, DependencyResolver.get_stack_order(stacks))
 
     def test_get_stack_order_includes_independent_stacks(self):
-        stacks = {'default-sg': {'parameters': {}},
-                  'app1': {'parameters': {'a': 'Ref::vpc.id'}},
-                  'app2': {'parameters': {'a': 'Ref::vpc.id', 'c': 'Ref::app1.id'}},
-                  'vpc': {'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}},
+        stacks = {'default-sg': StackConfig({}),
+                  'app1': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
+                  'app2': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'vpc': StackConfig({'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 
         result = 4
