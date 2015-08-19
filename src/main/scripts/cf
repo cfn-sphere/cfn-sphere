@@ -5,10 +5,14 @@ import sys
 import click
 import logging
 from cfn_sphere.util import convert_file, get_logger
-from cfn_sphere.stack_config import StackConfig
+from cfn_sphere.config import Config
 from cfn_sphere.main import StackActionHandler
 
 LOGGER = get_logger(root=True)
+
+
+def user_input_handler(message, type):
+    return click.prompt(message, type=type)
 
 
 @click.group(help="This tool manages AWS CloudFormation templates "
@@ -33,8 +37,8 @@ def sync(filename, debug, confirm):
         try:
             working_dir = os.path.dirname(os.path.realpath(filename))
 
-            stack_config = StackConfig(filename)
-            StackActionHandler(stack_config, working_dir).create_or_update_stacks()
+            stack_config = Config(filename)
+            StackActionHandler(stack_config, working_dir, user_input_handler).create_or_update_stacks()
         except Exception as e:
             LOGGER.error("Error syncing {0}:".format(filename))
             LOGGER.error(e)

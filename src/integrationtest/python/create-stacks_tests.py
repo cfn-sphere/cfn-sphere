@@ -2,7 +2,7 @@ __author__ = 'mhoyer'
 
 import os
 from cfn_sphere.main import StackActionHandler
-from cfn_sphere.stack_config import StackConfig
+from cfn_sphere.config import Config
 
 
 # class CreateStacksTest(object):
