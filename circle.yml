@@ -18,9 +18,4 @@ deployment:
   production:
     branch: stable
     commands:
-      - "pyb"
-      - "cd target/dist/* && fpm --iteration $CIRCLE_BUILD_NUM --python-install-lib '/usr/lib/python2.7/site-packages' -s python -t rpm setup.py"
-      - "cd target/dist/* && fpm --iteration $CIRCLE_BUILD_NUM --python-install-lib '/usr/lib/python2.7/site-packages' -s python -t deb setup.py"
-      - "package_cloud push marco-hoyer/cfn-sphere/scientific/6 target/dist/*/*.rpm"
-      - "package_cloud push marco-hoyer/cfn-sphere/debian/wheezy target/dist/*/*.deb"
-      - "package_cloud push marco-hoyer/cfn-sphere/debian/jessie target/dist/*/*.deb"
+    - build_and_upload_packages.sh
