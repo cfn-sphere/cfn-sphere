@@ -18,4 +18,4 @@ deployment:
   production:
     branch: stable
     commands:
-    - build_and_upload_packages.sh
+    - "./build_and_upload_packages.sh"
