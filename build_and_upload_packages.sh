@@ -44,4 +44,4 @@ python setup.py sdist upload || exit 0
 package_cloud push marco-hoyer/cfn-sphere/scientific/6 *.rpm
 package_cloud push marco-hoyer/cfn-sphere/debian/wheezy *.deb
 package_cloud push marco-hoyer/cfn-sphere/debian/jessie *.deb
-package_cloud push marco-hoyer/cfn-sphere/debian/precise *.deb
+package_cloud push marco-hoyer/cfn-sphere/ubuntu/trusty *.deb
