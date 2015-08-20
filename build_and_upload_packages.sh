@@ -20,7 +20,7 @@ fpm \
 fpm \
   --iteration $CIRCLE_BUILD_NUM \
   --no-python-fix-name \
-  --python-install-lib '/usr/lib/python2.7/site-packages' \
+  --python-install-lib '/usr/lib/python2.6/site-packages' \
   --python-install-bin '/usr/bin' --no-python-dependencies \
   --depends python --depends python-boto --depends python-click --depends python-networkx --depends python-ordereddict --depends python-yaml -s python -t rpm setup.py
 
