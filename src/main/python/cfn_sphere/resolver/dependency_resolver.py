@@ -43,6 +43,14 @@ class DependencyResolver(object):
 
         return graph
 
+    @staticmethod
+    def filter_unmanaged_stacks(managed_stacks, stacks):
+        for stack in stacks:
+            if stack not in managed_stacks:
+                stacks.remove(stack)
+
+        return stacks
+
     @classmethod
     def get_stack_order(cls, desired_stacks):
         graph = cls.create_stacks_directed_graph(desired_stacks)
@@ -55,7 +63,7 @@ class DependencyResolver(object):
             if stack not in desired_stacks.keys():
                 raise Exception("Stack {0} is referenced as value but it is not defined".format(stack))
 
-        return order
+        return cls.filter_unmanaged_stacks(desired_stacks, order)
 
 
 if __name__ == "__main__":
