@@ -7,6 +7,7 @@ use_plugin("python.install_dependencies")
 use_plugin("python.flake8")
 use_plugin("python.coverage")
 use_plugin("python.distutils")
+use_plugin('copy_resources')
 
 name = "cfn-sphere"
 
@@ -31,6 +32,9 @@ def set_properties(project):
     project.depends_on('ordereddict')
     project.set_property('coverage_break_build', False)
     project.set_property('install_dependencies_upgrade', True)
+
+    project.set_property('copy_resources_target', '$dir_dist')
+    project.get_property('copy_resources_glob').append('setup.cfg')
 
     project.set_property('distutils_classifiers', [
         'Development Status :: 4 - Beta',
