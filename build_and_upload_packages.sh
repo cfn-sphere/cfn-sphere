@@ -14,7 +14,7 @@ fpm \
   --no-python-fix-name \
   --python-install-lib '/usr/lib/python2.7/dist-packages' \
   --python-install-bin '/usr/bin' --no-python-dependencies \
-  --depends 'python>=2.7' --depends python-boto --depends python-click --depends python-networkx --depends python-ordereddict --depends python-yaml -s python -t deb setup.py
+  --depends python2.7 --depends python-boto --depends python-click --depends python-networkx --depends python-ordereddict --depends python-yaml -s python -t deb setup.py
 
 # rpm
 fpm \
