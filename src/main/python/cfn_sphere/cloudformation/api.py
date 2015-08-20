@@ -64,10 +64,10 @@ class CloudFormation(object):
                 "Creating stack {0} from template {1} with parameters: {2}".format(stack_name, template.url,
                                                                                    parameters))
             self.conn.create_stack(stack_name,
-                                   template_body=json.dumps(template.get_template_body()),
+                                   template_body=json.dumps(template.get_template_body_dict()),
                                    parameters=parameters)
             self.wait_for_stack_action_to_complete(stack_name, "create")
-            self.logger.info("Create completed for {}".format(stack_name))
+            self.logger.info("Create completed for {0}".format(stack_name))
         except BotoServerError as e:
             self.logger.error(
                 "Could not create stack {0}. Cloudformation API response: {1}".format(stack_name, e.message))
@@ -81,13 +81,13 @@ class CloudFormation(object):
                                                                                    parameters))
 
             self.conn.update_stack(stack_name,
-                                   template_body=json.dumps(template.get_template_body()),
+                                   template_body=json.dumps(template.get_template_body_dict()),
                                    parameters=parameters)
 
             self.wait_for_stack_action_to_complete(stack_name, "update")
             self.logger.info("Update completed for {0}".format(stack_name))
         except BotoServerError as e:
-            error = json.loads(e.body).get("Error", "{}")
+            error = json.loads(e.body).get("Error", "{0}")
             error_message = error.get("Message")
             if error_message == "No updates are to be performed.":
                 self.logger.info("Nothing to do: {0}.".format(error_message))
@@ -115,7 +115,7 @@ class CloudFormation(object):
                             if event.resource_status == expected_event:
                                 return event
                             if event.resource_status.endswith("_FAILED"):
-                                raise Exception("Stack is in {} state".format(event.resource_status))
+                                raise Exception("Stack is in {0} state".format(event.resource_status))
                             if event.resource_status.startswith("ROLLBACK_"):
                                 raise Exception("Rollback occured")
                         else:
@@ -138,7 +138,7 @@ class CloudFormation(object):
                                                  minimum_event_timestamp,
                                                  timeout=120)
 
-        self.logger.info("Stack {} started".format(action))
+        self.logger.info("Stack {0} started".format(action))
 
         minimum_event_timestamp = start_event.timestamp
         expected_complete_event = action.upper() + "_COMPLETE"
