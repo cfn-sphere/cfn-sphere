@@ -1,7 +1,9 @@
 import json
 import os
 import yaml
+from boto import connect_s3
 from cfn_sphere.util import get_logger
+from cfn_sphere.s3 import S3
 
 
 class NoTemplateException(Exception):
@@ -53,8 +55,16 @@ class CloudFormationTemplate(object):
         except IOError as e:
             raise NoTemplateException("Could not load template from {0}: {1}".format(url, e))
 
-    def _s3_get_template(self, url):
-        raise NotImplementedError
+    @staticmethod
+    def _s3_get_template(url):
+        s3 = S3()
+        try:
+            if url.lower().endswith(".json"):
+                return json.loads(s3.get_contents_from_url(url))
+            if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
+                return yaml.load(s3.get_contents_from_url(url))
+        except Exception as e:
+            raise NoTemplateException(e)
 
     def transform_template_body(self):
         # Could be a nice dynamic import solution if anybody wants custom handlers
@@ -90,3 +100,8 @@ class CloudFormationTemplate(object):
                     dictionary.pop(key)
                 else:
                     raise Exception("No handler defined for key {0}".format(key))
+
+if __name__ == "__main__":
+    s3_conn = connect_s3()
+    bucket = s3_conn.get_bucket('is24-cfn-templates')
+    print bucket.get_all_keys()
