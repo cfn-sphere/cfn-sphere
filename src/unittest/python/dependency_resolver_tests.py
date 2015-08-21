@@ -5,7 +5,6 @@ from cfn_sphere.config import StackConfig
 
 
 class DependencyResolverTests(unittest2.TestCase):
-
     def test_get_parameter_key_from_ref_value_returns_valid_key(self):
         self.assertEqual("vpc.id", DependencyResolver.get_parameter_key_from_ref_value("Ref::vpc.id"))
 
@@ -48,8 +47,10 @@ class DependencyResolverTests(unittest2.TestCase):
     def test_get_stack_order_returns_a_valid_order(self):
         stacks = {'default-sg': StackConfig({'parameters': {'a': 'Ref::vpc.id'}}),
                   'app1': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
-                  'app2': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
-                  'vpc': StackConfig({'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
+                  'app2': StackConfig(
+                      {'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'vpc': StackConfig(
+                      {'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 
         result = ['vpc', 'default-sg', 'app1', 'app2']
@@ -59,8 +60,10 @@ class DependencyResolverTests(unittest2.TestCase):
     def test_get_stack_order_includes_independent_stacks(self):
         stacks = {'default-sg': StackConfig({}),
                   'app1': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
-                  'app2': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
-                  'vpc': StackConfig({'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
+                  'app2': StackConfig(
+                      {'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'vpc': StackConfig(
+                      {'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 
         result = 4
@@ -81,7 +84,7 @@ class DependencyResolverTests(unittest2.TestCase):
     def test_get_stack_order_raises_exception_on_cyclic_dependency(self):
         stacks = {'app1': {'parameters': {'a': 'Ref::app2.id'}},
                   'app2': {'parameters': {'a': 'Ref::app1.id'}}
-        }
+                  }
         with self.assertRaises(Exception):
             DependencyResolver.get_stack_order(stacks)
 
@@ -103,3 +106,19 @@ class DependencyResolverTests(unittest2.TestCase):
     def test_get_stack_name_from_ref_value_raises_exception_for_none_value(self):
         with self.assertRaises(AssertionError):
             self.assertEqual("", DependencyResolver.get_stack_name_from_ref_value(None))
+
+    def test_filter_unmanaged_stacks(self):
+        stacks = ['a', 'b', 'c']
+        managed_stacks = ['a', 'c']
+
+        self.assertListEqual(managed_stacks, DependencyResolver.filter_unmanaged_stacks(managed_stacks, stacks))
+
+    def test_filter_unmanaged_stacks_filters_all_items(self):
+        stacks = ['a', 'b', 'c']
+        managed_stacks = []
+        self.assertListEqual(managed_stacks, DependencyResolver.filter_unmanaged_stacks(managed_stacks, stacks))
+
+    def test_filter_unmanaged_stacks_filters_all_occurences(self):
+        stacks = ['a', 'b', 'c', 'c']
+        managed_stacks = ['a']
+        self.assertListEqual(managed_stacks, DependencyResolver.filter_unmanaged_stacks(managed_stacks, stacks))
