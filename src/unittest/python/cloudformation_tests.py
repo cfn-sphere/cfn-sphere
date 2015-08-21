@@ -43,7 +43,6 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         self.assertEqual({'a': {'b': {'foo_new': 'bla_new'}}}, dict)
 
     def test_render_taupage_user_data(self):
-        self.maxDiff = None
         input = {
             "application_id": {"Ref": "AWS::StackName"},
             "application_version": {"Ref": "dockerImageVersion"},
