@@ -49,8 +49,7 @@ class CloudFormation(object):
                                   "UPDATE_ROLLBACK_COMPLETE"]:
             return True
         else:
-            self.logger.error("Stack {0} is in {1} state, because of: {2}".format(stack.stack_name, stack.stack_status,
-                                                                                  stack.stack_status_reason))
+            self.logger.error("Stack {0} is in {1} state.".format(stack.stack_name, stack.stack_status))
             return False
 
     def get_stack_state(self, stack_name):
