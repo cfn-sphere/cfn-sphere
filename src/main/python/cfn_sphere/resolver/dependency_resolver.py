@@ -59,10 +59,6 @@ class DependencyResolver(object):
         except NetworkXUnfeasible as e:
             raise Exception("Could not define an order of stacks: {0}".format(e))
 
-        for stack in order:
-            if stack not in desired_stacks.keys():
-                raise Exception("Stack {0} is referenced as value but it is not defined".format(stack))
-
         return cls.filter_unmanaged_stacks(desired_stacks, order)
 
 
