@@ -8,12 +8,17 @@ import logging
 from cfn_sphere.util import convert_file, get_logger
 from cfn_sphere.config import Config
 from cfn_sphere.main import StackActionHandler
+from boto.exception import NoAuthHandlerFound
 
 LOGGER = get_logger(root=True)
 
 
 def get_current_account_alias():
-    return boto.connect_iam().get_account_alias().account_aliases[0]
+    try:
+        return boto.connect_iam().get_account_alias().account_aliases[0]
+    except NoAuthHandlerFound as e:
+        click.echo("Authentication error! Please check credentials: {0}".format(e))
+        sys.exit(1)
 
 
 def user_input_handler(message, type):
