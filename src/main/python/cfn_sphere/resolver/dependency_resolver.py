@@ -1,6 +1,5 @@
 import networkx
 from networkx.exception import NetworkXUnfeasible
-from cfn_sphere.config import StackConfig
 
 
 class DependencyResolver(object):
@@ -45,11 +44,7 @@ class DependencyResolver(object):
 
     @staticmethod
     def filter_unmanaged_stacks(managed_stacks, stacks):
-        for stack in stacks:
-            if stack not in managed_stacks:
-                stacks.remove(stack)
-
-        return stacks
+        return [stack for stack in stacks if stack in managed_stacks]
 
     @classmethod
     def get_stack_order(cls, desired_stacks):
@@ -63,6 +58,6 @@ class DependencyResolver(object):
 
 
 if __name__ == "__main__":
-    dr = DependencyResolver()
-    print(dr.get_stack_order({"mystack1": StackConfig({"parameters": {"ta": "ref::mystack2.da"}}),
-                              "mystack2": StackConfig({"parameters": {"ta": "foo"}})}))
+    stacks = ['a', 'b', 'c']
+    managed_stacks = []
+    print DependencyResolver.filter_unmanaged_stacks(managed_stacks, stacks)
