@@ -65,7 +65,8 @@ class CloudFormation(object):
                                                                                    parameters))
             self.conn.create_stack(stack_name,
                                    template_body=json.dumps(template.get_template_body_dict()),
-                                   parameters=parameters)
+                                   parameters=parameters,
+                                   capabilities=['CAPABILITY_IAM'])
             self.wait_for_stack_action_to_complete(stack_name, "create")
             self.logger.info("Create completed for {0}".format(stack_name))
         except BotoServerError as e:
@@ -82,7 +83,8 @@ class CloudFormation(object):
 
             self.conn.update_stack(stack_name,
                                    template_body=json.dumps(template.get_template_body_dict()),
-                                   parameters=parameters)
+                                   parameters=parameters,
+                                   capabilities=['CAPABILITY_IAM'])
 
             self.wait_for_stack_action_to_complete(stack_name, "update")
             self.logger.info("Update completed for {0}".format(stack_name))
