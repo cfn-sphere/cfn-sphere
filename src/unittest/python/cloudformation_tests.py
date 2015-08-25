@@ -101,6 +101,9 @@ class CloudFormationTemplateTests(unittest2.TestCase):
 
 
 class CloudFormationApiTests(unittest2.TestCase):
+
+
+
     @patch('cfn_sphere.cloudformation.api.cloudformation')
     def test_wait_for_stack_event_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()

@@ -4,6 +4,7 @@ from cfn_sphere.cloudformation.api import CloudFormation, CloudFormationTemplate
 from cfn_sphere.util import get_logger
 
 
+
 class StackActionHandler(object):
     def __init__(self, config, working_dir, user_input_handler=None):
         self.working_dir = working_dir
@@ -31,9 +32,7 @@ class StackActionHandler(object):
 
             if stack_name in existing_stacks:
 
-                if not self.cfn.stack_is_in_good_state(stack_name):
-                    raise Exception("Stack {0} is in bad state".format(stack_name))
-
+                self.cfn.validate_stack_is_ready_for_updates(stack_name)
                 self.cfn.update_stack(stack_name=stack_name, template=template, parameters=parameters)
             else:
                 self.cfn.create_stack(stack_name=stack_name, template=template, parameters=parameters)

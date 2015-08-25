@@ -1,8 +1,8 @@
 region: eu-west-1
 stacks:
-  test2-vpc:
+  test-vpc:
     template: vpc.yml
-  test2-stack:
+  test-stack:
     template: app.yml
     parameters:
-      vpcID: "ref::test2-vpc.id"
+      vpcID: "ref::test-vpc.id"

@@ -31,5 +31,13 @@ Resources:
         environment:
           SSO_KEY:
             Ref: mySsoKey
+PostCustomResources:
+  exposeTopicSubscription:
+    Type: "SNS::Subscription"
+    Properties:
+      TopicArn:
+        Ref: exposeTopicArn
+      QueueArn:
+        Ref: exposeQueue
 
 
