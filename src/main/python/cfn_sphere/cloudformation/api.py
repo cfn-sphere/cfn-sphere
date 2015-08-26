@@ -80,7 +80,7 @@ class CloudFormation(object):
                                                                                    parameters))
 
             self.conn.update_stack(stack_name,
-                                   template_body=json.dumps(template.get_template_body_dict()),
+                                   template_body=template.get_template_json(),
                                    parameters=parameters,
                                    capabilities=['CAPABILITY_IAM'])
 

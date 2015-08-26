@@ -7,7 +7,9 @@ class CustomResourceHandler(object):
     @classmethod
     def process_post_resources(cls, stack):
         custom_resources_dict = stack.template.post_custom_resources
-
+        if not custom_resources_dict:
+            return
+            
         for resource, resource_description in custom_resources_dict.items():
             if resource_description['Type'] == "Custom::SNS::Subscription":
                 cls.handle_sns_subscription(resource_description, stack)
