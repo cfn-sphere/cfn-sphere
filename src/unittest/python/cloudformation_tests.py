@@ -3,32 +3,11 @@ import unittest2
 from datetime import timedelta
 from boto.cloudformation.stack import StackEvent
 from cfn_sphere.cloudformation.api import CloudFormation
-from cfn_sphere.cloudformation.template import CloudFormationTemplate, NoTemplateException
+from cfn_sphere.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader, NoTemplateException
 from mock import patch, Mock
 
 
 class CloudFormationTemplateTests(unittest2.TestCase):
-    def setUp(self):
-        self.cfn_template = CloudFormationTemplate("", template_body={"bla": "foo"})
-
-    @patch("cfn_sphere.cloudformation.template.CloudFormationTemplate._fs_get_template")
-    def test_load_template_calls_fs_get_template_for_fs_url(self, mock):
-        URL = "/tmp/template.json"
-
-        self.cfn_template._load_template(URL)
-        mock.assert_called_with(URL)
-
-    @patch("cfn_sphere.cloudformation.template.CloudFormationTemplate._s3_get_template")
-    def test_load_template_calls_s3_get_template_for_s3_url(self, mock):
-        URL = "s3://my-bucket.amazon.com/foo.json"
-
-        self.cfn_template._load_template(URL)
-        mock.assert_called_with(URL)
-
-    def test_load_template_raises_exception_on_unknown_protocol(self):
-        URL = "xxx://foo.json"
-        with self.assertRaises(NoTemplateException):
-            self.cfn_template._load_template(URL)
 
     def test_transform_dict_executes_value_handler_and_passes_correct_value(self):
         function_mock = Mock()
@@ -100,9 +79,35 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         self.assertDictEqual(expected, value)
 
 
+class CloudFormationTemplateLoaderTests(unittest2.TestCase):
+    @patch("cfn_sphere.cloudformation.template.CloudFormationTemplateLoader._fs_get_template")
+    def test_load_template_calls_fs_get_template_for_fs_url(self, mock):
+        url = "/tmp/template.json"
+
+        loader = CloudFormationTemplateLoader
+        loader.get_template_dict_from_url(url)
+
+        mock.assert_called_with(url)
+
+    @patch("cfn_sphere.cloudformation.template.CloudFormationTemplateLoader._s3_get_template")
+    def test_load_template_calls_s3_get_template_for_s3_url(self, mock):
+        url = "s3://my-bucket.amazon.com/foo.json"
+
+        loader = CloudFormationTemplateLoader
+        loader.get_template_dict_from_url(url)
+
+        mock.assert_called_with(url)
+
+    def test_load_template_raises_exception_on_unknown_protocol(self):
+        url = "xxx://foo.json"
+
+        loader = CloudFormationTemplateLoader
+
+        with self.assertRaises(NoTemplateException):
+            loader.get_template_dict_from_url(url)
+
+
 class CloudFormationApiTests(unittest2.TestCase):
-
-
 
     @patch('cfn_sphere.cloudformation.api.cloudformation')
     def test_wait_for_stack_event_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):

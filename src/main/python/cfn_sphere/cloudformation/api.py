@@ -60,10 +60,10 @@ class CloudFormation(object):
         assert isinstance(template, CloudFormationTemplate)
         try:
             self.logger.info(
-                "Creating stack {0} from template {1} with parameters: {2}".format(stack_name, template.url,
+                "Creating stack {0} from template {1} with parameters: {2}".format(stack_name, template.name,
                                                                                    parameters))
             self.conn.create_stack(stack_name,
-                                   template_body=json.dumps(template.get_template_body_dict()),
+                                   template_body=template.get_template_json(),
                                    parameters=parameters,
                                    capabilities=['CAPABILITY_IAM'])
             self.wait_for_stack_action_to_complete(stack_name, "create")
@@ -76,7 +76,7 @@ class CloudFormation(object):
         assert isinstance(template, CloudFormationTemplate)
         try:
             self.logger.info(
-                "Updating stack {0} from template {1} with parameters: {2}".format(stack_name, template.url,
+                "Updating stack {0} from template {1} with parameters: {2}".format(stack_name, template.name,
                                                                                    parameters))
 
             self.conn.update_stack(stack_name,

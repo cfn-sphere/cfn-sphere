@@ -60,10 +60,8 @@ class DependencyResolverTests(unittest2.TestCase):
     def test_get_stack_order_includes_independent_stacks(self):
         stacks = {'default-sg': StackConfig({}),
                   'app1': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
-                  'app2': StackConfig(
-                      {'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
-                  'vpc': StackConfig(
-                      {'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
+                  'app2': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'vpc': StackConfig({'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 
         result = 4

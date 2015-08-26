@@ -1,5 +1,9 @@
 __author__ = 'mhoyer'
 
 
-class CfnStackActionFailedException(Exception):
+class CfnSphereException(Exception):
+    pass
+
+
+class CfnStackActionFailedException(CfnSphereException):
     pass

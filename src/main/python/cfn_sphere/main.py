@@ -1,7 +1,11 @@
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 from cfn_sphere.resolver.parameter_resolver import ParameterResolver
-from cfn_sphere.cloudformation.api import CloudFormation, CloudFormationTemplate
+from cfn_sphere.cloudformation.api import CloudFormation
+from cfn_sphere.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader
+from cfn_sphere.cloudformation.stack import CloudFormationStack
+from cfn_sphere.custom_resources import CustomResourceHandler
 from cfn_sphere.util import get_logger
+import os
 
 
 
@@ -25,10 +29,11 @@ class StackActionHandler(object):
         for stack_name in stack_processing_order:
             stack_config = self.config.stacks.get(stack_name)
 
-            template_url = stack_config.template
-            template = CloudFormationTemplate(template_url, working_dir=self.working_dir)
+            template_url = stack_config.template_url
 
+            template = CloudFormationTemplateLoader.get_template_dict_from_url(template_url)
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters)
+            stack = CloudFormationStack(template, parameters, stack_name, self.region)
 
             if stack_name in existing_stacks:
 
@@ -36,3 +41,5 @@ class StackActionHandler(object):
                 self.cfn.update_stack(stack_name=stack_name, template=template, parameters=parameters)
             else:
                 self.cfn.create_stack(stack_name=stack_name, template=template, parameters=parameters)
+
+            CustomResourceHandler.process_post_resources(stack)

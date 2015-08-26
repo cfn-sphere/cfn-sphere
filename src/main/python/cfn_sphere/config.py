@@ -1,5 +1,6 @@
 from yaml.scanner import ScannerError
 import yaml
+import os
 
 
 class NoConfigException(Exception):
@@ -8,10 +9,13 @@ class NoConfigException(Exception):
 
 class Config(object):
     def __init__(self, config_file=None, config_dict=None):
+
         if config_dict:
             self.dict = config_dict
+            self.working_dir = None
         else:
             self.dict = self._read_config_file(config_file)
+            self.working_dir = os.path.dirname(os.path.realpath(config_file))
 
         self.region = self.dict.get('region')
         self.stacks = self._parse_stack_configs(self.dict)
@@ -26,11 +30,10 @@ class Config(object):
         except AssertionError as e:
             raise NoConfigException(e)
 
-    @staticmethod
-    def _parse_stack_configs(config_dict):
+    def _parse_stack_configs(self, config_dict):
         stacks_dict = {}
         for key, value in config_dict.get('stacks', {}).items():
-            stacks_dict[key] = StackConfig(value)
+            stacks_dict[key] = StackConfig(value, self.working_dir)
         return stacks_dict
 
     @staticmethod
@@ -48,9 +51,12 @@ class Config(object):
 
 
 class StackConfig(object):
-    def __init__(self, stack_config_dict):
+    def __init__(self, stack_config_dict, working_dir=None):
         self.parameters = stack_config_dict.get('parameters', {})
-        self.template = stack_config_dict.get('template')
+
+        self.template_url = stack_config_dict.get('template-url')
+        if working_dir:
+            self.template_url = os.path.join(working_dir, self.template_url)
 
 
 if __name__ == "__main__":
