@@ -13,5 +13,6 @@ PostCustomResources:
     Properties:
       TopicArn:
         Ref: exposeTopicArn
+      TopicRegion: "us-east-1"
       QueueResourceName: "exposeQueue"
 
