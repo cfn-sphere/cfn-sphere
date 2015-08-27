@@ -10,7 +10,7 @@ Parameters:
   securityGroupID:
     Description: "Target VPC id"
     Type: "AWS::EC2::VPC::Id"
-  sshKeyName:
+  appVersion:
     Description: "Target VPC id"
     Type: "String"
 Resources:
@@ -29,13 +29,10 @@ Resources:
       KeyName:
         Ref: "sshKeyName"
       @TaupageUserData:
-        application_id:
-          Ref: "AWS::StackName"
-        application_version:
-          Ref: dockerImageVersion
+        application_id: "Ref::AWS::StackName"
+        application_version: "Ref::appVersion"
         environment:
-          SSO_KEY:
-            Ref: mySsoKey
+          QUEUE: "GetAttr::exposeQueue:Url"
 PostCustomResources:
   exposeTopicSubscription:
     Type: "SNS::Subscription"
