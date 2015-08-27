@@ -1,5 +1,5 @@
+import os
 import json
-
 import yaml
 from boto import connect_s3
 from cfn_sphere.util import get_logger
@@ -15,9 +15,9 @@ class CloudFormationTemplateLoader(object):
     @classmethod
     def get_template_dict_from_url(cls, url):
         if url.lower().startswith("s3://"):
-            return CloudFormationTemplate(cls._s3_get_template(url), url)
+            return CloudFormationTemplate(cls._s3_get_template(url), os.path.basename(url))
         else:
-            return CloudFormationTemplate(cls._fs_get_template(url), url)
+            return CloudFormationTemplate(cls._fs_get_template(url), os.path.basename(url))
 
     @staticmethod
     def _fs_get_template(url):
