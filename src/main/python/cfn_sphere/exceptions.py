@@ -7,3 +7,7 @@ class CfnSphereException(Exception):
 
 class CfnStackActionFailedException(CfnSphereException):
     pass
+
+
+class TemplateErrorException(CfnSphereException):
+    pass

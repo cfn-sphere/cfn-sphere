@@ -4,10 +4,7 @@ import yaml
 from boto import connect_s3
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.s3 import S3
-
-
-class NoTemplateException(Exception):
-    pass
+from cfn_sphere.exceptions import TemplateErrorException
 
 
 class CloudFormationTemplateLoader(object):
@@ -35,9 +32,9 @@ class CloudFormationTemplateLoader(object):
                 if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                     return yaml.load(template_file.read())
         except ValueError as e:
-            raise NoTemplateException("Could not load template from {0}: {1}".format(url, e))
+            raise TemplateErrorException("Could not load template from {0}: {1}".format(url, e))
         except IOError as e:
-            raise NoTemplateException("Could not load template from {0}: {1}".format(url, e))
+            raise TemplateErrorException("Could not load template from {0}: {1}".format(url, e))
 
     @staticmethod
     def _s3_get_template(url):
@@ -48,7 +45,7 @@ class CloudFormationTemplateLoader(object):
             if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                 return yaml.load(s3.get_contents_from_url(url))
         except Exception as e:
-            raise NoTemplateException(e)
+            raise TemplateErrorException(e)
 
 
 class CloudFormationTemplate(object):
