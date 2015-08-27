@@ -8,12 +8,18 @@ import logging
 from cfn_sphere.util import convert_file, get_logger
 from cfn_sphere.config import Config
 from cfn_sphere.main import StackActionHandler
+from cfn_sphere.exceptions import CfnSphereException
+from boto.exception import NoAuthHandlerFound
 
 LOGGER = get_logger(root=True)
 
 
 def get_current_account_alias():
-    return boto.connect_iam().get_account_alias().account_aliases[0]
+    try:
+        return boto.connect_iam().get_account_alias().account_aliases[0]
+    except NoAuthHandlerFound as e:
+        click.echo("Authentication error! Please check credentials: {0}".format(e))
+        sys.exit(1)
 
 
 def user_input_handler(message, type):
@@ -42,10 +48,13 @@ def sync(filename, debug, confirm):
         try:
             working_dir = os.path.dirname(os.path.realpath(filename))
 
-            stack_config = Config(filename)
-            StackActionHandler(stack_config, working_dir, user_input_handler).create_or_update_stacks()
+            config = Config(filename)
+            StackActionHandler(config, working_dir, user_input_handler).create_or_update_stacks()
+        except CfnSphereException as e:
+            LOGGER.error("Sync failed, {0}".format(e))
+            sys.exit(1)
         except Exception as e:
-            LOGGER.error("Error syncing {0}:".format(filename))
+            LOGGER.error("Sync failed with unexpected error:".format(e))
             LOGGER.exception(e)
             sys.exit(1)
 

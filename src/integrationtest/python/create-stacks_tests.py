@@ -1,10 +1,3 @@
-__author__ = 'mhoyer'
-
-import os
-from cfn_sphere.main import StackActionHandler
-from cfn_sphere.config import Config
-
-
 # class CreateStacksTest(object):
 #
 #     def test_sync_creates_stacks(self):

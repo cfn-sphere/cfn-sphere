@@ -1,16 +1,21 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Test Security Group"
 Parameters:
+  exposeTopicArn:
+    Description: "Our expose topic arn"
+    Type: "String"
   subnetID:
     Description: "Target VPC id"
     Type: "AWS::EC2::Subnet::Id"
   securityGroupID:
     Description: "Target VPC id"
     Type: "AWS::EC2::VPC::Id"
-  sshKeyName:
+  appVersion:
     Description: "Target VPC id"
     Type: "String"
 Resources:
+  exposeQueue:
+    Type: "AWS::SQS::Queue"
   WebServerInstance:
     Type: "AWS::EC2::Instance"
     Properties:
@@ -24,12 +29,16 @@ Resources:
       KeyName:
         Ref: "sshKeyName"
       @TaupageUserData:
-        application_id:
-          Ref: "AWS::StackName"
-        application_version:
-          Ref: dockerImageVersion
+        application_id: "Ref::AWS::StackName"
+        application_version: "Ref::appVersion"
         environment:
-          SSO_KEY:
-            Ref: mySsoKey
+          QUEUE: "GetAttr::exposeQueue:Url"
+PostCustomResources:
+  exposeTopicSubscription:
+    Type: "SNS::Subscription"
+    Properties:
+      TopicArn:
+        Ref: exposeTopicArn
+      QueueName: "exposeQueue"
 
 

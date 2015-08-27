@@ -6,7 +6,8 @@ from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger
-from cfn_sphere.cloudformation.template import CloudFormationTemplate
+from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
+from cfn_sphere.exceptions import CfnStackActionFailedException
 
 
 class CloudFormation(object):
@@ -43,15 +44,13 @@ class CloudFormation(object):
     def get_stack(self, stack_name):
         return self.conn.describe_stacks(stack_name)[0]
 
-    def stack_is_in_good_state(self, stack_name):
+    def validate_stack_is_ready_for_updates(self, stack_name):
         stack = self.get_stack(stack_name)
-        if stack.stack_status in ["CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE",
-                                  "UPDATE_ROLLBACK_COMPLETE"]:
-            return True
-        else:
-            self.logger.error("Stack {0} is in {1} state, because of: {2}".format(stack.stack_name, stack.stack_status,
-                                                                                  stack.stack_status_reason))
-            return False
+        valid_states = ["CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"]
+
+        if stack.stack_status not in valid_states:
+            raise CfnStackActionFailedException(
+                "Stack {0} is in '{1}' state.".format(stack.stack_name, stack.stack_status))
 
     def get_stack_state(self, stack_name):
         stack = self.conn.describe_stacks(stack_name)
@@ -61,28 +60,27 @@ class CloudFormation(object):
         assert isinstance(template, CloudFormationTemplate)
         try:
             self.logger.info(
-                "Creating stack {0} from template {1} with parameters: {2}".format(stack_name, template.url,
+                "Creating stack {0} from template {1} with parameters: {2}".format(stack_name, template.name,
                                                                                    parameters))
             self.conn.create_stack(stack_name,
-                                   template_body=json.dumps(template.get_template_body_dict()),
+                                   template_body=template.get_template_json(),
                                    parameters=parameters,
                                    capabilities=['CAPABILITY_IAM'])
             self.wait_for_stack_action_to_complete(stack_name, "create")
             self.logger.info("Create completed for {0}".format(stack_name))
         except BotoServerError as e:
-            self.logger.error(
+            raise CfnStackActionFailedException(
                 "Could not create stack {0}. Cloudformation API response: {1}".format(stack_name, e.message))
-            raise
 
     def update_stack(self, stack_name, template, parameters):
         assert isinstance(template, CloudFormationTemplate)
         try:
             self.logger.info(
-                "Updating stack {0} from template {1} with parameters: {2}".format(stack_name, template.url,
+                "Updating stack {0} from template {1} with parameters: {2}".format(stack_name, template.name,
                                                                                    parameters))
 
             self.conn.update_stack(stack_name,
-                                   template_body=json.dumps(template.get_template_body_dict()),
+                                   template_body=template.get_template_json(),
                                    parameters=parameters,
                                    capabilities=['CAPABILITY_IAM'])
 
@@ -95,8 +93,7 @@ class CloudFormation(object):
                 self.logger.info("Nothing to do: {0}.".format(error_message))
             else:
                 error_code = error.get("Code")
-                self.logger.error("Stack '{0}' does not exist.".format(stack_name))
-                raise Exception("{0}: {1}.".format(error_code, error_message))
+                raise CfnStackActionFailedException("{0}: {1}.".format(error_code, error_message))
 
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
 
@@ -117,14 +114,16 @@ class CloudFormation(object):
                             if event.resource_status == expected_event:
                                 return event
                             if event.resource_status.endswith("_FAILED"):
-                                raise Exception("Stack is in {0} state".format(event.resource_status))
+                                raise CfnStackActionFailedException(
+                                    "Stack is in {0} state".format(event.resource_status))
                             if event.resource_status.startswith("ROLLBACK_"):
-                                raise Exception("Rollback occured")
+                                raise CfnStackActionFailedException("Rollback occured")
                         else:
                             self.logger.info(event)
 
             time.sleep(10)
-        raise Exception("Timeout occurred waiting for events: '{0}' on stack {1}".format(expected_event, stack_name))
+        raise CfnStackActionFailedException(
+            "Timeout occurred waiting for events: '{0}' on stack {1}".format(expected_event, stack_name))
 
     def wait_for_stack_action_to_complete(self, stack_name, action, timeout=600):
 

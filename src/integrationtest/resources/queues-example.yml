@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Test Security Group"
+Parameters:
+  exposeTopicArn:
+    Description: "Our expose topic arn"
+    Type: "String"
+Resources:
+  exposeQueue:
+    Type: "AWS::SQS::Queue"
+PostCustomResources:
+  exposeTopicSubscription:
+    Type: "Custom::SNS::Subscription"
+    Properties:
+      TopicArn:
+        Ref: exposeTopicArn
+      TopicRegion: "us-east-1"
+      QueueResourceName: "exposeQueue"

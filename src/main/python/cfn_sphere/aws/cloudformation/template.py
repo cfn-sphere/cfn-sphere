@@ -1,48 +1,29 @@
-import json
 import os
+import json
 import yaml
 from boto import connect_s3
 from cfn_sphere.util import get_logger
-from cfn_sphere.s3 import S3
+from cfn_sphere.aws.s3 import S3
+from cfn_sphere.exceptions import TemplateErrorException
 
 
-class NoTemplateException(Exception):
-    pass
+class CloudFormationTemplateLoader(object):
 
-
-class CloudFormationTemplate(object):
-    def __init__(self, template_url, template_body=None, working_dir=None):
-        self.logger = get_logger()
-
-        self.working_dir = working_dir
-        self.url = template_url
-        self.body_dict = template_body
-
-        if not self.body_dict:
-            self.body_dict = self._load_template(self.url)
-
-        self.transform_template_body()
-
-    def get_template_body_dict(self):
-        return self.body_dict
-
-    def _load_template(self, url):
-        self.logger.debug("Working in {0}".format(os.getcwd()))
+    @classmethod
+    def get_template_dict_from_url(cls, url):
         if url.lower().startswith("s3://"):
-            return self._s3_get_template(url)
+            return CloudFormationTemplate(cls._s3_get_template(url), os.path.basename(url))
         else:
-            return self._fs_get_template(url)
+            return CloudFormationTemplate(cls._fs_get_template(url), os.path.basename(url))
 
-    def _fs_get_template(self, url):
+    @staticmethod
+    def _fs_get_template(url):
         """
         Load cfn template from filesyste
 
         :param url: str template path
         :return: dict repr of cfn template
         """
-
-        if not os.path.isabs(url) and self.working_dir:
-            url = os.path.join(self.working_dir, url)
 
         try:
             with open(url, 'r') as template_file:
@@ -51,9 +32,9 @@ class CloudFormationTemplate(object):
                 if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                     return yaml.load(template_file.read())
         except ValueError as e:
-            raise NoTemplateException("Could not load template from {0}: {1}".format(url, e))
+            raise TemplateErrorException("Could not load template from {0}: {1}".format(url, e))
         except IOError as e:
-            raise NoTemplateException("Could not load template from {0}: {1}".format(url, e))
+            raise TemplateErrorException("Could not load template from {0}: {1}".format(url, e))
 
     @staticmethod
     def _s3_get_template(url):
@@ -64,7 +45,34 @@ class CloudFormationTemplate(object):
             if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                 return yaml.load(s3.get_contents_from_url(url))
         except Exception as e:
-            raise NoTemplateException(e)
+            raise TemplateErrorException(e)
+
+
+class CloudFormationTemplate(object):
+    def __init__(self, body_dict, name):
+        self.logger = get_logger()
+        self.name = name
+        self.body_dict = body_dict
+        self.template_format_version = body_dict.get('AWSTemplateFormatVersion', "2010-09-09")
+        self.description = body_dict.get('Description', "")
+        self.parameters = body_dict.get('Parameters', {})
+        self.resources = body_dict.get('Resources', {})
+        self.outputs = body_dict.get('Outputs', {})
+        self.post_custom_resources = body_dict.get('PostCustomResources', {})
+
+        self.transform_template_body()
+
+    def get_template_body_dict(self):
+        return {
+            'AWSTemplateFormatVersion': self.template_format_version,
+            'Description': self.description,
+            'Parameters': self.parameters,
+            'Resources': self.resources,
+            'Outputs': self.outputs
+        }
+
+    def get_template_json(self):
+        return json.dumps(self.get_template_body_dict())
 
     def transform_template_body(self):
         # Could be a nice dynamic import solution if anybody wants custom handlers

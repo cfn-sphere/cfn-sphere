@@ -26,5 +26,11 @@
         "KeyName": {"Ref": "sshKeyName"}
       }
     }
+  },
+  "PostCustomResources": {
+    "foo":
+    {
+      "foo": "foo"
+    }
   }
 }

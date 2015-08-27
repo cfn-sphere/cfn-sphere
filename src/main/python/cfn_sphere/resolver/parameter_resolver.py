@@ -1,5 +1,5 @@
 from cfn_sphere.util import get_logger
-from cfn_sphere.cloudformation.api import CloudFormation
+from cfn_sphere.aws.cloudformation.api import CloudFormation
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 
 
@@ -57,6 +57,7 @@ class ParameterResolver(object):
         except Exception:
             raise ParameterResolverException("Could not get a valid value for {0}".format(key))
 
+    # TODO: should return a dict instead of list
     def resolve_parameter_values(self, parameters):
         param_list = []
         for key, value in parameters.items():
