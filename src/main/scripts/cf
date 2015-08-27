@@ -51,10 +51,10 @@ def sync(filename, debug, confirm):
             config = Config(filename)
             StackActionHandler(config).create_or_update_stacks()
         except CfnSphereException as e:
-            LOGGER.error("Sync failed, {0}".format(e))
+            LOGGER.error("Failed, {0}".format(e))
             sys.exit(1)
         except Exception as e:
-            LOGGER.error("Sync failed with unexpected error".format(e))
+            LOGGER.error("Failed with unexpected error".format(e))
             LOGGER.exception(e)
             sys.exit(1)
 
