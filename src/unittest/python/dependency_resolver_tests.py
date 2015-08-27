@@ -45,12 +45,10 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertFalse(DependencyResolver.is_parameter_reference(True))
 
     def test_get_stack_order_returns_a_valid_order(self):
-        stacks = {'default-sg': StackConfig({'parameters': {'a': 'Ref::vpc.id'}}),
-                  'app1': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
-                  'app2': StackConfig(
-                      {'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
-                  'vpc': StackConfig(
-                      {'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
+        stacks = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id'}}),
+                  'app1': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
+                  'app2': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'vpc': StackConfig({'template-url': 'horst.yml', 'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 
         result = ['vpc', 'default-sg', 'app1', 'app2']
@@ -58,12 +56,10 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertEqual(result, DependencyResolver.get_stack_order(stacks))
 
     def test_get_stack_order_includes_independent_stacks(self):
-        stacks = {'default-sg': StackConfig({}),
-                  'app1': StackConfig({'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
-                  'app2': StackConfig(
-                      {'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
-                  'vpc': StackConfig(
-                      {'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
+        stacks = {'default-sg': StackConfig({'template-url': 'horst.yml'}),
+                  'app1': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
+                  'app2': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'vpc': StackConfig({'template-url': 'horst.yml', 'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 
         result = 4
