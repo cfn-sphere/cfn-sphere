@@ -1,10 +1,10 @@
+from cfn_sphere.exceptions import NoConfigException
 from yaml.scanner import ScannerError
 import yaml
 import os
 
 
-class NoConfigException(Exception):
-    pass
+
 
 
 class Config(object):
@@ -16,6 +16,9 @@ class Config(object):
         else:
             self.dict = self._read_config_file(config_file)
             self.working_dir = os.path.dirname(os.path.realpath(config_file))
+
+        if not isinstance(self.dict, dict):
+            raise NoConfigException("Config has invalid content, must be of type dict/yaml")
 
         self.region = self.dict.get('region')
         self.stacks = self._parse_stack_configs(self.dict)

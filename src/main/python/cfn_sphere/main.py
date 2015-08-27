@@ -8,14 +8,13 @@ from cfn_sphere.util import get_logger
 
 
 class StackActionHandler(object):
-    def __init__(self, config, working_dir, user_input_handler=None):
+    def __init__(self, config, working_dir):
         self.working_dir = working_dir
         self.logger = get_logger()
         self.config = config
         self.region = config.region
         self.cfn = CloudFormation(region=self.region)
         self.parameter_resolver = ParameterResolver(region=self.region)
-        self.user_input_handler = user_input_handler
 
     def create_or_update_stacks(self):
         existing_stacks = self.cfn.get_stack_names()

@@ -11,3 +11,7 @@ class CfnStackActionFailedException(CfnSphereException):
 
 class TemplateErrorException(CfnSphereException):
     pass
+
+
+class NoConfigException(CfnSphereException):
+    pass

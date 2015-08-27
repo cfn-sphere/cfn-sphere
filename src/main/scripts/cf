@@ -9,7 +9,7 @@ from cfn_sphere.util import convert_file, get_logger
 from cfn_sphere.config import Config
 from cfn_sphere.main import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
-from boto.exception import NoAuthHandlerFound
+from boto.exception import NoAuthHandlerFound, BotoServerError
 
 LOGGER = get_logger(root=True)
 
@@ -20,10 +20,9 @@ def get_current_account_alias():
     except NoAuthHandlerFound as e:
         click.echo("Authentication error! Please check credentials: {0}".format(e))
         sys.exit(1)
-
-
-def user_input_handler(message, type):
-    return click.prompt(message, type=type)
+    except BotoServerError as e:
+        click.echo("AWS API Error: {0}".format(e))
+        sys.exit(1)
 
 
 @click.group(help="This tool manages AWS CloudFormation templates "
@@ -49,7 +48,7 @@ def sync(filename, debug, confirm):
             working_dir = os.path.dirname(os.path.realpath(filename))
 
             config = Config(filename)
-            StackActionHandler(config, working_dir, user_input_handler).create_or_update_stacks()
+            StackActionHandler(config, working_dir).create_or_update_stacks()
         except CfnSphereException as e:
             LOGGER.error("Sync failed, {0}".format(e))
             sys.exit(1)
