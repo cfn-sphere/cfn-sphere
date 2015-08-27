@@ -6,7 +6,7 @@ from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger
-from cfn_sphere.cloudformation.template import CloudFormationTemplate
+from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 from cfn_sphere.exceptions import CfnStackActionFailedException
 
 

@@ -1,8 +1,9 @@
 import json
+
 import yaml
 from boto import connect_s3
 from cfn_sphere.util import get_logger
-from cfn_sphere.s3 import S3
+from cfn_sphere.aws.s3 import S3
 
 
 class NoTemplateException(Exception):

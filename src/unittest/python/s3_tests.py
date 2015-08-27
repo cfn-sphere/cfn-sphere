@@ -1,5 +1,6 @@
 import unittest2
-from cfn_sphere.s3 import S3
+
+from cfn_sphere.aws.s3 import S3
 
 
 class S3Tests(unittest2.TestCase):

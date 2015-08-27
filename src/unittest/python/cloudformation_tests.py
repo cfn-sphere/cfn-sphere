@@ -2,8 +2,8 @@ import datetime
 import unittest2
 from datetime import timedelta
 from boto.cloudformation.stack import StackEvent
-from cfn_sphere.cloudformation.api import CloudFormation
-from cfn_sphere.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader, NoTemplateException
+from cfn_sphere.aws.cloudformation.api import CloudFormation
+from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader, NoTemplateException
 from mock import patch, Mock
 
 
@@ -80,7 +80,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
 
 
 class CloudFormationTemplateLoaderTests(unittest2.TestCase):
-    @patch("cfn_sphere.cloudformation.template.CloudFormationTemplateLoader._fs_get_template")
+    @patch("cfn_sphere.aws.cloudformation.template.CloudFormationTemplateLoader._fs_get_template")
     def test_load_template_calls_fs_get_template_for_fs_url(self, mock):
         url = "/tmp/template.json"
 
@@ -89,7 +89,7 @@ class CloudFormationTemplateLoaderTests(unittest2.TestCase):
 
         mock.assert_called_with(url)
 
-    @patch("cfn_sphere.cloudformation.template.CloudFormationTemplateLoader._s3_get_template")
+    @patch("cfn_sphere.aws.cloudformation.template.CloudFormationTemplateLoader._s3_get_template")
     def test_load_template_calls_s3_get_template_for_s3_url(self, mock):
         url = "s3://my-bucket.amazon.com/foo.json"
 
@@ -109,7 +109,7 @@ class CloudFormationTemplateLoaderTests(unittest2.TestCase):
 
 class CloudFormationApiTests(unittest2.TestCase):
 
-    @patch('cfn_sphere.cloudformation.api.cloudformation')
+    @patch('cfn_sphere.aws.cloudformation.api.cloudformation')
     def test_wait_for_stack_event_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
@@ -135,7 +135,7 @@ class CloudFormationApiTests(unittest2.TestCase):
 
         self.assertEqual(timestamp, event.timestamp)
 
-    @patch('cfn_sphere.cloudformation.api.cloudformation')
+    @patch('cfn_sphere.aws.cloudformation.api.cloudformation')
     def test_wait_for_stack_event_returns_on_update_complete(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
@@ -158,7 +158,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         cfn.wait_for_stack_events("foo", "UPDATE_COMPLETE", timestamp - timedelta(seconds=10),
                                   timeout=10)
 
-    @patch('cfn_sphere.cloudformation.api.cloudformation')
+    @patch('cfn_sphere.aws.cloudformation.api.cloudformation')
     def test_wait_for_stack_event_raises_exception_on_rollback(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
@@ -182,7 +182,7 @@ class CloudFormationApiTests(unittest2.TestCase):
             cfn.wait_for_stack_events("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
                                       timeout=10)
 
-    @patch('cfn_sphere.cloudformation.api.cloudformation')
+    @patch('cfn_sphere.aws.cloudformation.api.cloudformation')
     def test_wait_for_stack_event_raises_exception_on_update_failure(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 

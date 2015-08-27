@@ -4,8 +4,8 @@ import yaml
 from textwrap import dedent
 from cfn_sphere.custom_resources import CustomResourceHandler
 from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.cloudformation.stack import CloudFormationStack
-from cfn_sphere.cloudformation.template import CloudFormationTemplate
+from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
+from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 
 
 class CustomResourceHandlerTests(unittest2.TestCase):

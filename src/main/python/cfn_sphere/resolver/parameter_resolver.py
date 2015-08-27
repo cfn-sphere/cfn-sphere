@@ -1,5 +1,5 @@
 from cfn_sphere.util import get_logger
-from cfn_sphere.cloudformation.api import CloudFormation
+from cfn_sphere.aws.cloudformation.api import CloudFormation
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 
 
