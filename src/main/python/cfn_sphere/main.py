@@ -1,12 +1,10 @@
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 from cfn_sphere.resolver.parameter_resolver import ParameterResolver
 from cfn_sphere.cloudformation.api import CloudFormation
-from cfn_sphere.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader
+from cfn_sphere.cloudformation.template import CloudFormationTemplateLoader
 from cfn_sphere.cloudformation.stack import CloudFormationStack
 from cfn_sphere.custom_resources import CustomResourceHandler
 from cfn_sphere.util import get_logger
-import os
-
 
 
 class StackActionHandler(object):

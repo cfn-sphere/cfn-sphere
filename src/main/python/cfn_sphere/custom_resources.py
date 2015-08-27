@@ -9,7 +9,7 @@ class CustomResourceHandler(object):
         custom_resources_dict = stack.template.post_custom_resources
         if not custom_resources_dict:
             return
-            
+
         for resource, resource_description in custom_resources_dict.items():
             if resource_description['Type'] == "Custom::SNS::Subscription":
                 cls.handle_sns_subscription(resource_description, stack)
@@ -25,7 +25,7 @@ class CustomResourceHandler(object):
         sns_conn = sns.connect_to_region(topic_region)
 
         queues = sqs_conn.get_all_queues(prefix=queue_prefix)
-        if (len(queues) != 1):
+        if len(queues) != 1:
             raise CfnSphereException(
                 "Found {0} queues matching the prefix: {1}. Should be 1.".format(len(queues), queue_prefix))
 

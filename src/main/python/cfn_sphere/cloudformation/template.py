@@ -1,5 +1,4 @@
 import json
-import os
 import yaml
 from boto import connect_s3
 from cfn_sphere.util import get_logger
