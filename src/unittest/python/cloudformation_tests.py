@@ -3,7 +3,8 @@ import unittest2
 from datetime import timedelta
 from boto.cloudformation.stack import StackEvent
 from cfn_sphere.aws.cloudformation.api import CloudFormation
-from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader, NoTemplateException
+from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader
+from cfn_sphere.exceptions import TemplateErrorException
 from mock import patch, Mock
 
 
@@ -103,7 +104,7 @@ class CloudFormationTemplateLoaderTests(unittest2.TestCase):
 
         loader = CloudFormationTemplateLoader
 
-        with self.assertRaises(NoTemplateException):
+        with self.assertRaises(TemplateErrorException):
             loader.get_template_dict_from_url(url)
 
 
