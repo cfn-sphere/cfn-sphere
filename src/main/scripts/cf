@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import os
 import sys
 import boto
 import click
@@ -22,6 +21,9 @@ def get_current_account_alias():
         sys.exit(1)
     except BotoServerError as e:
         click.echo("AWS API Error: {0}".format(e))
+        sys.exit(1)
+    except Exception as e:
+        click.echo("Unknown error occurred loading users account alias: {0}".format(e))
         sys.exit(1)
 
 
@@ -45,15 +47,14 @@ def sync(filename, debug, confirm):
             'This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
                 get_current_account_alias()), abort=True):
         try:
-            working_dir = os.path.dirname(os.path.realpath(filename))
 
             config = Config(filename)
-            StackActionHandler(config, working_dir).create_or_update_stacks()
+            StackActionHandler(config).create_or_update_stacks()
         except CfnSphereException as e:
             LOGGER.error("Sync failed, {0}".format(e))
             sys.exit(1)
         except Exception as e:
-            LOGGER.error("Sync failed with unexpected error:".format(e))
+            LOGGER.error("Sync failed with unexpected error".format(e))
             LOGGER.exception(e)
             sys.exit(1)
 

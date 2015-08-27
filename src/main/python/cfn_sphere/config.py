@@ -57,7 +57,11 @@ class StackConfig(object):
     def __init__(self, stack_config_dict, working_dir=None):
         self.parameters = stack_config_dict.get('parameters', {})
 
-        self.template_url = stack_config_dict.get('template-url')
+        try:
+            self.template_url = stack_config_dict['template-url']
+        except KeyError as e:
+            raise NoConfigException("Stack config needs a {0} key".format(e))
+
         if working_dir:
             self.template_url = os.path.join(working_dir, self.template_url)
 

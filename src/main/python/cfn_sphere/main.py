@@ -8,8 +8,7 @@ from cfn_sphere.util import get_logger
 
 
 class StackActionHandler(object):
-    def __init__(self, config, working_dir):
-        self.working_dir = working_dir
+    def __init__(self, config):
         self.logger = get_logger()
         self.config = config
         self.region = config.region
