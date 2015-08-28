@@ -78,20 +78,62 @@ class CloudFormationTemplate(object):
         # Could be a nice dynamic import solution if anybody wants custom handlers
         self.transform_dict(self.body_dict, {'@TaupageUserData': self.render_taupage_user_data})
 
-    @staticmethod
-    def render_taupage_user_data(dict_value):
-        assert isinstance(dict_value, dict), "Value of 'TaupageUserData' must be of type dict"
+    @classmethod
+    def render_taupage_user_data(cls, taupage_user_data_dict):
+        assert isinstance(taupage_user_data_dict, dict), "Value of 'TaupageUserData' must be of type dict"
 
-        kv_pairs = ['#taupage-ami-config']
-
-        for key in sorted(dict_value.keys()):
-            kv_pairs.append({'Fn::Join:': [': ', [key, dict_value[key]]]})
+        lines = ['#taupage-ami-config']
+        lines.extend(cls.transform_userdata_dict(taupage_user_data_dict))
 
         return "UserData", {
             'Fn::Base64': {
-                'Fn::Join': ['\n', kv_pairs]
+                'Fn::Join': ['\n', lines]
             }
         }
+
+    @classmethod
+    def transform_userdata_dict(cls, userdata_dict, level=0):
+        parameters = []
+
+        for key, value in userdata_dict.items():
+            # key indentation
+            if level > 0:
+                key = '  ' * level + str(key)
+
+            # recursion for dict values
+            if isinstance(value, dict):
+                parameters.extend(cls.transform_userdata_dict(value, level + 1))
+                parameters.append(key + ':')
+
+            elif isinstance(value, str):
+                if value.lower().startswith('@ref::'):
+                    value = cls.transform_reference_string(value)
+                elif value.lower().startswith('@getattr::'):
+                    value = cls.transform_getattr_string(value)
+
+                parameters.append(cls.transform_kv_to_cfn_join(key, value))
+
+            else:
+                parameters.append(cls.transform_kv_to_cfn_join(key, value))
+
+        parameters.reverse()
+        return parameters
+
+    @staticmethod
+    def transform_reference_string(value):
+        return {'Ref': value[6:]}
+
+    @staticmethod
+    def transform_getattr_string(value):
+        elements = value.split('@', 3)
+        resource = elements[2]
+        attribute = elements[3]
+
+        return {'Fn::GetAtt': [resource, attribute]}
+
+    @staticmethod
+    def transform_kv_to_cfn_join(key, value):
+        return {'Fn::Join:': [': ', [key, value]]}
 
     @classmethod
     def transform_dict(cls, dictionary, key_handlers):
@@ -107,7 +149,7 @@ class CloudFormationTemplate(object):
                     dictionary[new_key] = new_value
                     dictionary.pop(key)
                 else:
-                    raise Exception("No handler defined for key {0}".format(key))
+                    raise TemplateErrorException("No handler defined for key {0}".format(key))
 
 if __name__ == "__main__":
     s3_conn = connect_s3()
