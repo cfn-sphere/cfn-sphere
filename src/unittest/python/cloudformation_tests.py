@@ -15,8 +15,8 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         function_mock = Mock()
         function_mock.return_value = 'foo_new', 'bla_new'
 
-        mapping = {'@foo': function_mock}
-        dict = {'a': {'b': {'@foo': 'bla'}}}
+        mapping = {'@foo@': function_mock}
+        dict = {'a': {'b': {'@foo@': 'bla'}}}
 
         CloudFormationTemplate.transform_dict(dict, mapping)
 
@@ -31,7 +31,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
             CloudFormationTemplate.transform_dict(dict, mapping)
 
     def test_transform_userdata_dict_creates_cfn_reference(self):
-        result = CloudFormationTemplate.transform_userdata_dict({'my-key': '@ref::my-value'})
+        result = CloudFormationTemplate.transform_userdata_dict({'my-key': '|ref|my-value'})
         self.assertEqual([{'Fn::Join:': [': ', ['my-key', {'Ref': 'my-value'}]]}], result)
 
     def test_transform_userdata_dict_ignores_values_without_keyword(self):
@@ -47,20 +47,20 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         self.assertEqual([{'Fn::Join:': [': ', ['my-key', 3]]}], result)
 
     def test_transform_reference_string_creates_valid_cfn_reference(self):
-        result = CloudFormationTemplate.transform_reference_string('@ref::my-value')
+        result = CloudFormationTemplate.transform_reference_string('|ref|my-value')
         self.assertEqual({'Ref': 'my-value'}, result)
 
     def test_transform_getattr_string_creates_valid_cfn_getattr(self):
-        result = CloudFormationTemplate.transform_getattr_string('@getatt@resource@attribute')
+        result = CloudFormationTemplate.transform_getattr_string('|getatt|resource|attribute')
         self.assertEqual({'Fn::GetAtt': ['resource','attribute' ]}, result)
 
     def test_render_taupage_user_data(self):
         input = {
-            "application_id": "@Ref::AWS::StackName",
-            "application_version": "@Ref::dockerImageVersion",
+            "application_id": "|Ref|AWS::StackName",
+            "application_version": "|Ref|dockerImageVersion",
             "environment": {
-                "SSO_KEY": "@Ref::mySsoKey",
-                "QUEUE_URL": "@Ref::myQueueUrl"
+                "SSO_KEY": "|Ref|mySsoKey",
+                "QUEUE_URL": "|Ref|myQueueUrl"
             }
         }
         expected = {

@@ -76,7 +76,7 @@ class CloudFormationTemplate(object):
 
     def transform_template_body(self):
         # Could be a nice dynamic import solution if anybody wants custom handlers
-        self.transform_dict(self.body_dict, {'@TaupageUserData': self.render_taupage_user_data})
+        self.transform_dict(self.body_dict, {'@TaupageUserData@': self.render_taupage_user_data})
 
     @classmethod
     def render_taupage_user_data(cls, taupage_user_data_dict):
@@ -106,9 +106,9 @@ class CloudFormationTemplate(object):
                 parameters.append(key + ':')
 
             elif isinstance(value, str):
-                if value.lower().startswith('@ref::'):
+                if value.lower().startswith('|ref|'):
                     value = cls.transform_reference_string(value)
-                elif value.lower().startswith('@getattr::'):
+                elif value.lower().startswith('|getatt|'):
                     value = cls.transform_getattr_string(value)
 
                 parameters.append(cls.transform_kv_to_cfn_join(key, value))
@@ -121,11 +121,11 @@ class CloudFormationTemplate(object):
 
     @staticmethod
     def transform_reference_string(value):
-        return {'Ref': value[6:]}
+        return {'Ref': value[5:]}
 
     @staticmethod
     def transform_getattr_string(value):
-        elements = value.split('@', 3)
+        elements = value.split('|', 3)
         resource = elements[2]
         attribute = elements[3]
 

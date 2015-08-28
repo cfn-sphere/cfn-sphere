@@ -28,11 +28,11 @@ Resources:
       InstanceType: "t2.micro"
       KeyName:
         Ref: "sshKeyName"
-      @TaupageUserData:
-        application_id: "@Ref::AWS::StackName"
-        application_version: "@Ref::appVersion"
+      @TaupageUserData@:
+        application_id: "|REF|AWS::StackName"
+        application_version: "|Ref|appVersion"
         environment:
-          QUEUE: "@GetAttr::exposeQueue:Url"
+          QUEUE: "|GetAttr|exposeQueue|Url"
 PostCustomResources:
   exposeTopicSubscription:
     Type: "SNS::Subscription"
