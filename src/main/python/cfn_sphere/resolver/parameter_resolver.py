@@ -1,5 +1,5 @@
 from cfn_sphere.util import get_logger
-from cfn_sphere.aws.cloudformation.api import CloudFormation
+from cfn_sphere.aws.cloudformation.cfn_api import CloudFormation
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 from boto.exception import BotoServerError
 
@@ -55,12 +55,29 @@ class ParameterResolver(object):
             artifact = artifacts[key]
             assert artifact, "No value found"
             return artifact
-        except Exception:
-            raise ParameterResolverException("Could not get a valid value for {0}".format(key))
+        except Exception as e:
+            raise ParameterResolverException("Could not get a valid value for {0}. {1}".format(key, e))
 
     @staticmethod
     def is_keep_value(value):
-        return value.lower() == '@keep@'
+        return value.lower().startswith('@keeporuse@')
+
+    @staticmethod
+    def get_default_from_keep_value(value):
+        return value.split('@', 2)[2]
+
+    def get_actual_value(self, key, value, stack_name):
+        try:
+            actual_stack_parameters = self.cfn.get_stack_parameters_dict(stack_name)
+            actual_value = actual_stack_parameters.get(key, None)
+            if actual_value:
+                self.logger.info("Will keep '{0}' as actual value for {1}".format(actual_value, key))
+                return actual_value
+            else:
+                return self.get_default_from_keep_value(value)
+        except BotoServerError:
+            self.logger.info("Will use default value for {0}".format(key))
+            return self.get_default_from_keep_value(value)
 
     def resolve_parameter_values(self, parameters_dict, stack_name):
         parameters = {}
@@ -74,31 +91,16 @@ class ParameterResolver(object):
 
             elif isinstance(value, str):
 
-                self.logger.debug("String parameter found for {0}".format(key))
-
                 if DependencyResolver.is_parameter_reference(value):
                     stripped_key = DependencyResolver.get_parameter_key_from_ref_value(value)
-                    self.logger.debug(
-                        "Resolved artifact value: ".format(self.get_output_value(stripped_key)))
                     parameters[key] = self.get_output_value(stripped_key)
 
                 elif self.is_keep_value(value):
-                    try:
-                        actual_stack_parameters = self.cfn.get_stack_parameters_dict(stack_name)
-                        actual_value = actual_stack_parameters.get(key, None)
-                        if actual_value:
-                            self.logger.info("Will keep '{0}' as actual value for {1}".format(actual_value, key))
-                            parameters[key] = actual_value
-                    except BotoServerError as e:
-                        self.logger.info(
-                            "Stack {0} seems to be non-existing. Could not find an actual value for {0}".format(
-                                stack_name, key))
+                    parameters[key] = self.get_actual_value(key, value, stack_name)
 
                 else:
                     parameters[key] = value
             elif isinstance(value, bool):
-
-                self.logger.debug("Boolean parameter found for {0}".format(key))
                 parameters[key] = str(value).lower()
             elif isinstance(value, int):
                 parameters[key] = str(value)

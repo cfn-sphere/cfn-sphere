@@ -1,6 +1,6 @@
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 from cfn_sphere.resolver.parameter_resolver import ParameterResolver
-from cfn_sphere.aws.cloudformation.api import CloudFormation
+from cfn_sphere.aws.cloudformation.cfn_api import CloudFormation
 from cfn_sphere.aws.cloudformation.template import CloudFormationTemplateLoader
 from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.custom_resources import CustomResourceHandler
