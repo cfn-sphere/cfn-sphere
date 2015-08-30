@@ -40,7 +40,7 @@ class CustomResourceHandlerTests(unittest2.TestCase):
         self.assertEqual('my-super-duper-arn', result)
 
     def test_extract_topic_arn_by_parameter_reference(self):
-        parameters = [('exposeTopicArn', 'my-super-duper-arn')]
+        parameters = {'exposeTopicArn': 'my-super-duper-arn'}
         resource_description = {'Type': 'Custom::SNS::Subscription',
                                 'Properties': {'TopicArn': {'Ref': 'exposeTopicArn'},
                                                'QueueArn': {'Ref': 'exposeQueue'}}}
@@ -49,7 +49,7 @@ class CustomResourceHandlerTests(unittest2.TestCase):
         self.assertEqual('my-super-duper-arn', result)
 
     def test_extract_topic_arn_by_parameter_reference_raises_exception_on_invalid_reference(self):
-        parameters = [('exposeTopicArn', 'my-super-duper-arn')]
+        parameters = {'exposeTopicArn': 'my-super-duper-arn'}
         resource_description = {'Type': 'Custom::SNS::Subscription',
                                 'Properties': {'TopicArn': {'Ref': 'exposeTopicArnWithTypo'},
                                                'QueueArn': {'Ref': 'exposeQueue'}}}

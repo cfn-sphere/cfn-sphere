@@ -3,6 +3,7 @@ Description: "Test Security Group"
 Parameters:
   exposeTopicArn:
     Description: "Our expose topic arn"
+    Default: "arn:aws:sns:us-east-1:522480313337:unreliable-town-clock-topic-178F1OQACHTYF"
     Type: "String"
 Resources:
   exposeQueue:

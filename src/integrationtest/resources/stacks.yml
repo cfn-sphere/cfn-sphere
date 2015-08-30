@@ -3,4 +3,4 @@ stacks:
   a-queue:
     template-url: queues-example.yml
     parameters:
-      exposeTopicArn: "arn:aws:sns:us-east-1:522480313337:unreliable-town-clock-topic-178F1OQACHTYF"
+      exposeTopicArn: "@keep@"

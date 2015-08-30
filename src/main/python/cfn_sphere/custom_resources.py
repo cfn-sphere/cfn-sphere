@@ -41,9 +41,9 @@ class CustomResourceHandler(object):
 
             if isinstance(parameter_name, dict):
                 parameter_name = resource_description['Properties']['TopicArn']['Ref']
-                for param, value in parameters:
-                    if param == parameter_name:
-                        return value
+                for key in parameters.keys():
+                    if key == parameter_name:
+                        return parameters[key]
                 raise CfnSphereException("Could not find a parameter value for {0}".format(parameter_name))
             else:
                 return parameter_name

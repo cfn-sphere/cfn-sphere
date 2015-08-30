@@ -56,6 +56,15 @@ class CloudFormation(object):
         stack = self.conn.describe_stacks(stack_name)
         return stack.status
 
+    def get_stack_parameters_dict(self, stack_name):
+        parameters = {}
+        stack = self.get_stack(stack_name)
+
+        for parameter in stack.parameters:
+            parameters[parameter.key] = parameter.value
+
+        return parameters
+
     def create_stack(self, stack_name, template, parameters):
         assert isinstance(template, CloudFormationTemplate)
         try:

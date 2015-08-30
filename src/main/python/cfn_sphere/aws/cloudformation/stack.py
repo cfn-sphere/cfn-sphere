@@ -6,3 +6,6 @@ class CloudFormationStack(object):
         self.parameters = parameters
         self.name = name
         self.region = region
+
+    def get_parameters_list(self):
+        return [(key, value) for key, value in self.parameters.items()]
