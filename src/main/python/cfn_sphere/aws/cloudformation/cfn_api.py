@@ -112,7 +112,10 @@ class CloudFormation(object):
         start = time.time()
         while time.time() < (start + timeout):
 
-            for event in self.conn.describe_stack_events(stack_name):
+            events = self.conn.describe_stack_events(stack_name)
+            events.reverse()
+
+            for event in events:
                 if event.event_id not in seen_event_ids:
                     seen_event_ids.append(event.event_id)
                     if event.timestamp > valid_from_timestamp:
@@ -128,7 +131,11 @@ class CloudFormation(object):
                             if event.resource_status.startswith("ROLLBACK_"):
                                 raise CfnStackActionFailedException("Rollback occured")
                         else:
-                            self.logger.info(event)
+                            if event.resource_status.endswith("_FAILED"):
+                                self.logger.error("Failed to create {0} (Reason: {1})".format(event.logical_resource_id,
+                                                                                              event.resource_status_reason))
+                            else:
+                                self.logger.info(event)
 
             time.sleep(10)
         raise CfnStackActionFailedException(
