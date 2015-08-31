@@ -31,19 +31,19 @@ class CloudFormationTemplateTests(unittest2.TestCase):
 
     def test_transform_userdata_dict_creates_cfn_reference(self):
         result = CloudFormationTemplate.transform_userdata_dict({'my-key': '|ref|my-value'})
-        self.assertEqual([{'Fn::Join:': [': ', ['my-key', {'Ref': 'my-value'}]]}], result)
+        self.assertEqual([{'Fn::Join': [': ', ['my-key', {'Ref': 'my-value'}]]}], result)
 
     def test_transform_userdata_dict_ignores_values_without_keyword(self):
         result = CloudFormationTemplate.transform_userdata_dict({'my-key': 'my-value'})
-        self.assertEqual([{'Fn::Join:': [': ', ['my-key', 'my-value']]}], result)
+        self.assertEqual([{'Fn::Join': [': ', ['my-key', 'my-value']]}], result)
 
     def test_transform_userdata_dict_indents_sub_dicts(self):
         result = CloudFormationTemplate.transform_userdata_dict({'my-key': {'my-sub-key': 'value'}})
-        self.assertEqual(['my-key:', {'Fn::Join:': [': ', ['  my-sub-key', 'value']]}], result)
+        self.assertEqual(['my-key:', {'Fn::Join': [': ', ['  my-sub-key', 'value']]}], result)
 
     def test_transform_userdata_dict_accepts_integer_values(self):
         result = CloudFormationTemplate.transform_userdata_dict({'my-key': 3})
-        self.assertEqual([{'Fn::Join:': [': ', ['my-key', 3]]}], result)
+        self.assertEqual([{'Fn::Join': [': ', ['my-key', 3]]}], result)
 
     def test_transform_reference_string_creates_valid_cfn_reference(self):
         result = CloudFormationTemplate.transform_reference_string('|ref|my-value')
@@ -69,7 +69,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
                     [
                         "#taupage-ami-config",
                         {
-                            "Fn::Join:": [
+                            "Fn::Join": [
                                 ": ",
                                 [
                                     "application_id",
@@ -80,7 +80,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
                             ]
                         },
                         {
-                            "Fn::Join:": [
+                            "Fn::Join": [
                                 ": ",
                                 [
                                     "application_version",
@@ -92,7 +92,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
                         },
                         "environment:",
                         {
-                            "Fn::Join:": [
+                            "Fn::Join": [
                                 ": ",
                                 [
                                     "  QUEUE_URL",
@@ -103,7 +103,7 @@ class CloudFormationTemplateTests(unittest2.TestCase):
                             ]
                         },
                         {
-                            "Fn::Join:": [
+                            "Fn::Join": [
                                 ": ",
                                 [
                                     "  SSO_KEY",
@@ -119,6 +119,8 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplate.render_taupage_user_data(input)
+        import json
+        print json.dumps(value)
         self.assertDictEqual(expected, value)
 
 

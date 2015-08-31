@@ -25,7 +25,7 @@ class CloudFormationTemplateLoader(object):
         :return: dict repr of cfn template
         """
         if not os.path.isabs(url) and working_dir:
-            url = os.path.join(url, working_dir)
+            url = os.path.join(working_dir, url)
 
         try:
             with open(url, 'r') as template_file:
@@ -135,7 +135,7 @@ class CloudFormationTemplate(object):
 
     @staticmethod
     def transform_kv_to_cfn_join(key, value):
-        return {'Fn::Join:': [': ', [key, value]]}
+        return {'Fn::Join': [': ', [key, value]]}
 
     @classmethod
     def transform_dict(cls, dictionary, key_handlers):

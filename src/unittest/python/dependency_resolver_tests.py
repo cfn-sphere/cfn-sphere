@@ -6,48 +6,46 @@ from cfn_sphere.config import StackConfig
 
 class DependencyResolverTests(unittest2.TestCase):
     def test_get_parameter_key_from_ref_value_returns_valid_key(self):
-        self.assertEqual("vpc.id", DependencyResolver.get_parameter_key_from_ref_value("Ref::vpc.id"))
+        self.assertEqual("vpc.id", DependencyResolver.get_parameter_key_from_ref_value("|Ref|vpc.id"))
 
     def test_get_parameter_key_from_ref_value_returns_key_on_lowercase_ref(self):
-        self.assertEqual("vpc.id", DependencyResolver.get_parameter_key_from_ref_value("ref::vpc.id"))
+        self.assertEqual("vpc.id", DependencyResolver.get_parameter_key_from_ref_value("|ref|vpc.id"))
 
     def test_get_parameter_key_from_ref_value_returns_empty_string_on_single_separator(self):
-        self.assertEqual("", DependencyResolver.get_parameter_key_from_ref_value("Ref:vpc.id"))
+        self.assertEqual("", DependencyResolver.get_parameter_key_from_ref_value("Ref|vpc.id"))
 
     def test_get_parameter_key_from_ref_value_returns_empty_string_on_invalid_ref_value(self):
-        self.assertEqual("", DependencyResolver.get_parameter_key_from_ref_value("Ref:vpc.id"))
+        self.assertEqual("", DependencyResolver.get_parameter_key_from_ref_value("|Refvpc.id"))
 
     def test_get_parameter_key_from_ref_value_returns_empty_string_if_none(self):
         self.assertEqual(None, DependencyResolver.get_parameter_key_from_ref_value(None))
 
     def test_is_ref_value_returns_true_for_uppercase_ref(self):
-        self.assertTrue(DependencyResolver.is_parameter_reference("Ref::vpc.id"))
+        self.assertTrue(DependencyResolver.is_parameter_reference("|Ref|vpc.id"))
 
     def test_is_ref_value_returns_true_for_all_uppercase_ref(self):
-        self.assertTrue(DependencyResolver.is_parameter_reference("REF::vpc.id"))
+        self.assertTrue(DependencyResolver.is_parameter_reference("|REF|vpc.id"))
 
     def test_is_ref_value_returns_true_for_lowercase_ref(self):
-        self.assertTrue(DependencyResolver.is_parameter_reference("ref::vpc.id"))
+        self.assertTrue(DependencyResolver.is_parameter_reference("|ref|vpc.id"))
 
     def test_is_ref_value_returns_false_for_single_separator(self):
-        self.assertFalse(DependencyResolver.is_parameter_reference("Ref:vpc.id"))
+        self.assertFalse(DependencyResolver.is_parameter_reference("Ref|vpc.id"))
 
     def test_is_ref_value_returns_false_for_simple_string(self):
         self.assertFalse(DependencyResolver.is_parameter_reference("vpc.id"))
 
-    def test_is_ref_value_returns_false_for_simple_string_with_separator(self):
-        self.assertFalse(DependencyResolver.is_parameter_reference("test::vpc.id"))
 
     def test_is_ref_value_returns_true_for_empty_ref_value(self):
-        self.assertTrue(DependencyResolver.is_parameter_reference("Ref::"))
+        self.assertTrue(DependencyResolver.is_parameter_reference("|Ref|"))
 
     def test_is_ref_value_returns_false_for_boolean_values(self):
         self.assertFalse(DependencyResolver.is_parameter_reference(True))
 
     def test_get_stack_order_returns_a_valid_order(self):
         stacks = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id'}}),
-                  'app1': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
-                  'app2': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'app1': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                  'app2': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id', 'c': '|Ref|app1.id'}}),
                   'vpc': StackConfig({'template-url': 'horst.yml', 'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 
@@ -57,8 +55,8 @@ class DependencyResolverTests(unittest2.TestCase):
 
     def test_get_stack_order_includes_independent_stacks(self):
         stacks = {'default-sg': StackConfig({'template-url': 'horst.yml'}),
-                  'app1': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id'}}),
-                  'app2': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id', 'b': 'Ref::default-sg.id', 'c': 'Ref::app1.id'}}),
+                  'app1': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                  'app2': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id', 'c': 'Ref::app1.id'}}),
                   'vpc': StackConfig({'template-url': 'horst.yml', 'parameters': {'logBucketName': 'is24-cloudtrail-logs', 'includeGlobalServices': False}})
                   }
 

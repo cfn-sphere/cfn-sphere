@@ -1,6 +1,15 @@
 region: eu-west-1
 stacks:
-  a-queue:
-    template-url: queues-example.yml
+  my-vpc:
+    template-url: templates/vpc.yml
+  my-queue:
+    template-url: templates/queues-example.yml
     parameters:
-      exposeTopicArn: "@keepOrUse@arn:aws:sns:us-east-1:522480313337:unreliable-town-clock-topic-178F1OQACHTYF"
+      exposeTopicArn: "arn:aws:sns:us-east-1:522480313337:unreliable-town-clock-topic-178F1OQACHTYF"
+  my-instance:
+    template-url: templates/ec2-instance.yml
+    parameters:
+      vpcID: "|ref|my-vpc.id"
+      subnetID: "|ref|my-vpc.subnet"
+      appVersion: "|keepOrUse|1"
+      updateQueueUrl: "|ref|my-queue.url"

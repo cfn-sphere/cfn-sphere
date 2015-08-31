@@ -13,26 +13,14 @@
       Properties:
         EnableDnsSupport: "true"
         EnableDnsHostnames: "true"
-        CidrBlock:
-          Fn::FindInMap:
-            - "SubnetConfig"
-            - "VPC-Values"
-            - "CIDR"
+        CidrBlock: "10.10.0.0/18"
     Subnet:
       Type: "AWS::EC2::Subnet"
       Properties:
-        AvailabilityZone:
-          Fn::FindInMap:
-            - "SubnetConfig"
-            - "Subnet-Values"
-            - "AZ"
+        AvailabilityZone: "eu-west-1a"
         VpcId:
           Ref: "VPC"
-        CidrBlock:
-          Fn::FindInMap:
-            - "SubnetConfig"
-            - "Subnet-Values"
-            - "CIDR"
+        CidrBlock: "10.10.0.0/18"
   Outputs:
     id:
       Description: "ID of the newly created VPC"

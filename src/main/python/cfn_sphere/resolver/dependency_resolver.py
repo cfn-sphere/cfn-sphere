@@ -15,7 +15,7 @@ class DependencyResolver(object):
         if not isinstance(value, str):
             return False
 
-        if value.lower().startswith("ref::"):
+        if value.lower().startswith("|ref|"):
             return True
         else:
             return False
@@ -24,9 +24,11 @@ class DependencyResolver(object):
     def get_parameter_key_from_ref_value(value):
         if not value:
             return None
-
-        stripped_value = value.partition('::')[2]
-        return stripped_value
+        components = value.split('|')
+        if len(components) == 3:
+            return components[2]
+        else:
+            return ""
 
     @classmethod
     def create_stacks_directed_graph(cls, desired_stacks):
