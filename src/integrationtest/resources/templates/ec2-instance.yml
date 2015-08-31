@@ -3,7 +3,7 @@ Description: "Small Test App Example Template"
 Parameters:
   vpcID:
     Description: "VPC ID"
-    Type: "AWS::EC2::Subnet::Id"
+    Type: "AWS::EC2::VPC::Id"
   subnetID:
     Description: "VPC Subnet IDs"
     Type: "AWS::EC2::Subnet::Id"
@@ -16,16 +16,24 @@ Parameters:
 Resources:
   jobQueue:
     Type: "AWS::SQS::Queue"
+  secGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Test Group"
+      VpcId:
+        Ref:
+          vpcID
   WebServerInstance:
     Type: "AWS::EC2::Instance"
     Properties:
       ImageId: "ami-6e7bd919"
-      SecurityGroupIds: "|Ref|securityGroupID"
+      SecurityGroupIds:
+        - "|ref|secGroup"
       SubnetId: "|ref|subnetID"
       InstanceType: "t2.micro"
       "@TaupageUserData@":
         application_id: "|REF|AWS::StackName"
         application_version: "|Ref|appVersion"
         environment:
-          JOB_QUEUE: "|GetAttr|jobQueue|Url"
+          JOB_QUEUE: "|ref|jobQueue"
           UPDATE_QUEUE: "|ref|updateQueueUrl"

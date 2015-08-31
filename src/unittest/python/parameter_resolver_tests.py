@@ -53,7 +53,7 @@ class ParameterResolverTests(unittest2.TestCase):
         cfn_mock.return_value.get_stack_parameters_dict.return_value = {'my-key': 'my-actual-value'}
 
         pr = ParameterResolver()
-        result = pr.get_actual_value('my-key', '@keepOrUse@default-value', 'my-stack')
+        result = pr.get_actual_value('my-key', '|keepOrUse|default-value', 'my-stack')
 
         cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
         self.assertEqual('my-actual-value', result)
@@ -63,21 +63,21 @@ class ParameterResolverTests(unittest2.TestCase):
         cfn_mock.return_value.get_stack_parameters_dict.return_value = {'not-my-key': 'my-actual-value'}
 
         pr = ParameterResolver()
-        result = pr.get_actual_value('my-key', '@keepOrUse@default-value', 'my-stack')
+        result = pr.get_actual_value('my-key', '|keepOrUse|default-value', 'my-stack')
 
         cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
         self.assertEqual('default-value', result)
 
     def test_is_keep_value_returns_true_for_keep_keyword(self):
-        result = ParameterResolver.is_keep_value('@keeporuse@')
+        result = ParameterResolver.is_keep_value('|keeporuse|')
         self.assertTrue(result)
 
     def test_is_keep_value_returns_true_for_uppercase_keep_keyword(self):
-        result = ParameterResolver.is_keep_value('@KEEPORUSE@')
+        result = ParameterResolver.is_keep_value('|KEEPORUSE|')
         self.assertTrue(result)
 
     def test_is_keep_value_returns_true_for_mixed_case_keep_keyword(self):
-        result = ParameterResolver.is_keep_value('@keepOrUse@')
+        result = ParameterResolver.is_keep_value('|keepOrUse|')
         self.assertTrue(result)
 
     def test_is_keep_value_returns_false_for_empty_value(self):
@@ -85,13 +85,13 @@ class ParameterResolverTests(unittest2.TestCase):
         self.assertFalse(result)
 
     def test_get_default_from_keep_value_returns_proper_string(self):
-        result = ParameterResolver.get_default_from_keep_value('@keepOrUse@foo')
+        result = ParameterResolver.get_default_from_keep_value('|keepOrUse|foo')
         self.assertEqual('foo', result)
 
     def test_get_default_from_keep_value_returns_proper_string_if_it_contains_separator(self):
-        result = ParameterResolver.get_default_from_keep_value('@keepOrUse@foo@foo.de')
-        self.assertEqual('foo@foo.de', result)
+        result = ParameterResolver.get_default_from_keep_value('|keepOrUse|foo|foo.de')
+        self.assertEqual('foo|foo.de', result)
 
     def test_get_default_from_keep_value_returns_empty_string(self):
-        result = ParameterResolver.get_default_from_keep_value('@keepOrUse@')
+        result = ParameterResolver.get_default_from_keep_value('|keepOrUse|')
         self.assertEqual('', result)

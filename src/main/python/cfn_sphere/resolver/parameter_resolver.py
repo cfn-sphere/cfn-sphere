@@ -60,11 +60,11 @@ class ParameterResolver(object):
 
     @staticmethod
     def is_keep_value(value):
-        return value.lower().startswith('@keeporuse@')
+        return value.lower().startswith('|keeporuse|')
 
     @staticmethod
     def get_default_from_keep_value(value):
-        return value.split('@', 2)[2]
+        return value.split('|', 2)[2]
 
     def get_actual_value(self, key, value, stack_name):
         try:

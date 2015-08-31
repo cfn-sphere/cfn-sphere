@@ -6,8 +6,14 @@ Parameters:
     Default: "arn:aws:sns:us-east-1:522480313337:unreliable-town-clock-topic-178F1OQACHTYF"
     Type: "String"
 Resources:
-  exposeQueue:
+  testQueue:
     Type: "AWS::SQS::Queue"
+Outputs:
+  url:
+      Description: "Queue url"
+      Value:
+        Ref:
+          testQueue
 PostCustomResources:
   exposeTopicSubscription:
     Type: "Custom::SNS::Subscription"
@@ -15,4 +21,4 @@ PostCustomResources:
       TopicArn:
         Ref: exposeTopicArn
       TopicRegion: "us-east-1"
-      QueueResourceName: "exposeQueue"
+      QueueResourceName: "testQueue"

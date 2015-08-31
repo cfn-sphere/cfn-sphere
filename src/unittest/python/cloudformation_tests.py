@@ -119,8 +119,6 @@ class CloudFormationTemplateTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplate.render_taupage_user_data(input)
-        import json
-        print json.dumps(value)
         self.assertDictEqual(expected, value)
 
 
