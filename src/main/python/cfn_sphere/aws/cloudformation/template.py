@@ -10,20 +10,22 @@ from cfn_sphere.exceptions import TemplateErrorException
 class CloudFormationTemplateLoader(object):
 
     @classmethod
-    def get_template_dict_from_url(cls, url):
+    def get_template_dict_from_url(cls, url, working_dir):
         if url.lower().startswith("s3://"):
-            return CloudFormationTemplate(cls._s3_get_template(url), os.path.basename(url))
+            return CloudFormationTemplate(body_dict=cls._s3_get_template(url), name=os.path.basename(url))
         else:
-            return CloudFormationTemplate(cls._fs_get_template(url), os.path.basename(url))
+            return CloudFormationTemplate(body_dict=cls._fs_get_template(url, working_dir), name=os.path.basename(url))
 
     @staticmethod
-    def _fs_get_template(url):
+    def _fs_get_template(url, working_dir):
         """
         Load cfn template from filesyste
 
         :param url: str template path
         :return: dict repr of cfn template
         """
+        if not os.path.isabs(url) and working_dir:
+            url = os.path.join(url, working_dir)
 
         try:
             with open(url, 'r') as template_file:

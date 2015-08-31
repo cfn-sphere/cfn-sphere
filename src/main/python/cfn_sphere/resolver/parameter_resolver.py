@@ -93,10 +93,10 @@ class ParameterResolver(object):
 
                 if DependencyResolver.is_parameter_reference(value):
                     stripped_key = DependencyResolver.get_parameter_key_from_ref_value(value)
-                    parameters[key] = self.get_output_value(stripped_key)
+                    parameters[key] = str(self.get_output_value(stripped_key))
 
                 elif self.is_keep_value(value):
-                    parameters[key] = self.get_actual_value(key, value, stack_name)
+                    parameters[key] = str(self.get_actual_value(key, value, stack_name))
 
                 else:
                     parameters[key] = value

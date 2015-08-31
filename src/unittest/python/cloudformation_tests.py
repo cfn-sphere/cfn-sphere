@@ -1,4 +1,3 @@
-import json
 import datetime
 import unittest2
 from datetime import timedelta
@@ -129,16 +128,16 @@ class CloudFormationTemplateLoaderTests(unittest2.TestCase):
         url = "/tmp/template.json"
 
         loader = CloudFormationTemplateLoader
-        loader.get_template_dict_from_url(url)
+        loader.get_template_dict_from_url(url, None)
 
-        mock.assert_called_with(url)
+        mock.assert_called_with(url, None)
 
     @patch("cfn_sphere.aws.cloudformation.template.CloudFormationTemplateLoader._s3_get_template")
     def test_load_template_calls_s3_get_template_for_s3_url(self, mock):
         url = "s3://my-bucket.amazon.com/foo.json"
 
         loader = CloudFormationTemplateLoader
-        loader.get_template_dict_from_url(url)
+        loader.get_template_dict_from_url(url, None)
 
         mock.assert_called_with(url)
 
@@ -148,7 +147,7 @@ class CloudFormationTemplateLoaderTests(unittest2.TestCase):
         loader = CloudFormationTemplateLoader
 
         with self.assertRaises(TemplateErrorException):
-            loader.get_template_dict_from_url(url)
+            loader.get_template_dict_from_url(url, None)
 
 
 class CloudFormationApiTests(unittest2.TestCase):
