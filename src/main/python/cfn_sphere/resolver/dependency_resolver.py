@@ -1,14 +1,32 @@
 import networkx
 from networkx.exception import NetworkXUnfeasible
+from cfn_sphere.exceptions import CfnSphereException
 
 
 class DependencyResolver(object):
+
     @staticmethod
-    def get_stack_name_from_ref_value(value):
-        assert value, "No value given"
-        assert not value.startswith('.'), "Reference value should not start with a dot"
-        assert value.__contains__('.'), "Reference value must contain a dot"
-        return value.split('.')[0]
+    def parse_stack_reference_value(value):
+        if not value:
+            return None
+
+        if value.lower().startswith('|ref|'):
+            components = value.split('|')
+            if len(components) != 3:
+                raise CfnSphereException("Stack output reference must be like '|ref|stack.output'")
+
+            reference = components[2]
+
+            reference_components = reference.split('.')
+            if len(reference_components) != 2:
+                raise CfnSphereException("Stack output reference must be like '|ref|stack.output'")
+
+            stack_name = reference_components[0]
+            output_name = reference_components[1]
+
+            return stack_name, output_name
+        else:
+            return None
 
     @staticmethod
     def is_parameter_reference(value):
@@ -20,16 +38,6 @@ class DependencyResolver(object):
         else:
             return False
 
-    @staticmethod
-    def get_parameter_key_from_ref_value(value):
-        if not value:
-            return None
-        components = value.split('|')
-        if len(components) == 3:
-            return components[2]
-        else:
-            return ""
-
     @classmethod
     def create_stacks_directed_graph(cls, desired_stacks):
         graph = networkx.DiGraph()
@@ -39,7 +47,7 @@ class DependencyResolver(object):
             if data:
                 for key, value in data.parameters.items():
                     if cls.is_parameter_reference(value):
-                        dependant_stack = cls.get_stack_name_from_ref_value(cls.get_parameter_key_from_ref_value(value))
+                        dependant_stack, _ = cls.parse_stack_reference_value(value)
                         graph.add_edge(dependant_stack, name)
 
         return graph

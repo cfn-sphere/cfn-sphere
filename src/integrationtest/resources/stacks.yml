@@ -1,7 +1,5 @@
 region: eu-west-1
 stacks:
-  my-vpc:
-    template-url: templates/vpc.yml
   my-queue:
     template-url: templates/queues-example.yml
     parameters:
@@ -9,7 +7,7 @@ stacks:
   my-instance:
     template-url: templates/ec2-instance.yml
     parameters:
-      vpcID: "|ref|my-vpc.id"
-      subnetID: "|ref|my-vpc.subnet"
+      vpcID: "vpc-c3eb41a6"
+      subnetID: "subnet-97a12ee0"
       appVersion: "|keepOrUse|1"
       updateQueueUrl: "|ref|my-queue.url"

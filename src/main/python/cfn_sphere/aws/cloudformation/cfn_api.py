@@ -6,7 +6,7 @@ from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger
-from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
+from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.exceptions import CfnStackActionFailedException
 
 
@@ -65,36 +65,37 @@ class CloudFormation(object):
 
         return parameters
 
-    def create_stack(self, stack_name, template, parameters):
-        assert isinstance(template, CloudFormationTemplate)
+    def create_stack(self, stack):
+        assert isinstance(stack, CloudFormationStack)
         try:
             self.logger.info(
-                "Creating stack {0} from template {1} with parameters: {2}".format(stack_name, template.name,
-                                                                                   parameters))
-            self.conn.create_stack(stack_name,
-                                   template_body=template.get_template_json(),
-                                   parameters=parameters,
+                "Creating stack {0} from template {1} with parameters: {2}".format(stack.name, stack.template.name,
+                                                                                   stack.parameters))
+            self.conn.create_stack(stack.name,
+                                   template_body=stack.template.get_template_json(),
+                                   parameters=stack.get_parameters_list(),
                                    capabilities=['CAPABILITY_IAM'])
-            self.wait_for_stack_action_to_complete(stack_name, "create")
-            self.logger.info("Create completed for {0}".format(stack_name))
+
+            self.wait_for_stack_action_to_complete(stack.name, "create")
+            self.logger.info("Create completed for {0}".format(stack.name))
         except BotoServerError as e:
             raise CfnStackActionFailedException(
-                "Could not create stack {0}. Cloudformation API response: {1}".format(stack_name, e.message))
+                "Could not create stack {0}. Cloudformation API response: {1}".format(stack.name, e.message))
 
-    def update_stack(self, stack_name, template, parameters):
-        assert isinstance(template, CloudFormationTemplate)
+    def update_stack(self, stack):
+        assert isinstance(stack, CloudFormationStack)
         try:
             self.logger.info(
-                "Updating stack {0} from template {1} with parameters: {2}".format(stack_name, template.name,
-                                                                                   parameters))
+                "Updating stack {0} from template {1} with parameters: {2}".format(stack.name, stack.template.name,
+                                                                                   stack.parameters))
 
-            self.conn.update_stack(stack_name,
-                                   template_body=template.get_template_json(),
-                                   parameters=parameters,
+            self.conn.update_stack(stack.name,
+                                   template_body=stack.template.get_template_json(),
+                                   parameters=stack.get_parameters_list(),
                                    capabilities=['CAPABILITY_IAM'])
 
-            self.wait_for_stack_action_to_complete(stack_name, "update")
-            self.logger.info("Update completed for {0}".format(stack_name))
+            self.wait_for_stack_action_to_complete(stack.name, "update")
+            self.logger.info("Update completed for {0}".format(stack.name))
         except BotoServerError as e:
             error = json.loads(e.body).get("Error", "{0}")
             error_message = error.get("Message")
@@ -128,7 +129,11 @@ class CloudFormation(object):
                             if event.resource_status.endswith("_FAILED"):
                                 raise CfnStackActionFailedException(
                                     "Stack is in {0} state".format(event.resource_status))
-                            if event.resource_status.startswith("ROLLBACK_"):
+                            if event.resource_status == "ROLLBACK_IN_PROGRESS":
+                                self.logger.error(
+                                    "Failed to create stack (Reason: {1})".format(event.logical_resource_id,
+                                                                                  event.resource_status_reason))
+                            if event.resource_status == "ROLLBACK_COMPLETE":
                                 raise CfnStackActionFailedException("Rollback occured")
                         else:
                             if event.resource_status.endswith("_FAILED"):

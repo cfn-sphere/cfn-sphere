@@ -20,22 +20,18 @@ Resources:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
       GroupDescription: "Test Group"
-      VpcId:
-        Ref: vpcID
+      VpcId: "|Ref|vpcID"
   WebServerInstance:
     Type: "AWS::EC2::Instance"
     Properties:
       ImageId: "ami-6e7bd919"
       SecurityGroupIds:
-        - "Fn::GetAtt":
-            - secGroup
-            - GroupId
-      SubnetId:
-        Ref: subnetID
+        - "|GetAtt|secGroup|GroupId"
+      SubnetId: "|Ref|subnetID"
       InstanceType: "t2.micro"
       "@TaupageUserData@":
-        application_id: "|REF|AWS::StackName"
+        application_id: "|Ref|AWS::StackName"
         application_version: "|Ref|appVersion"
         environment:
-          JOB_QUEUE: "|ref|jobQueue"
-          UPDATE_QUEUE: "|ref|updateQueueUrl"
+          JOB_QUEUE: "|Ref|jobQueue"
+          UPDATE_QUEUE: "|Ref|updateQueueUrl"

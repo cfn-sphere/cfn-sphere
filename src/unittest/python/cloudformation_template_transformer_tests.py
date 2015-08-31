@@ -1,5 +1,6 @@
 import unittest2
 from cfn_sphere.aws.cloudformation.template_transformer import CloudFormationTemplateTransformer
+from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 from cfn_sphere.exceptions import TemplateErrorException
 from mock import Mock, mock
 
@@ -16,6 +17,22 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
         self.assertListEqual(expected_calls, handler.mock_calls)
         self.assertEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
+
+    def test_transform_userdata_dict_creates_cfn_reference(self):
+        result = CloudFormationTemplateTransformer.transform_userdata_dict({'my-key': '|ref|my-value'})
+        self.assertEqual([{'Fn::Join': [': ', ['my-key', {'Ref': 'my-value'}]]}], result)
+
+    def test_transform_userdata_dict_ignores_values_without_keyword(self):
+        result = CloudFormationTemplateTransformer.transform_userdata_dict({'my-key': 'my-value'})
+        self.assertEqual([{'Fn::Join': [': ', ['my-key', 'my-value']]}], result)
+
+    def test_transform_userdata_dict_indents_sub_dicts(self):
+        result = CloudFormationTemplateTransformer.transform_userdata_dict({'my-key': {'my-sub-key': 'value'}})
+        self.assertEqual(['my-key:', {'Fn::Join': [': ', ['  my-sub-key', 'value']]}], result)
+
+    def test_transform_userdata_dict_accepts_integer_values(self):
+        result = CloudFormationTemplateTransformer.transform_userdata_dict({'my-key': 3})
+        self.assertEqual([{'Fn::Join': [': ', ['my-key', 3]]}], result)
 
     def test_transform_reference_string_creates_valid_cfn_reference(self):
         result = CloudFormationTemplateTransformer.transform_reference_string('|ref|my-value')
@@ -39,7 +56,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
     def test_transform_getattr_string_creates_valid_cfn_getattr(self):
         result = CloudFormationTemplateTransformer.transform_getattr_string('|getatt|resource|attribute')
-        self.assertEqual({'Fn::GetAtt': ['resource','attribute' ]}, result)
+        self.assertEqual({'Fn::GetAtt': ['resource', 'attribute']}, result)
 
     def test_transform_getattr_string_raises_exception_on_missing_resource(self):
         with self.assertRaises(TemplateErrorException):
@@ -52,3 +69,81 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
     def test_transform_getattr_string_ignores_empty_strings(self):
         result = CloudFormationTemplateTransformer.transform_getattr_string('')
         self.assertEqual('', result)
+
+    def test_transform_template_returns_properly_rendered_dict(self):
+        template_dict = {'key1': '|ref|value', 'key2': '|getatt|resource|attribute',
+                         '@TaupageUserData@': {'key': 'value'}}
+
+        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+        expected = {'key2': {'Fn::GetAtt': ['resource', 'attribute']}, 'key1': {'Ref': 'value'}, 'UserData': {
+        'Fn::Base64': {'Fn::Join': ['\n', ['#taupage-ami-config', {'Fn::Join': [': ', ['key', 'value']]}]]}}}
+
+        self.assertEqual(expected, result.body_dict)
+
+    def test_render_taupage_user_data(self):
+        input = {
+            "application_id": "|Ref|AWS::StackName",
+            "application_version": "|Ref|dockerImageVersion",
+            "environment": {
+                "SSO_KEY": "|Ref|mySsoKey",
+                "QUEUE_URL": "|Ref|myQueueUrl"
+            }
+        }
+        expected = {
+            "Fn::Base64": {
+                "Fn::Join": [
+                    "\n",
+                    [
+                        "#taupage-ami-config",
+                        {
+                            "Fn::Join": [
+                                ": ",
+                                [
+                                    "application_id",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        },
+                        {
+                            "Fn::Join": [
+                                ": ",
+                                [
+                                    "application_version",
+                                    {
+                                        "Ref": "dockerImageVersion"
+                                    }
+                                ]
+                            ]
+                        },
+                        "environment:",
+                        {
+                            "Fn::Join": [
+                                ": ",
+                                [
+                                    "  QUEUE_URL",
+                                    {
+                                        "Ref": "myQueueUrl"
+                                    }
+                                ]
+                            ]
+                        },
+                        {
+                            "Fn::Join": [
+                                ": ",
+                                [
+                                    "  SSO_KEY",
+                                    {
+                                        "Ref": "mySsoKey"
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            }
+        }
+
+        key, value = CloudFormationTemplateTransformer.render_taupage_user_data(input)
+        self.assertDictEqual(expected, value)

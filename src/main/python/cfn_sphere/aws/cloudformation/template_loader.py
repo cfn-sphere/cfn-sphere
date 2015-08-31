@@ -5,6 +5,7 @@ from cfn_sphere.aws.s3 import S3
 from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 from cfn_sphere.exceptions import TemplateErrorException
 
+
 class CloudFormationTemplateLoader(object):
     @classmethod
     def get_template_dict_from_url(cls, url, working_dir):

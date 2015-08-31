@@ -18,15 +18,12 @@
       Type: "AWS::EC2::Subnet"
       Properties:
         AvailabilityZone: "eu-west-1a"
-        VpcId:
-          Ref: "VPC"
+        VpcId: "|Ref|VPC"
         CidrBlock: "10.10.0.0/18"
   Outputs:
     id:
       Description: "ID of the newly created VPC"
-      Value:
-        Ref: "VPC"
+      Value: "|Ref|VPC"
     subnet:
       Description: "SubnetId of the subnet"
-      Value:
-        Ref: "Subnet"
+      Value: "|Ref|Subnet"

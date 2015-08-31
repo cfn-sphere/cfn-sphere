@@ -53,10 +53,9 @@ class ParameterResolver(object):
         self.logger.debug("Found artifacts: {0}".format(artifacts))
         try:
             artifact = artifacts[key]
-            assert artifact, "No value found"
             return artifact
-        except Exception as e:
-            raise ParameterResolverException("Could not get a valid value for {0}. {1}".format(key, e))
+        except KeyError:
+            raise ParameterResolverException("Could not get a valid value for {0}.".format(key))
 
     @staticmethod
     def is_keep_value(value):
@@ -92,8 +91,8 @@ class ParameterResolver(object):
             elif isinstance(value, str):
 
                 if DependencyResolver.is_parameter_reference(value):
-                    stripped_key = DependencyResolver.get_parameter_key_from_ref_value(value)
-                    parameters[key] = str(self.get_output_value(stripped_key))
+                    referenced_stack, output_name = DependencyResolver.parse_stack_reference_value(value)
+                    parameters[key] = str(self.get_output_value(referenced_stack + '.' + output_name))
 
                 elif self.is_keep_value(value):
                     parameters[key] = str(self.get_actual_value(key, value, stack_name))
