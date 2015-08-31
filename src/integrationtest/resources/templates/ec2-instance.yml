@@ -21,15 +21,17 @@ Resources:
     Properties:
       GroupDescription: "Test Group"
       VpcId:
-        Ref:
-          vpcID
+        Ref: vpcID
   WebServerInstance:
     Type: "AWS::EC2::Instance"
     Properties:
       ImageId: "ami-6e7bd919"
       SecurityGroupIds:
-        - "|ref|secGroup"
-      SubnetId: "|ref|subnetID"
+        - "Fn::GetAtt":
+            - secGroup
+            - GroupId
+      SubnetId:
+        Ref: subnetID
       InstanceType: "t2.micro"
       "@TaupageUserData@":
         application_id: "|REF|AWS::StackName"
