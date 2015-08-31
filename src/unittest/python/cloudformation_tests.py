@@ -3,9 +3,9 @@ import unittest2
 from datetime import timedelta
 from boto.cloudformation.stack import StackEvent
 from cfn_sphere.aws.cloudformation.cfn_api import CloudFormation
-from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader
+from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate, CloudFormationTemplateLoader, CloudFormationTemplateTransformer
 from cfn_sphere.exceptions import TemplateErrorException
-from mock import patch, Mock
+from mock import patch, Mock, mock
 
 
 class CloudFormationTemplateTests(unittest2.TestCase):
@@ -248,3 +248,16 @@ class CloudFormationApiTests(unittest2.TestCase):
         with self.assertRaises(Exception):
             cfn.wait_for_stack_events("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
                                       timeout=10)
+
+class CloudFormationTemplateTransformerTests(unittest2.TestCase):
+
+    def test_transform_dict_values_executes_value_handler_for_all_matching_prefixes(self):
+        dictionary = {'a': 'foo123', 'b': {'c': 'foo234'}}
+        handler = Mock()
+        handler.return_value = "foo"
+
+        result = CloudFormationTemplateTransformer.transform_dict_values(dictionary, 'foo', handler)
+        expected_calls = [mock.call('foo123'), mock.call('foo234')]
+
+        self.assertListEqual(expected_calls, handler.mock_calls)
+        self.assertEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})

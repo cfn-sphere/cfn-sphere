@@ -8,7 +8,6 @@ from cfn_sphere.exceptions import TemplateErrorException
 
 
 class CloudFormationTemplateLoader(object):
-
     @classmethod
     def get_template_dict_from_url(cls, url, working_dir):
         if url.lower().startswith("s3://"):
@@ -48,6 +47,43 @@ class CloudFormationTemplateLoader(object):
                 return yaml.load(s3.get_contents_from_url(url))
         except Exception as e:
             raise TemplateErrorException(e)
+
+
+class CloudFormationTemplateTransformer(object):
+
+    @classmethod
+    def transform_template(cls, template):
+        template_dict = template.body_dict
+
+        template_dict = cls.transform_dict_values(template_dict, '|ref|', cls.transform_reference_string)
+        template_dict = cls.transform_dict_values(template_dict, '|getatt|', cls.transform_getattr_string)
+        return template_dict
+
+    @staticmethod
+    def transform_reference_string(value):
+        return {'Ref': value[5:]}
+
+    @staticmethod
+    def transform_getattr_string(value):
+        elements = value.split('|', 3)
+        resource = elements[2]
+        attribute = elements[3]
+
+        return {'Fn::GetAtt': [resource, attribute]}
+
+    @classmethod
+    def transform_dict_values(cls, dictionary, prefix, value_handler):
+        for key in dictionary:
+            value = dictionary[key]
+
+            if isinstance(value, dict):
+                dictionary[key] = cls.transform_dict_values(value, prefix, value_handler)
+            if isinstance(value, basestring) and value.lower().startswith(prefix):
+                dictionary[key] = value_handler(value)
+            else:
+                dictionary[key] = value
+
+        return dictionary
 
 
 class CloudFormationTemplate(object):
@@ -152,6 +188,7 @@ class CloudFormationTemplate(object):
                     dictionary.pop(key)
                 else:
                     raise TemplateErrorException("No handler defined for key {0}".format(key))
+
 
 if __name__ == "__main__":
     s3_conn = connect_s3()
