@@ -11,6 +11,7 @@ from cfn_sphere.exceptions import CfnSphereException
 from boto.exception import NoAuthHandlerFound, BotoServerError
 
 LOGGER = get_logger(root=True)
+logging.getLogger('boto').setLevel(logging.FATAL)
 
 
 def get_current_account_alias():
