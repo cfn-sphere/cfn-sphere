@@ -68,7 +68,7 @@ class CloudFormationApiTests(unittest2.TestCase):
 
         event = StackEvent()
         event.resource_type = "AWS::CloudFormation::Stack"
-        event.resource_status = "ROLLBACK_IN_PROGRESS"
+        event.resource_status = "ROLLBACK_COMPLETE"
         event.event_id = "123"
         event.timestamp = timestamp
 
