@@ -1,11 +1,10 @@
-import json
 import logging
 import time
 import datetime
 from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
-from cfn_sphere.util import get_logger
+from cfn_sphere.util import get_logger, get_message_from_boto_server_error
 from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.exceptions import CfnStackActionFailedException
 
@@ -79,8 +78,9 @@ class CloudFormation(object):
             self.wait_for_stack_action_to_complete(stack.name, "create")
             self.logger.info("Create completed for {0}".format(stack.name))
         except BotoServerError as e:
+            message = get_message_from_boto_server_error(e)
             raise CfnStackActionFailedException(
-                "Could not create stack {0}. Cloudformation API response: {1}".format(stack.name, e.message))
+                "Could not create stack {0}. Cfn API responded with: {1}".format(stack.name, message))
 
     def update_stack(self, stack):
         assert isinstance(stack, CloudFormationStack)
@@ -97,13 +97,12 @@ class CloudFormation(object):
             self.wait_for_stack_action_to_complete(stack.name, "update")
             self.logger.info("Update completed for {0}".format(stack.name))
         except BotoServerError as e:
-            error = json.loads(e.body).get("Error", "{0}")
-            error_message = error.get("Message")
-            if error_message == "No updates are to be performed.":
-                self.logger.info("Nothing to do: {0}.".format(error_message))
+            message = get_message_from_boto_server_error(e)
+
+            if message == "No updates are to be performed.":
+                self.logger.info("Nothing to do: {0}.".format(message))
             else:
-                error_code = error.get("Code")
-                raise CfnStackActionFailedException("{0}: {1}.".format(error_code, error_message))
+                raise CfnStackActionFailedException("{0}.".format(message))
 
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
 
