@@ -129,11 +129,11 @@ class CloudFormation(object):
                             if event.resource_status.endswith("_FAILED"):
                                 raise CfnStackActionFailedException(
                                     "Stack is in {0} state".format(event.resource_status))
-                            if event.resource_status == "ROLLBACK_IN_PROGRESS":
+                            if event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
                                 self.logger.error(
                                     "Failed to create stack (Reason: {1})".format(event.logical_resource_id,
                                                                                   event.resource_status_reason))
-                            if event.resource_status == "ROLLBACK_COMPLETE":
+                            if event.resource_status.endswith("ROLLBACK_COMPLETE"):
                                 raise CfnStackActionFailedException("Rollback occured")
                         else:
                             if event.resource_status.endswith("_FAILED"):
