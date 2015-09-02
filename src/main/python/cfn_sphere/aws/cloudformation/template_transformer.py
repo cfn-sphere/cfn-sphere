@@ -46,7 +46,7 @@ class CloudFormationTemplateTransformer(object):
 
             join_string = key[6:]
 
-            return {'Fn::Join': [join_string, value]}
+            return 'Fn::Join', [join_string, value]
         else:
             return key, value
 
