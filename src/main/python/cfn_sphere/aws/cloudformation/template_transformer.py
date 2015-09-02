@@ -93,11 +93,12 @@ class CloudFormationTemplateTransformer(object):
 
         for key, value in userdata_dict.items():
 
+            # do not go any further and directly return cfn functions and their values
             if key.lower() == 'ref' or key.lower() == 'fn::getatt' or key.lower() == 'fn::join':
                 return {key: value}
             else:
 
-                # key indentation
+                # key indentation with two spaces
                 if indentation_level > 0:
                     indented_key = '  ' * indentation_level + str(key)
                 else:
@@ -107,11 +108,14 @@ class CloudFormationTemplateTransformer(object):
                 if isinstance(value, dict):
 
                     result = cls.transform_userdata_dict_to_lines_list(value, indentation_level + 1)
+
                     if isinstance(result, dict):
                         lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
                     elif isinstance(result, list):
                         lines.extend(result)
                         lines.append(indented_key + ':')
+                    else:
+                        raise TemplateErrorException("Failed to convert user-data dict to list of lines")
 
                 else:
                     lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
@@ -152,10 +156,4 @@ class CloudFormationTemplateTransformer(object):
 
 
 if __name__ == "__main__":
-    import re
-
-    string = '-|(|ref|a)|(|ref|b)|c'
-    pattern = re.compile('\|\((.*[\)])\)\|')
-
-    components = pattern.findall(string)
-    print components
+    pass
