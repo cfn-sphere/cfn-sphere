@@ -6,6 +6,7 @@ class CloudFormationTemplateTransformer(object):
     def transform_template(cls, template):
         template_dict = template.body_dict
 
+        template_dict = cls.transform_dict_values(template_dict, cls.transform_join_string)
         template_dict = cls.transform_dict_values(template_dict, cls.transform_reference_string)
         template_dict = cls.transform_dict_values(template_dict, cls.transform_getattr_string)
         template_dict = cls.transform_dict_keys(template_dict, {'@TaupageUserData@': cls.render_taupage_user_data})
@@ -61,6 +62,25 @@ class CloudFormationTemplateTransformer(object):
             attribute = elements[3]
 
             return {'Fn::GetAtt': [resource, attribute]}
+        else:
+            return value
+
+    @staticmethod
+    def transform_join_string(value):
+        if not value:
+            return value
+
+        if value.lower().startswith('|join|'):
+            join_value = value[6:]
+            components = join_value.split('|')
+
+            if len(components) < 1:
+                raise TemplateErrorException("Attribute join must be like '|join|join-string|string1|string2|...'")
+
+            join_string = components[0]
+            strings_to_join = components[1:]
+
+            return {'Fn::Join': [join_string, strings_to_join]}
         else:
             return value
 

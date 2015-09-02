@@ -6,7 +6,6 @@ from mock import Mock, mock
 
 
 class CloudFormationTemplateTransformerTests(unittest2.TestCase):
-
     def test_transform_dict_values_executes_value_handler_for_all_matching_prefixes(self):
         dictionary = {'a': 'foo123', 'b': {'c': 'foo234'}}
         handler = Mock()
@@ -33,6 +32,14 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
     def test_transform_userdata_dict_accepts_integer_values(self):
         result = CloudFormationTemplateTransformer.transform_userdata_dict({'my-key': 3})
         self.assertEqual([{'Fn::Join': [': ', ['my-key', 3]]}], result)
+
+    def test_transform_join_string_creates_valid_cfn_join(self):
+        result = CloudFormationTemplateTransformer.transform_join_string('|join|-|a|b')
+        self.assertEqual({'Fn::Join': ['-', ['a', 'b']]}, result)
+
+    def test_transform_join_string_creates_valid_cfn_join_with_multiple_strings(self):
+        result = CloudFormationTemplateTransformer.transform_join_string('|join|-|a|b|c|d|e')
+        self.assertEqual({'Fn::Join': ['-', ['a', 'b', 'c', 'd', 'e']]}, result)
 
     def test_transform_reference_string_creates_valid_cfn_reference(self):
         result = CloudFormationTemplateTransformer.transform_reference_string('|ref|my-value')
@@ -76,7 +83,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
         expected = {'key2': {'Fn::GetAtt': ['resource', 'attribute']}, 'key1': {'Ref': 'value'}, 'UserData': {
-        'Fn::Base64': {'Fn::Join': ['\n', ['#taupage-ami-config', {'Fn::Join': [': ', ['key', 'value']]}]]}}}
+            'Fn::Base64': {'Fn::Join': ['\n', ['#taupage-ami-config', {'Fn::Join': [': ', ['key', 'value']]}]]}}}
 
         self.assertEqual(expected, result.body_dict)
 
@@ -147,3 +154,12 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
         key, value = CloudFormationTemplateTransformer.render_taupage_user_data(input)
         self.assertDictEqual(expected, value)
+
+    # def test_transform_template_transforms_combined_functions(self):
+    #     template = CloudFormationTemplate({'my-key': '|join|.||ref|my-value|domain.de'}, 'foo')
+    #     result = CloudFormationTemplateTransformer.transform_template(template)
+    #     print result.body_dict
+    #
+    #     expected = [{'Fn::Join': [': ', ['my-key', {'Fn::Join': ['.', [{'Ref': 'my-value'}, 'domain.de']]}]]}]
+    #
+    #     self.assertEqual(expected, result)
