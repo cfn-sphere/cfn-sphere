@@ -140,7 +140,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
         self.assertDictEqual(expected, value)
 
-    def test_render_taupage_user_data_accepts_joins(self):
+    def test_transform_taupage_user_data_accepts_joins(self):
         input = {
             "source": {"Fn::Join": [":", ["my-registry/my-app", {"Ref": "appVersion"}]]}
         }
@@ -175,11 +175,11 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        #import json
-        #print json.dumps(value, indent=4, sort_keys=True)
+        # import json
+        # print json.dumps(value, indent=4, sort_keys=True)
         self.assertDictEqual(expected, value)
 
-    def test_transform_template_returns_properly_renders_dict(self):
+    def test_transform_template_properly_renders_dict(self):
         template_dict = {
             'key1': '|ref|value',
             'key2': '|getatt|resource|attribute',
@@ -188,7 +188,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                     'key1': 'value',
                     'key2': {'ref': 'value'},
                     'key3': {'|join|.': ['a', 'b', 'c']}
-                    }
+                }
         }
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
@@ -251,5 +251,25 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                 }
             }
         }
+
+        self.assertEqual(expected, result.body_dict)
+
+    def test_transform_template_transforms_list_values(self):
+        template_dict = {
+            'key1': ["|ref|foo", "a", "b"]
+        }
+
+        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+        expected = {'key1': [{'Ref': 'foo'}, 'a', 'b']}
+
+        self.assertEqual(expected, result.body_dict)
+
+    def test_transform_template_transforms_join_with_embedded_ref(self):
+        template_dict = {
+            'key1': {"|join|.": ["|ref|foo", "b"]}
+        }
+
+        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+        expected = {'key1': {'Fn::Join': ['.', [{'Ref': 'foo'}, 'b']]}}
 
         self.assertEqual(expected, result.body_dict)

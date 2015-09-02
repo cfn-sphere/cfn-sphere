@@ -147,7 +147,20 @@ class CloudFormationTemplateTransformer(object):
 
             if isinstance(value, dict):
                 dictionary[key] = cls.transform_dict_values(value, value_handler)
-            if isinstance(value, basestring):
+
+            elif isinstance(value, list):
+                value_list = []
+                for item in value:
+                    if isinstance(item, dict):
+                        value_list.append(cls.transform_dict_values(item, value_handler))
+                    elif isinstance(item, basestring):
+                        value_list.append(value_handler(item))
+                    else:
+                        value_list.append(item)
+
+                dictionary[key] = value_list
+
+            elif isinstance(value, basestring):
                 dictionary[key] = value_handler(value)
             else:
                 dictionary[key] = value
