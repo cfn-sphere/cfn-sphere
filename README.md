@@ -5,6 +5,7 @@ A CLI tool intended to simplify AWS CloudFormation handling.
 
 ## Features
 - cfn templates in yml or json
+- build for human interaction and automation (run 'cf sync stacks.yml' triggered by a git push if you dare ;-)
 - a source of truth defining cloudformation stacks with their template and parameters
 - cross referencing parameters between stacks (use a stack output as parameter for another stack)
 - automatic stack dependency resolution including circular dependency detection
