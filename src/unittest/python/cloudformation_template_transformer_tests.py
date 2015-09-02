@@ -41,6 +41,10 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         result = CloudFormationTemplateTransformer.transform_join_string('|join|-|a|b|c|d|e')
         self.assertEqual({'Fn::Join': ['-', ['a', 'b', 'c', 'd', 'e']]}, result)
 
+    # def test_transform_join_string_ignores_pipe_separators_in_parentheses(self):
+    #     result = CloudFormationTemplateTransformer.transform_join_string('|join|-|(|ref|a)|b')
+    #     self.assertEqual({'Fn::Join': ['-', ['(|ref|a)', 'b']]}, result)
+
     def test_transform_reference_string_creates_valid_cfn_reference(self):
         result = CloudFormationTemplateTransformer.transform_reference_string('|ref|my-value')
         self.assertEqual({'Ref': 'my-value'}, result)
@@ -156,7 +160,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         self.assertDictEqual(expected, value)
 
     # def test_transform_template_transforms_combined_functions(self):
-    #     template = CloudFormationTemplate({'my-key': '|join|.||ref|my-value|domain.de'}, 'foo')
+    #     template = CloudFormationTemplate({'my-key': '|join|.|(|ref|my-value)|domain.de'}, 'foo')
     #     result = CloudFormationTemplateTransformer.transform_template(template)
     #     print result.body_dict
     #

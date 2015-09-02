@@ -140,3 +140,12 @@ class CloudFormationTemplateTransformer(object):
                 dictionary[key] = value
 
         return dictionary
+
+
+if __name__ == "__main__":
+    import re
+    string = '-|(|ref|a)|(|ref|b)|c'
+    pattern = re.compile('\|\((.*[\)])\)\|')
+
+    components = pattern.findall(string)
+    print components
