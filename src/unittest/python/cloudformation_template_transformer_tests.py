@@ -148,16 +148,43 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        import json
-
-        print json.dumps(value)
         self.assertDictEqual(expected, value)
 
-        # def test_transform_template_transforms_combined_functions(self):
-        #     template = CloudFormationTemplate({'my-key': '|join|.|(|ref|my-value)|domain.de'}, 'foo')
-        #     result = CloudFormationTemplateTransformer.transform_template(template)
-        #     print result.body_dict
-        #
-        #     expected = [{'Fn::Join': [': ', ['my-key', {'Fn::Join': ['.', [{'Ref': 'my-value'}, 'domain.de']]}]]}]
-        #
-        #     self.assertEqual(expected, result)
+    def test_render_taupage_user_data_accepts_joins(self):
+        input = {
+            "source": {"Fn::Join": [":", ["my-registry/my-app", {"Ref": "appVersion"}]]}
+        }
+        expected = {
+            "Fn::Base64": {
+                "Fn::Join": [
+                    "\n",
+                    [
+                        "#taupage-ami-config",
+                        {
+                            "Fn::Join": [
+                                ": ",
+                                [
+                                    "source",
+                                    {
+                                        "Fn::Join": [
+                                            ":",
+                                            [
+                                                "my-registry/my-app",
+                                                {
+                                                    "Ref": "appVersion"
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            }
+        }
+
+        key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
+        #import json
+        #print json.dumps(value, indent=4, sort_keys=True)
+        self.assertDictEqual(expected, value)

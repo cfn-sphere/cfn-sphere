@@ -93,7 +93,7 @@ class CloudFormationTemplateTransformer(object):
 
         for key, value in userdata_dict.items():
 
-            if key.lower() == 'ref' or key.lower() == 'fn::getatt':
+            if key.lower() == 'ref' or key.lower() == 'fn::getatt' or key.lower() == 'fn::join':
                 return {key: value}
             else:
 
