@@ -6,27 +6,49 @@ class CloudFormationTemplateTransformer(object):
     def transform_template(cls, template):
         template_dict = template.body_dict
 
-        template_dict = cls.transform_dict_values(template_dict, cls.transform_join_string)
         template_dict = cls.transform_dict_values(template_dict, cls.transform_reference_string)
         template_dict = cls.transform_dict_values(template_dict, cls.transform_getattr_string)
-        template_dict = cls.transform_dict_keys(template_dict, {'@TaupageUserData@': cls.render_taupage_user_data})
+        template_dict = cls.transform_dict_keys(template_dict, cls.transform_join_key)
+        template_dict = cls.transform_dict_keys(template_dict, cls.transform_taupage_user_data_key)
 
         template.body_dict = template_dict
         return template
 
     @classmethod
-    def render_taupage_user_data(cls, taupage_user_data_dict):
-        if not isinstance(taupage_user_data_dict, dict):
-            raise TemplateErrorException("Value of 'TaupageUserData' must be of type dict")
+    def transform_taupage_user_data_key(cls, key, value):
+        if not value:
+            return value
 
-        lines = ['#taupage-ami-config']
-        lines.extend(cls.transform_userdata_dict(taupage_user_data_dict))
+        if key.lower() == '@taupageuserdata@':
 
-        return "UserData", {
-            'Fn::Base64': {
-                'Fn::Join': ['\n', lines]
+            if not isinstance(value, dict):
+                raise TemplateErrorException("Value of 'TaupageUserData' must be of type dict")
+
+            lines = ['#taupage-ami-config']
+            lines.extend(cls.transform_userdata_dict_to_lines_list(value))
+
+            return "UserData", {
+                'Fn::Base64': {
+                    'Fn::Join': ['\n', lines]
+                }
             }
-        }
+        else:
+            return key, value
+
+    @classmethod
+    def transform_join_key(cls, key, value):
+        if not value:
+            return value
+
+        if key.lower().startswith('|join|'):
+            if not isinstance(value, list):
+                raise TemplateErrorException("Value of '|join|' must be of type list")
+
+            join_string = key[6:]
+
+            return {'Fn::Join': [join_string, value]}
+        else:
+            return key, value
 
     @staticmethod
     def transform_kv_to_cfn_join(key, value):
@@ -65,64 +87,51 @@ class CloudFormationTemplateTransformer(object):
         else:
             return value
 
-    @staticmethod
-    def transform_join_string(value):
-        if not value:
-            return value
-
-        if value.lower().startswith('|join|'):
-            join_value = value[6:]
-            components = join_value.split('|')
-
-            if len(components) < 1:
-                raise TemplateErrorException("Attribute join must be like '|join|join-string|string1|string2|...'")
-
-            join_string = components[0]
-            strings_to_join = components[1:]
-
-            return {'Fn::Join': [join_string, strings_to_join]}
-        else:
-            return value
-
     @classmethod
-    def transform_userdata_dict(cls, userdata_dict, level=0):
-        parameters = []
+    def transform_userdata_dict_to_lines_list(cls, userdata_dict, indentation_level=0):
+        lines = []
 
         for key, value in userdata_dict.items():
-            # key indentation
-            if level > 0:
-                key = '  ' * level + str(key)
 
-            # recursion for dict values
-            if isinstance(value, dict):
-                parameters.extend(cls.transform_userdata_dict(value, level + 1))
-                parameters.append(key + ':')
-
-            elif isinstance(value, str):
-                if value.lower().startswith('|ref|'):
-                    value = cls.transform_reference_string(value)
-                elif value.lower().startswith('|getatt|'):
-                    value = cls.transform_getattr_string(value)
-
-                parameters.append(cls.transform_kv_to_cfn_join(key, value))
-
+            if key.lower() == 'ref' or key.lower() == 'fn::getatt':
+                return {key: value}
             else:
-                parameters.append(cls.transform_kv_to_cfn_join(key, value))
 
-        parameters.reverse()
-        return parameters
+                # key indentation
+                if indentation_level > 0:
+                    indented_key = '  ' * indentation_level + str(key)
+                else:
+                    indented_key = key
+
+                # recursion for dict values
+                if isinstance(value, dict):
+
+                    result = cls.transform_userdata_dict_to_lines_list(value, indentation_level + 1)
+                    if isinstance(result, dict):
+                        lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
+                    elif isinstance(result, list):
+                        lines.extend(result)
+                        lines.append(indented_key + ':')
+
+                else:
+                    lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
+
+        lines.reverse()
+        return lines
 
     @classmethod
-    def transform_dict_keys(cls, dictionary, key_handlers):
+    def transform_dict_keys(cls, dictionary, key_handler):
         for key in dictionary:
             value = dictionary[key]
             if isinstance(value, dict):
-                cls.transform_dict_keys(value, key_handlers)
+                dictionary[key] = cls.transform_dict_keys(value, key_handler)
 
-            key_handler = key_handlers.get(key, None)
-            if key_handler:
-                new_key, new_value = key_handler(value)
+            new_key, new_value = key_handler(key, value)
+
+            if new_key != key or new_value != value:
                 dictionary[new_key] = new_value
+
+            if new_key != key:
                 dictionary.pop(key)
 
         return dictionary
@@ -144,6 +153,7 @@ class CloudFormationTemplateTransformer(object):
 
 if __name__ == "__main__":
     import re
+
     string = '-|(|ref|a)|(|ref|b)|c'
     pattern = re.compile('\|\((.*[\)])\)\|')
 
