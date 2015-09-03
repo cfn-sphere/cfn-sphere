@@ -35,8 +35,10 @@ def convert_json_to_yaml_string(data):
 def convert_yaml_to_json_string(data):
     if not data:
         return '{}'
-    return json.dumps(yaml.load(data), indent=4, sort_keys=True)
+    return json.dumps(yaml.load(data), indent=2)
 
+def convert_dict_to_json_string(data):
+    return json.dumps(data, indent=2)
 
 def get_message_from_boto_server_error(boto_server_error):
     return boto_server_error.message

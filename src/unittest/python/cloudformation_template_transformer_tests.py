@@ -264,6 +264,16 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
         self.assertEqual(expected, result.body_dict)
 
+    def test_transform_template_transforms_dict_list_items(self):
+        template_dict = {
+            'key1': {'key2': [{'key3': 'value3', 'foo': {'|Join|': ['a', 'b']}}]}
+        }
+
+        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+        expected = {'key1': {'key2': [{'foo': {'Fn::Join': ['', ['a', 'b']]}, 'key3': 'value3'}]}}
+
+        self.assertEqual(expected, result.body_dict)
+
     def test_transform_template_transforms_join_with_embedded_ref(self):
         template_dict = {
             'key1': {"|join|.": ["|ref|foo", "b"]}

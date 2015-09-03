@@ -10,7 +10,7 @@ class CloudFormationTemplateLoaderTests(unittest2.TestCase):
         url = "/tmp/template.json"
 
         loader = CloudFormationTemplateLoader
-        loader.get_template_dict_from_url(url, None)
+        loader.get_template_from_url(url, None)
 
         mock.assert_called_with(url, None)
 
@@ -19,7 +19,7 @@ class CloudFormationTemplateLoaderTests(unittest2.TestCase):
         url = "s3://my-bucket.amazon.com/foo.json"
 
         loader = CloudFormationTemplateLoader
-        loader.get_template_dict_from_url(url, None)
+        loader.get_template_from_url(url, None)
 
         mock.assert_called_with(url)
 
@@ -29,4 +29,4 @@ class CloudFormationTemplateLoaderTests(unittest2.TestCase):
         loader = CloudFormationTemplateLoader
 
         with self.assertRaises(TemplateErrorException):
-            loader.get_template_dict_from_url(url, None)
+            loader.get_template_from_url(url, None)

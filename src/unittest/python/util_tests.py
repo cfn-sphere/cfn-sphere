@@ -10,7 +10,7 @@ class StackConfigTests(unittest2.TestCase):
           foo: baa
         """)
 
-        self.assertEqual('{\n    "foo": {\n        "foo": "baa"\n    }\n}', convert_yaml_to_json_string(data))
+        self.assertEqual('{\n  "foo": {\n    "foo": "baa"\n  }\n}', convert_yaml_to_json_string(data))
 
     def test_convert_yaml_to_json_string_returns_valid_json_string_on_empty_string_input(self):
         data = ""

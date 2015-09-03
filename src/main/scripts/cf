@@ -4,10 +4,13 @@ import sys
 import boto
 import click
 import logging
-from cfn_sphere.util import convert_file, get_logger, get_message_from_boto_server_error
+from cfn_sphere.util import convert_file, get_logger, get_message_from_boto_server_error, convert_dict_to_json_string
 from cfn_sphere.config import Config
 from cfn_sphere.main import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
+from cfn_sphere.aws.cloudformation.template_loader import CloudFormationTemplateLoader
+from cfn_sphere.aws.cloudformation.template_transformer import CloudFormationTemplateTransformer
 from boto.exception import NoAuthHandlerFound, BotoServerError
 
 LOGGER = get_logger(root=True)
@@ -74,6 +77,15 @@ def convert(filename, debug):
         LOGGER.error("Error converting {0}:".format(filename))
         LOGGER.exception(e)
         sys.exit(1)
+
+
+@cli.command(help="Render template as it would be used to create/update a stack")
+@click.argument('filename', type=click.Path(exists=True))
+def render_template(filename):
+    loader = CloudFormationTemplateLoader()
+    template = loader.get_template_from_url(filename, None)
+    template = CloudFormationTemplateTransformer.transform_template(template)
+    click.echo(convert_dict_to_json_string(template.body_dict))
 
 
 if __name__ == '__main__':

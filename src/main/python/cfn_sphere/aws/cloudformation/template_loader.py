@@ -8,7 +8,7 @@ from cfn_sphere.exceptions import TemplateErrorException
 
 class CloudFormationTemplateLoader(object):
     @classmethod
-    def get_template_dict_from_url(cls, url, working_dir):
+    def get_template_from_url(cls, url, working_dir):
         if url.lower().startswith("s3://"):
             return CloudFormationTemplate(body_dict=cls._s3_get_template(url), name=os.path.basename(url))
         else:
