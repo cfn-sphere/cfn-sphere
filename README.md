@@ -12,27 +12,17 @@ A CLI tool intended to simplify AWS CloudFormation handling.
 - helper features easing the use of cfn functions like Fn::Join, Ref or Fn::GetAtt
 - easy user-data definition for https://github.com/zalando-stups/taupage
 
-## Build
-
-Install:
-
-* python >= 2.6
-* virtualenv
-* pybuilder
-
-Execute:
-
-    source my-virtualenv/bin/activate
-	pyb
-
-
 ## Install
 
 ### As python artifact:
 
+**This might be the easiest solution for you**
+
     pip install cfn-sphere
     
 ### Debian / Ubuntu Packages: 
+
+**.deb packages are untested right now! Use Python artifacts instead!**
 
 Install repo gpg key and required package:
 
@@ -67,6 +57,26 @@ Put a file named /etc/yum.repos.d/cfn-sphere.repo with the following content:
 Install package:
 
     sudo yum install cfn-sphere
+
+
+## Build
+
+Requirements:
+
+* python >= 2.6
+* virtualenv
+* pybuilder
+
+Execute:
+
+    git clone https://github.com/marco-hoyer/cfn-sphere.git
+    cd cfn-sphere
+    virtualenv .venv --python=python2.7
+    source .venv/bin/activate
+    pip install pybuilder
+    pyb install_dependencies
+	pyb
+
 
 ## Getting Started Guide
 
