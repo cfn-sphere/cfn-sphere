@@ -125,6 +125,7 @@ class CloudFormationTemplateTransformer(object):
                         if isinstance(result, dict):
                             lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
                         elif isinstance(result, list):
+                            result.reverse()
                             lines.extend(result)
                             lines.append(indented_key + ':')
                         else:

@@ -116,10 +116,8 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                             "Fn::Join": [
                                 ": ",
                                 [
-                                    "  QUEUE_URL",
-                                    {
-                                        "ref": "myQueueUrl"
-                                    }
+                                    "  SSO_KEY",
+                                    "mySsoKey"
                                 ]
                             ]
                         },
@@ -127,14 +125,41 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                             "Fn::Join": [
                                 ": ",
                                 [
-                                    "  SSO_KEY",
-                                    "mySsoKey"
+                                    "  QUEUE_URL",
+                                    {
+                                        "ref": "myQueueUrl"
+                                    }
                                 ]
                             ]
                         }
                     ]
                 ]
             }
+        }
+
+        key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
+
+        self.assertDictEqual(expected, value)
+
+    def test_render_taupage_user_data_accepts_multiple_sub_dicts(self):
+        input = {
+            "foo": {
+                'baa': {'key': 'value'}
+            }
+        }
+        expected = {'Fn::Base64':
+                        {
+                            'Fn::Join':
+                                [
+                                    '\n',
+                                    [
+                                        '#taupage-ami-config',
+                                        'foo:',
+                                        '  baa:',
+                                        {'Fn::Join': [': ', ['    key', 'value']]}
+                                    ]
+                                ]
+                        }
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
@@ -197,12 +222,18 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
         #import json
-        #print json.dumps(value, indent=4, sort_keys=True)
+        #print value
         self.assertDictEqual(expected, value)
 
     def test_transform_kv_to_cfn_join_accepts_int_key_value(self):
         result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join(8080, 9000)
         expected = {'Fn::Join': [': ', [8080, 9000]]}
+
+        self.assertEqual(expected, result)
+
+    def test_transform_kv_to_cfn_join_quotes_strings_with_colons(self):
+        result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join('f:b', 'foo:baa')
+        expected = {'Fn::Join': [': ', ["'f:b'", "'foo:baa'"]]}
 
         self.assertEqual(expected, result)
 
