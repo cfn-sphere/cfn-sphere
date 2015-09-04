@@ -196,8 +196,8 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        import json
-        print json.dumps(value, indent=4, sort_keys=True)
+        #import json
+        #print json.dumps(value, indent=4, sort_keys=True)
         self.assertDictEqual(expected, value)
 
     def test_transform_kv_to_cfn_join_accepts_int_key_value(self):
