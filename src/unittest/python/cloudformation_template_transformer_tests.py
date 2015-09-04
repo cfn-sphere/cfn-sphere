@@ -140,6 +140,26 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
         self.assertDictEqual(expected, value)
 
+    def test_transform_taupage_user_data_accepts_int_key_value(self):
+        input = {'ports': {8080: 9000}}
+
+        key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
+        expected = {
+            "Fn::Base64": {
+                "Fn::Join":
+                    [
+                        "\n",
+                        [
+                            "#taupage-ami-config",
+                            "ports:",
+                            {"Fn::Join": [": ", [8080, 9000]]}
+                        ]
+                    ]
+            }
+        }
+
+        self.assertDictEqual(expected, value)
+
     def test_transform_taupage_user_data_accepts_joins(self):
         input = {
             "source": {"Fn::Join": [":", ["my-registry/my-app", {"Ref": "appVersion"}]]}
@@ -178,6 +198,12 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         # import json
         # print json.dumps(value, indent=4, sort_keys=True)
         self.assertDictEqual(expected, value)
+
+    def test_transform_kv_to_cfn_join_accepts_int_key_value(self):
+        result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join(8080, 9000)
+        expected = {'Fn::Join': [': ', [8080, 9000]]}
+
+        self.assertEqual(expected, result)
 
     def test_transform_template_properly_renders_dict(self):
         template_dict = {

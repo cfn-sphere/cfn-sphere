@@ -97,7 +97,6 @@ class CloudFormationTemplateTransformer(object):
         lines = []
 
         for key, value in userdata_dict.items():
-
             if isinstance(key, basestring):
 
                 # do not go any further and directly return cfn functions and their values
@@ -126,6 +125,8 @@ class CloudFormationTemplateTransformer(object):
 
                     else:
                         lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
+            else:
+                lines.append(cls.transform_kv_to_cfn_join(key, value))
 
         lines.reverse()
         return lines
