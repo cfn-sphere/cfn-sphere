@@ -55,6 +55,12 @@ class CloudFormationTemplateTransformer(object):
 
     @staticmethod
     def transform_kv_to_cfn_join(key, value):
+        if isinstance(value, basestring) and ':' in key:
+            key = "'{0}'".format(key)
+
+        if isinstance(value, basestring) and ':' in value:
+            value = "'{0}'".format(value)
+
         return {'Fn::Join': [': ', [key, value]]}
 
     @staticmethod
