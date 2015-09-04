@@ -152,7 +152,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                         [
                             "#taupage-ami-config",
                             "ports:",
-                            {"Fn::Join": [": ", [8080, 9000]]}
+                            {"Fn::Join": [": ", ['  8080', 9000]]}
                         ]
                     ]
             }

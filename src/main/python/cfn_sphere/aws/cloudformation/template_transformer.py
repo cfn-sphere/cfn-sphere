@@ -97,18 +97,19 @@ class CloudFormationTemplateTransformer(object):
         lines = []
 
         for key, value in userdata_dict.items():
+
+            # key indentation with two spaces
+            if indentation_level > 0:
+                indented_key = '  ' * indentation_level + str(key)
+            else:
+                indented_key = key
+
             if isinstance(key, basestring):
 
                 # do not go any further and directly return cfn functions and their values
                 if key.lower() == 'ref' or key.lower() == 'fn::getatt' or key.lower() == 'fn::join':
                     return {key: value}
                 else:
-
-                    # key indentation with two spaces
-                    if indentation_level > 0:
-                        indented_key = '  ' * indentation_level + str(key)
-                    else:
-                        indented_key = key
 
                     # recursion for dict values
                     if isinstance(value, dict):
@@ -126,7 +127,7 @@ class CloudFormationTemplateTransformer(object):
                     else:
                         lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
             else:
-                lines.append(cls.transform_kv_to_cfn_join(key, value))
+                lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
 
         lines.reverse()
         return lines
