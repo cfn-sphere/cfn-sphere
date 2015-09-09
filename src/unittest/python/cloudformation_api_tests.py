@@ -116,6 +116,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
         stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.timeout = 42
 
         cfn = CloudFormation()
         cfn.create_stack(stack)
@@ -135,6 +136,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
         stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.timeout = 42
 
         cfn = CloudFormation()
         cfn.update_stack(stack)

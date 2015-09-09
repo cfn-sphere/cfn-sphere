@@ -35,7 +35,7 @@ class StackActionHandler(object):
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)
 
-            stack = CloudFormationStack(template, parameters, stack_name, self.region)
+            stack = CloudFormationStack(template, parameters, stack_name, self.region, stack_config.timeout)
 
             if stack_name in existing_stacks:
 
