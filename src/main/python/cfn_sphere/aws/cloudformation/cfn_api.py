@@ -75,7 +75,7 @@ class CloudFormation(object):
                                    parameters=stack.get_parameters_list(),
                                    capabilities=['CAPABILITY_IAM'])
 
-            self.wait_for_stack_action_to_complete(stack.name, "create")
+            self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
             self.logger.info("Create completed for {0}".format(stack.name))
         except BotoServerError as e:
             message = get_message_from_boto_server_error(e)
@@ -94,7 +94,7 @@ class CloudFormation(object):
                                    parameters=stack.get_parameters_list(),
                                    capabilities=['CAPABILITY_IAM'])
 
-            self.wait_for_stack_action_to_complete(stack.name, "update")
+            self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
             self.logger.info("Update completed for {0}".format(stack.name))
         except BotoServerError as e:
             message = get_message_from_boto_server_error(e)
@@ -145,7 +145,7 @@ class CloudFormation(object):
         raise CfnStackActionFailedException(
             "Timeout occurred waiting for events: '{0}' on stack {1}".format(expected_event, stack_name))
 
-    def wait_for_stack_action_to_complete(self, stack_name, action, timeout=600):
+    def wait_for_stack_action_to_complete(self, stack_name, action, timeout):
 
         allowed_actions = ["create", "update", "delete"]
         assert action.lower() in allowed_actions, "action argument must be one of {0}".format(allowed_actions)
