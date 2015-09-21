@@ -1,10 +1,9 @@
 import logging
 import time
-import datetime
 from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
-from cfn_sphere.util import get_logger, get_message_from_boto_server_error
+from cfn_sphere.util import get_logger, get_message_from_boto_server_error, get_cfn_api_server_time
 from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.exceptions import CfnStackActionFailedException
 
@@ -151,7 +150,7 @@ class CloudFormation(object):
         assert action.lower() in allowed_actions, "action argument must be one of {0}".format(allowed_actions)
 
         time_jitter_window = timedelta(seconds=10)
-        minimum_event_timestamp = datetime.datetime.utcnow() - time_jitter_window
+        minimum_event_timestamp = get_cfn_api_server_time() - time_jitter_window
         expected_start_event = action.upper() + "_IN_PROGRESS"
 
         start_event = self.wait_for_stack_events(stack_name,

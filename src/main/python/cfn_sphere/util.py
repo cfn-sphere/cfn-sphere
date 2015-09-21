@@ -1,6 +1,9 @@
 import logging
 import json
 import yaml
+import urllib2
+import datetime
+from cfn_sphere.exceptions import CfnSphereException
 
 
 def get_logger(root=False):
@@ -37,8 +40,20 @@ def convert_yaml_to_json_string(data):
         return '{}'
     return json.dumps(yaml.load(data), indent=2)
 
+
 def convert_dict_to_json_string(data):
     return json.dumps(data, indent=2)
 
+
 def get_message_from_boto_server_error(boto_server_error):
     return boto_server_error.message
+
+
+def get_cfn_api_server_time():
+    url = "http://aws.amazon.com"
+
+    try:
+        header_date = urllib2.urlopen(url).info().get('Date')
+        return datetime.datetime.strptime(header_date, '%a, %d %b %Y %H:%M:%S GMT')
+    except Exception as e:
+        raise CfnSphereException("Could not get AWS server time from {0}. Error: {1}".format(url, e))
