@@ -1,9 +1,9 @@
-from boto.ec2 import connect_to_region
+from boto import ec2
+from cfn_sphere.exceptions import CfnSphereException
 
-
-class Ec2(object):
+class Ec2Api(object):
     def __init__(self, region="eu-west-1"):
-        self.conn = connect_to_region(region)
+        self.conn = ec2.connect_to_region(region)
 
     def get_taupage_images(self):
         filters = {'name': ['Taupage-AMI-*'],
@@ -12,15 +12,18 @@ class Ec2(object):
                    'root-device-type': ['ebs']
                    }
 
-        return self.conn.get_all_images(executable_by=["self"], filters=filters)
+        response = self.conn.get_all_images(executable_by=["self"], filters=filters)
+
+        if not response:
+            raise CfnSphereException("Could not find any private and available Taupage AMI")
+
+        return {image.creationDate: image.id for image in response}
 
     def get_latest_taupage_image_id(self):
-        images = {image.creationDate: image.id for image in self.get_taupage_images()}
+        images = self.get_taupage_images()
 
         creation_dates = images.keys()
-        creation_dates.sort()
+        creation_dates.sort(reverse=True)
         return images[creation_dates[0]]
 
-# creationDate, name, id, ownerId
-
-print Ec2().get_latest_taupage_image_id()
+#print Ec2Api().get_latest_taupage_image_id()
