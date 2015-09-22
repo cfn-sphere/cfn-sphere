@@ -26,5 +26,3 @@ class Ec2Api(object):
         creation_dates = images.keys()
         creation_dates.sort(reverse=True)
         return images[creation_dates[0]]
-
-#print Ec2Api().get_latest_taupage_image_id()

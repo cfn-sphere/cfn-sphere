@@ -1,5 +1,6 @@
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.cloudformation.cfn_api import CloudFormation
+from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.resolver.dependency_resolver import DependencyResolver
 from boto.exception import BotoServerError
 
@@ -16,6 +17,7 @@ class ParameterResolver(object):
     def __init__(self, region="eu-west-1"):
         self.logger = get_logger()
         self.cfn = CloudFormation(region)
+        self.ec2 = Ec2Api(region)
 
     @staticmethod
     def convert_list_to_string(value):
@@ -62,6 +64,10 @@ class ParameterResolver(object):
         return value.lower().startswith('|keeporuse|')
 
     @staticmethod
+    def is_taupage_ami_reference(value):
+        return value.lower() == '|latesttaupageami|'
+
+    @staticmethod
     def get_default_from_keep_value(value):
         return value.split('|', 2)[2]
 
@@ -97,8 +103,12 @@ class ParameterResolver(object):
                 elif self.is_keep_value(value):
                     parameters[key] = str(self.get_actual_value(key, value, stack_name))
 
+                elif self.is_taupage_ami_reference(value):
+                    parameters[key] = str(self.ec2.get_latest_taupage_image_id())
+
                 else:
                     parameters[key] = value
+
             elif isinstance(value, bool):
                 parameters[key] = str(value).lower()
             elif isinstance(value, int):
@@ -109,11 +119,3 @@ class ParameterResolver(object):
                 raise NotImplementedError("Cannot handle {0} value for key: {1}".format(type(value), key))
 
         return parameters
-
-
-if __name__ == "__main__":
-    cfn = ParameterResolver()
-
-    print(cfn.get_stack_outputs())
-    print(cfn.get_output_value("simple-cloud-rest-api.WebsiteURL"))
-    # print(cfn.get_artifact_value("blalbufg"))

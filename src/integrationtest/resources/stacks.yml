@@ -5,9 +5,10 @@ stacks:
     parameters:
       exposeTopicArn: "arn:aws:sns:us-east-1:522480313337:unreliable-town-clock-topic-178F1OQACHTYF"
   my-instance:
-    template-url: templates/ec2-instance.yml
+    template-url: templates/reference-template.yml
     parameters:
       vpcID: "vpc-c3eb41a6"
       subnetID: "subnet-97a12ee0"
+      taupageAmiId: "|latestTaupageAmi|"
       appVersion: "|keepOrUse|1"
       updateQueueUrl: "|ref|my-queue.url"

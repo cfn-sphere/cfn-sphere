@@ -14,7 +14,7 @@ Parameters:
     Description: "SQS Queue URL"
     Type: "String"
 Resources:
-  jobQueue:
+  testQueue:
     Type: "AWS::SQS::Queue"
   secGroup:
     Type: "AWS::EC2::SecurityGroup"
@@ -33,5 +33,13 @@ Resources:
         application_id: "|Ref|AWS::StackName"
         application_version: "|Ref|appVersion"
         environment:
-          JOB_QUEUE: "|Ref|jobQueue"
+          JOB_QUEUE: "|Ref|testQueue"
           UPDATE_QUEUE: "|Ref|updateQueueUrl"
+PostCustomResources:
+  exposeTopicSubscription:
+    Type: "Custom::SNS::Subscription"
+    Properties:
+      TopicArn:
+        Ref: exposeTopicArn
+      TopicRegion: "us-east-1"
+      QueueResourceName: "testQueue"
