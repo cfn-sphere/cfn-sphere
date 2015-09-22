@@ -1,6 +1,7 @@
 from boto import ec2
 from cfn_sphere.exceptions import CfnSphereException
 
+
 class Ec2Api(object):
     def __init__(self, region="eu-west-1"):
         self.conn = ec2.connect_to_region(region)
@@ -17,10 +18,10 @@ class Ec2Api(object):
         if not response:
             raise CfnSphereException("Could not find any private and available Taupage AMI")
 
-        return {image.creationDate: image.id for image in response}
+        return response
 
     def get_latest_taupage_image_id(self):
-        images = self.get_taupage_images()
+        images = {image.creationDate: image.id for image in self.get_taupage_images()}
 
         creation_dates = images.keys()
         creation_dates.sort(reverse=True)
