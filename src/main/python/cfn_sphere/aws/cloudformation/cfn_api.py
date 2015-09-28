@@ -27,7 +27,7 @@ class CloudFormation(object):
         result.extend(response)
         while response.next_token:
             response = self.conn.describe_stacks(next_token=response.next_token)
-        result.extend(response)
+            result.extend(response)
         return result
 
     def get_stack_names(self):
