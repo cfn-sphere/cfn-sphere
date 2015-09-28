@@ -34,8 +34,10 @@ def get_current_account_alias():
 
 @click.group(help="This tool manages AWS CloudFormation templates "
                   "and stacks by providing an application scope and useful tooling.")
+@click.version_option(version='${version}')
 def cli():
     pass
+
 
 
 @cli.command(help="Sync AWS resources with definition file")

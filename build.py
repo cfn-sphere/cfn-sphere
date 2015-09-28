@@ -8,6 +8,7 @@ use_plugin("python.flake8")
 use_plugin("python.coverage")
 use_plugin("python.distutils")
 use_plugin('copy_resources')
+use_plugin('filter_resources')
 
 name = "cfn-sphere"
 
@@ -18,7 +19,7 @@ summary = 'cfn-sphere AWS CloudFormation management cli'
 url = 'https://github.com/marco-hoyer/cfn-sphere'
 version = '0.1.17'
 
-default_task = ['analyze', 'package']
+default_task = ['clean', 'analyze', 'package']
 
 
 @init
@@ -36,6 +37,8 @@ def set_properties(project):
 
     project.set_property('copy_resources_target', '$dir_dist')
     project.get_property('copy_resources_glob').append('setup.cfg')
+
+    project.get_property('filter_resources_glob').extend(['**/cfn_sphere/__init__.py', '**/scripts/cf'])
 
     project.set_property('distutils_classifiers', [
         'Development Status :: 4 - Beta',
