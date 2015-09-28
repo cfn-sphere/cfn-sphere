@@ -30,6 +30,7 @@ def set_properties(project):
     project.depends_on("pyyaml")
     project.depends_on("networkx")
     project.depends_on('ordereddict')
+    project.set_property('integrationtest_inherit_environment', True)
     project.set_property('coverage_break_build', False)
     project.set_property('install_dependencies_upgrade', True)
 
