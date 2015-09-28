@@ -1,13 +1,10 @@
 region: eu-west-1
 stacks:
-  my-queue:
-    template-url: templates/queues-example.yml
+  cfn-sphere-test-vpc:
+    template-url: templates/vpc.yml
+  cfn-sphere-test-instances:
+    template-url: templates/instances.yml
     parameters:
-      exposeTopicArn: "arn:aws:sns:us-east-1:522480313337:unreliable-town-clock-topic-178F1OQACHTYF"
-  my-instance:
-    template-url: templates/ec2-instance.yml
-    parameters:
-      vpcID: "vpc-c3eb41a6"
-      subnetID: "subnet-97a12ee0"
+      vpcID: "|Ref|cfn-sphere-test-vpc.id"
+      subnetID: "|Ref|cfn-sphere-test-vpc.subnet"
       appVersion: "|keepOrUse|1"
-      updateQueueUrl: "|ref|my-queue.url"

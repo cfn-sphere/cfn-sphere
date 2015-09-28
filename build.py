@@ -18,7 +18,7 @@ summary = 'cfn-sphere AWS CloudFormation management cli'
 url = 'https://github.com/marco-hoyer/cfn-sphere'
 version = '0.1.16'
 
-default_task = ['analyze', 'publish']
+default_task = ['analyze', 'package']
 
 
 @init
