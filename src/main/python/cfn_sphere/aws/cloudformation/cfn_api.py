@@ -145,7 +145,7 @@ class CloudFormation(object):
 
             time.sleep(10)
         raise CfnStackActionFailedException(
-            "Timeout occurred waiting for events: '{0}' on stack {1}".format(expected_event, stack_name))
+            "Timeout occurred waiting for '{0}' on stack {1}".format(expected_event, stack_name))
 
     def wait_for_stack_action_to_complete(self, stack_name, action, timeout):
 
