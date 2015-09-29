@@ -3,7 +3,8 @@ import time
 from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
-from cfn_sphere.util import get_logger, get_message_from_boto_server_error, get_cfn_api_server_time
+from cfn_sphere.util import get_logger, get_message_from_boto_server_error, get_cfn_api_server_time, \
+    get_pretty_parameters_string
 from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.exceptions import CfnStackActionFailedException
 
@@ -67,8 +68,9 @@ class CloudFormation(object):
         assert isinstance(stack, CloudFormationStack)
         try:
             self.logger.info(
-                "Creating stack {0} from template {1} with parameters: {2}".format(stack.name, stack.template.name,
-                                                                                   stack.parameters))
+                "Creating stack {0} from template {1} with parameters:\n{2}".format(stack.name, stack.template.name,
+                                                                                    get_pretty_parameters_string(
+                                                                                        stack.parameters)))
             self.conn.create_stack(stack.name,
                                    template_body=stack.template.get_template_json(),
                                    parameters=stack.get_parameters_list(),
@@ -85,8 +87,9 @@ class CloudFormation(object):
         assert isinstance(stack, CloudFormationStack)
         try:
             self.logger.info(
-                "Updating stack {0} from template {1} with parameters: {2}".format(stack.name, stack.template.name,
-                                                                                   stack.parameters))
+                "Updating stack {0} from template {1} with parameters:\n{2}".format(stack.name, stack.template.name,
+                                                                                    get_pretty_parameters_string(
+                                                                                        stack.parameters)))
 
             self.conn.update_stack(stack.name,
                                    template_body=stack.template.get_template_json(),

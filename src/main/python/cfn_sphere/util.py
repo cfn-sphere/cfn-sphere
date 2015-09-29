@@ -29,6 +29,13 @@ def convert_file(file_path):
         return convert(filestream.read())
 
 
+def get_pretty_parameters_string(parameter_dict):
+    parameters_string = ""
+    for key, value in parameter_dict.items():
+        parameters_string = parameters_string + "{0} = {1}\n".format(key, value)
+
+    return parameters_string
+
 def convert_json_to_yaml_string(data):
     if not data:
         return ''
