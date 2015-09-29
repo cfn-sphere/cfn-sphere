@@ -11,8 +11,32 @@ class CloudFormationTemplateTransformer(object):
         template_dict = cls.transform_dict_keys(template_dict, cls.transform_join_key)
         template_dict = cls.transform_dict_keys(template_dict, cls.transform_taupage_user_data_key)
 
+        template_dict = cls.transform_dict_values(template_dict, cls.check_for_leftover_reference_values)
+        template_dict = cls.transform_dict_keys(template_dict, cls.check_for_leftover_reference_keys)
+
         template.body_dict = template_dict
         return template
+
+    @staticmethod
+    def check_for_leftover_reference_values(value):
+        if isinstance(value, list):
+            for item in value:
+                if item.startswith('|'):
+                    raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
+        elif isinstance(value, basestring):
+            if value.startswith('|'):
+                raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
+
+        return value
+
+    @staticmethod
+    def check_for_leftover_reference_keys(key, value):
+        if key.startswith('|'):
+            raise TemplateErrorException("Unhandled reference key found: {0}".format(key))
+        if key.startswith('@') and key.endswith('@'):
+            raise TemplateErrorException("Unhandled reference key found: {0}".format(key))
+
+        return key, value
 
     @classmethod
     def transform_taupage_user_data_key(cls, key, value):

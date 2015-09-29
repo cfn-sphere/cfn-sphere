@@ -148,18 +148,18 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
             }
         }
         expected = {'Fn::Base64':
-                        {
-                            'Fn::Join':
-                                [
-                                    '\n',
-                                    [
-                                        '#taupage-ami-config',
-                                        'foo:',
-                                        '  baa:',
-                                        {'Fn::Join': [': ', ['    key', 'value']]}
-                                    ]
-                                ]
-                        }
+            {
+                'Fn::Join':
+                    [
+                        '\n',
+                        [
+                            '#taupage-ami-config',
+                            'foo:',
+                            '  baa:',
+                            {'Fn::Join': [': ', ['    key', 'value']]}
+                        ]
+                    ]
+            }
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
@@ -221,8 +221,8 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        #import json
-        #print value
+        # import json
+        # print value
         self.assertDictEqual(expected, value)
 
     def test_transform_kv_to_cfn_join_accepts_int_key_value(self):
@@ -341,3 +341,64 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         expected = {'key1': {'Fn::Join': ['.', [{'Ref': 'foo'}, 'b']]}}
 
         self.assertEqual(expected, result.body_dict)
+
+    def test_transform_template_raises_exception_on_unknown_reference_value(self):
+        template_dict = {
+            'key1': "|foo|foo"
+        }
+
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+
+    def test_transform_template_raises_exception_on_unknown_reference_key(self):
+        template_dict = {
+            '|key|': "foo"
+        }
+
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+
+    def test_transform_template_raises_exception_on_unknown_at_reference_key(self):
+        template_dict = {
+            '@foo@': "foo"
+        }
+
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+
+    def test_transform_template_raises_exception_on_embedded_reference(self):
+        template_dict = {
+            'key1': {"foo": ["|foo|foo", "b"]}
+        }
+
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+
+    def test_check_for_leftover_reference_values_raises_exception_on_existing_reference(self):
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.check_for_leftover_reference_values('|Ref|foo')
+
+    def test_check_for_leftover_reference_values_raises_exception_on_references_in_list_values(self):
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.check_for_leftover_reference_values(['a', '|Ref|foo', 'b'])
+
+    def test_check_for_leftover_reference_values_properly_returns_values_without_reference(self):
+        self.assertEqual('foo', CloudFormationTemplateTransformer.check_for_leftover_reference_values('foo'))
+
+    def test_check_for_leftover_reference_values_properly_returns_empty_values(self):
+        self.assertEqual('', CloudFormationTemplateTransformer.check_for_leftover_reference_values(''))
+
+    def test_check_for_leftover_reference_keys_raises_exception_on_existing_at_reference(self):
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.check_for_leftover_reference_keys('@Foo@', 'foo')
+
+    def test_check_for_leftover_reference_keys_raises_exception_on_existing_pipe_reference(self):
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.check_for_leftover_reference_keys('|foo|', 'foo')
+
+    def test_check_for_leftover_reference_keys_properly_returns_values_without_reference(self):
+        self.assertEqual(('key', 'value'),
+                         CloudFormationTemplateTransformer.check_for_leftover_reference_keys('key', 'value'))
+
+    def test_check_for_leftover_reference_keys_properly_returns_empty_values(self):
+        self.assertEqual(('', ''), CloudFormationTemplateTransformer.check_for_leftover_reference_keys('', ''))
