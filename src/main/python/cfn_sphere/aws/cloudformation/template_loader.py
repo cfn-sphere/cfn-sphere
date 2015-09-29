@@ -44,5 +44,6 @@ class CloudFormationTemplateLoader(object):
                 return json.loads(s3.get_contents_from_url(url))
             if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                 return yaml.load(s3.get_contents_from_url(url))
+            raise TemplateErrorException("{0} has an unknown file type. Please provide an url with [.json|.yml|.yaml] extension")
         except Exception as e:
             raise TemplateErrorException(e)

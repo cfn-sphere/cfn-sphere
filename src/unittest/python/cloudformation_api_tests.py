@@ -5,10 +5,42 @@ from mock import Mock, patch
 from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.aws.cloudformation.cfn_api import CloudFormation
-from boto.cloudformation.stack import StackEvent
+from boto.cloudformation.stack import StackEvent, Stack
+from boto.resultset import ResultSet
 
 
 class CloudFormationApiTests(unittest2.TestCase):
+
+    @patch('cfn_sphere.aws.cloudformation.cfn_api.cloudformation')
+    def test_get_stacks_correctly_calls_aws_api(self, cloudformation_mock):
+        stacks = [Mock(spec=Stack), Mock(spec=Stack)]
+
+        result = ResultSet()
+        result.extend(stacks)
+        result.next_token = None
+        cloudformation_mock.connect_to_region.return_value.describe_stacks.return_value = result
+
+        cfn = CloudFormation()
+        self.assertListEqual(stacks, cfn.get_stacks())
+
+    @patch('cfn_sphere.aws.cloudformation.cfn_api.cloudformation')
+    def test_get_stacks_correctly_aggregates_paged_results(self, cloudformation_mock):
+        stacks_1 = [Mock(spec=Stack), Mock(spec=Stack)]
+        stacks_2 = [Mock(spec=Stack), Mock(spec=Stack)]
+
+        result_1 = ResultSet()
+        result_1.extend(stacks_1)
+        result_1.next_token = "my-next-token"
+
+        result_2 = ResultSet()
+        result_2.extend(stacks_2)
+        result_2.next_token = None
+
+        cloudformation_mock.connect_to_region.return_value.describe_stacks.side_effect = [result_1, result_2]
+
+        cfn = CloudFormation()
+        self.assertListEqual(stacks_1 + stacks_2, cfn.get_stacks())
+
     @patch('cfn_sphere.aws.cloudformation.cfn_api.cloudformation')
     def test_wait_for_stack_event_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
