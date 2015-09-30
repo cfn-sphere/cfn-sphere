@@ -4,15 +4,16 @@ import sys
 import boto
 import click
 import logging
-from cfn_sphere.util import convert_file, get_logger, get_message_from_boto_server_error, convert_dict_to_json_string
+from cfn_sphere.util import convert_file, get_logger, get_message_from_boto_server_error, convert_dict_to_json_string, \
+    get_latest_version
 from cfn_sphere.config import Config
 from cfn_sphere.main import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 from cfn_sphere.aws.cloudformation.template_loader import CloudFormationTemplateLoader
 from cfn_sphere.aws.cloudformation.template_transformer import CloudFormationTemplateTransformer
 from boto.exception import NoAuthHandlerFound, BotoServerError
 
+VERSION = '${version}'
 LOGGER = get_logger(root=True)
 logging.getLogger('boto').setLevel(logging.FATAL)
 
@@ -32,12 +33,19 @@ def get_current_account_alias():
         sys.exit(1)
 
 
+def check_update_available():
+    latest_version = get_latest_version()
+    if latest_version and VERSION != latest_version:
+        click.confirm(
+            "There is an update available (v: {0}). Do you want to continue?".format(latest_version),
+            abort=True)
+
+
 @click.group(help="This tool manages AWS CloudFormation templates "
                   "and stacks by providing an application scope and useful tooling.")
-@click.version_option(version='${version}')
+@click.version_option(version=VERSION)
 def cli():
     pass
-
 
 
 @cli.command(help="Sync AWS resources with definition file")
@@ -50,26 +58,30 @@ def sync(filename, debug, confirm):
     else:
         LOGGER.setLevel(logging.INFO)
 
-    if confirm or click.confirm(
-            'This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
-                get_current_account_alias()), abort=True):
-        try:
+    if not confirm:
+        check_update_available()
+        click.confirm('This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
+            get_current_account_alias()), abort=True)
 
-            config = Config(filename)
-            StackActionHandler(config).create_or_update_stacks()
-        except CfnSphereException as e:
-            LOGGER.error("Failed, {0}".format(e))
-            sys.exit(1)
-        except Exception as e:
-            LOGGER.error("Failed with unexpected error".format(e))
-            LOGGER.exception(e)
-            sys.exit(1)
+    try:
+
+        config = Config(filename)
+        StackActionHandler(config).create_or_update_stacks()
+    except CfnSphereException as e:
+        LOGGER.error("Failed, {0}".format(e))
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.error("Failed with unexpected error".format(e))
+        LOGGER.exception(e)
+        sys.exit(1)
 
 
 @cli.command(help="Convert JSON to YAML or vice versa")
 @click.argument('filename', type=click.Path(exists=True))
 @click.option('--debug', is_flag=True, default=False, help="Debug output")
 def convert(filename, debug):
+    check_update_available()
+
     if debug:
         LOGGER.setLevel(logging.DEBUG)
 
@@ -84,6 +96,8 @@ def convert(filename, debug):
 @cli.command(help="Render template as it would be used to create/update a stack")
 @click.argument('filename', type=click.Path(exists=True))
 def render_template(filename):
+    check_update_available()
+
     loader = CloudFormationTemplateLoader()
     template = loader.get_template_from_url(filename, None)
     template = CloudFormationTemplateTransformer.transform_template(template)

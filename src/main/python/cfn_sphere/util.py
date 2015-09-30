@@ -36,6 +36,7 @@ def get_pretty_parameters_string(parameter_dict):
 
     return parameters_string
 
+
 def convert_json_to_yaml_string(data):
     if not data:
         return ''
@@ -64,3 +65,18 @@ def get_cfn_api_server_time():
         return datetime.datetime.strptime(header_date, '%a, %d %b %Y %H:%M:%S GMT')
     except Exception as e:
         raise CfnSphereException("Could not get AWS server time from {0}. Error: {1}".format(url, e))
+
+
+def get_latest_version():
+    try:
+        package_info = get_pypi_package_description()
+        return package_info["info"]["version"]
+    except Exception:
+        return None
+
+
+def get_pypi_package_description():
+    url = "https://pypi.python.org/pypi/cfn-sphere/json"
+
+    response = urllib2.urlopen(url, timeout=2)
+    return json.load(response)
