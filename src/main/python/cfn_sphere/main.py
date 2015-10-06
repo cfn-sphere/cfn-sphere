@@ -22,7 +22,8 @@ class StackActionHandler(object):
         stack_processing_order = DependencyResolver().get_stack_order(desired_stacks)
 
         if len(stack_processing_order) > 1:
-            self.logger.info("Will process stacks in the following order: {0}".format(", ".join(stack_processing_order)))
+            self.logger.info(
+                "Will process stacks in the following order: {0}".format(", ".join(stack_processing_order)))
 
         for stack_name in stack_processing_order:
             stack_config = self.config.stacks.get(stack_name)

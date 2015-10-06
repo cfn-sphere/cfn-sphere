@@ -138,8 +138,8 @@ class CloudFormation(object):
                                 raise CfnStackActionFailedException("Rollback occured")
                         else:
                             if event.resource_status.endswith("_FAILED"):
-                                self.logger.error("Failed to create {0} (Reason: {1})".format(event.logical_resource_id,
-                                                                                              event.resource_status_reason))
+                                self.logger.error("Failed to create {0} (Reason: {1})".format(
+                                    event.logical_resource_id, event.resource_status_reason))
                             else:
                                 self.logger.info(event)
 

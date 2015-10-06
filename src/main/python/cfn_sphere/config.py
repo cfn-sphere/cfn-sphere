@@ -4,9 +4,6 @@ import yaml
 import os
 
 
-
-
-
 class Config(object):
     def __init__(self, config_file=None, config_dict=None):
 
