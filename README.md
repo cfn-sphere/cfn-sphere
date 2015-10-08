@@ -19,8 +19,8 @@ A CLI tool intended to simplify AWS CloudFormation handling.
 **This might be the easiest solution for you**
 
     pip install cfn-sphere
-    
-### Debian / Ubuntu Packages: 
+
+### Debian / Ubuntu Packages:
 
 **.deb packages are untested right now! Use Python artifacts instead!**
 
@@ -28,7 +28,7 @@ Install repo gpg key and required package:
 
     curl https://packagecloud.io/gpg.key | apt-key add -
     apt-get install -y apt-transport-https
-    
+
 Put a file named /etc/apt.sources.list.d/cfn-sphere.list with the following content if your distro version is wheezy:
 
     deb https://packagecloud.io/marco-hoyer/cfn-sphere/debian/ wheezy main
@@ -41,9 +41,9 @@ Install package:
 ### RHEL6 RPM:
 
     sudo yum install pygpgme
-    
+
 Put a file named /etc/yum.repos.d/cfn-sphere.repo with the following content:
- 
+
     [cfn-sphere]
     name=cfn-sphere
     baseurl=https://packagecloud.io/marco-hoyer/cfn-sphere/el/6/$basearch
@@ -75,7 +75,7 @@ Execute:
     source .venv/bin/activate
     pip install pybuilder
     pyb install_dependencies
-	pyb
+    pyb
 
 
 ## Getting Started Guide
@@ -83,19 +83,19 @@ Execute:
 ### 1. Create Stacks Config
 Create a YAML file containing a region and some stacks in a stacks.yml file f.e.:
 
-	region: eu-west-1
-	stacks:
-  		test-vpc:
-    		template: vpc.yml
-  		test-stack:
-    		template: app.yml
-    		parameters:
-      			vpcID: "|ref|test-vpc.id"
-      			
+    region: eu-west-1
+    stacks:
+        test-vpc:
+            template: vpc.yml
+        test-stack:
+            template: app.yml
+            parameters:
+                vpcID: "|ref|test-vpc.id"
+
 ### 2. Write your CloudFormation templates
 Write your templates and configure them in your stacks.yml
 
 ### 3. Sync it
 A simple command synchronizes your definition with reality!
 
-	cf sync myapp-test.yml
+    cf sync myapp-test.yml
