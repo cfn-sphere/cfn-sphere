@@ -1,7 +1,7 @@
 import logging
 import json
 import yaml
-import urllib2
+from six.moves.urllib import request as urllib2
 import datetime
 from cfn_sphere.exceptions import CfnSphereException
 
@@ -23,7 +23,8 @@ def convert_file(file_path):
     elif file_path.lower().endswith('.yaml'):
         convert = convert_yaml_to_json_string
     else:
-        raise Exception('Unknown file extension. Please use .yaml, .yml or .json!')
+        raise Exception(
+            'Unknown file extension. Please use .yaml, .yml or .json!')
 
     with open(file_path, 'r') as filestream:
         return convert(filestream.read())
@@ -32,7 +33,8 @@ def convert_file(file_path):
 def get_pretty_parameters_string(parameter_dict):
     parameters_string = ""
     for key, value in parameter_dict.items():
-        parameters_string = parameters_string + "{0} = {1}\n".format(key, value)
+        parameters_string = parameters_string + \
+            "{0} = {1}\n".format(key, value)
 
     return parameters_string
 
@@ -64,7 +66,8 @@ def get_cfn_api_server_time():
         header_date = urllib2.urlopen(url).info().get('Date')
         return datetime.datetime.strptime(header_date, '%a, %d %b %Y %H:%M:%S GMT')
     except Exception as e:
-        raise CfnSphereException("Could not get AWS server time from {0}. Error: {1}".format(url, e))
+        raise CfnSphereException(
+            "Could not get AWS server time from {0}. Error: {1}".format(url, e))
 
 
 def get_latest_version():

@@ -1,8 +1,9 @@
 from boto import connect_s3
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 
 class S3(object):
+
     def __init__(self):
         self.conn = connect_s3()
 

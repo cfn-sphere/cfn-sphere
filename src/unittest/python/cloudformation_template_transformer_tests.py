@@ -6,6 +6,7 @@ from mock import Mock, mock
 
 
 class CloudFormationTemplateTransformerTests(unittest2.TestCase):
+
     def test_transform_dict_values_executes_value_handler_for_all_matching_prefixes(self):
         dictionary = {'a': 'foo123', 'b': {'c': 'foo234'}}
         handler = Mock()

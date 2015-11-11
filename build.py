@@ -26,6 +26,7 @@ default_task = ['clean', 'analyze', 'package']
 def set_properties(project):
     project.build_depends_on("unittest2")
     project.build_depends_on("mock")
+    project.depends_on('six')
     project.depends_on("click")
     project.depends_on("boto")
     project.depends_on("pyyaml")
