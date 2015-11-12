@@ -1,26 +1,18 @@
 from cfn_sphere.exceptions import TemplateErrorException
 from six import string_types
 
-
 class CloudFormationTemplateTransformer(object):
-
     @classmethod
     def transform_template(cls, template):
         template_dict = template.body_dict
 
-        template_dict = cls.transform_dict_values(
-            template_dict, cls.transform_reference_string)
-        template_dict = cls.transform_dict_values(
-            template_dict, cls.transform_getattr_string)
-        template_dict = cls.transform_dict_keys(
-            template_dict, cls.transform_join_key)
-        template_dict = cls.transform_dict_keys(
-            template_dict, cls.transform_taupage_user_data_key)
+        template_dict = cls.transform_dict_values(template_dict, cls.transform_reference_string)
+        template_dict = cls.transform_dict_values(template_dict, cls.transform_getattr_string)
+        template_dict = cls.transform_dict_keys(template_dict, cls.transform_join_key)
+        template_dict = cls.transform_dict_keys(template_dict, cls.transform_taupage_user_data_key)
 
-        template_dict = cls.transform_dict_values(
-            template_dict, cls.check_for_leftover_reference_values)
-        template_dict = cls.transform_dict_keys(
-            template_dict, cls.check_for_leftover_reference_keys)
+        template_dict = cls.transform_dict_values(template_dict, cls.check_for_leftover_reference_values)
+        template_dict = cls.transform_dict_keys(template_dict, cls.check_for_leftover_reference_keys)
 
         template.body_dict = template_dict
         return template
@@ -30,23 +22,19 @@ class CloudFormationTemplateTransformer(object):
         if isinstance(value, list):
             for item in value:
                 if item.startswith('|'):
-                    raise TemplateErrorException(
-                        "Unhandled reference value found: {0}".format(value))
+                    raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
         elif isinstance(value, string_types):
             if value.startswith('|'):
-                raise TemplateErrorException(
-                    "Unhandled reference value found: {0}".format(value))
+                raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
 
         return value
 
     @staticmethod
     def check_for_leftover_reference_keys(key, value):
         if key.startswith('|'):
-            raise TemplateErrorException(
-                "Unhandled reference key found: {0}".format(key))
+            raise TemplateErrorException("Unhandled reference key found: {0}".format(key))
         if key.startswith('@') and key.endswith('@'):
-            raise TemplateErrorException(
-                "Unhandled reference key found: {0}".format(key))
+            raise TemplateErrorException("Unhandled reference key found: {0}".format(key))
 
         return key, value
 
@@ -60,8 +48,7 @@ class CloudFormationTemplateTransformer(object):
             if str(key).lower() == '@taupageuserdata@':
 
                 if not isinstance(value, dict):
-                    raise TemplateErrorException(
-                        "Value of 'TaupageUserData' must be of type dict")
+                    raise TemplateErrorException("Value of 'TaupageUserData' must be of type dict")
 
                 lines = ['#taupage-ami-config']
                 lines.extend(cls.transform_userdata_dict_to_lines_list(value))
@@ -82,8 +69,7 @@ class CloudFormationTemplateTransformer(object):
         if isinstance(key, string_types):
             if key.lower().startswith('|join|'):
                 if not isinstance(value, list):
-                    raise TemplateErrorException(
-                        "Value of '|join|' must be of type list")
+                    raise TemplateErrorException("Value of '|join|' must be of type list")
 
                 join_string = key[6:]
 
@@ -111,8 +97,7 @@ class CloudFormationTemplateTransformer(object):
                 referenced_value = value[5:]
 
                 if not referenced_value:
-                    raise TemplateErrorException(
-                        "Reference must be like |ref|resource")
+                    raise TemplateErrorException("Reference must be like |ref|resource")
 
                 return {'Ref': referenced_value}
 
@@ -128,8 +113,7 @@ class CloudFormationTemplateTransformer(object):
                 elements = value.split('|', 3)
 
                 if len(elements) != 4:
-                    raise TemplateErrorException(
-                        "Attribute reference must be like '|getatt|resource|attribute'")
+                    raise TemplateErrorException("Attribute reference must be like '|getatt|resource|attribute'")
 
                 resource = elements[2]
                 attribute = elements[3]
@@ -152,8 +136,7 @@ class CloudFormationTemplateTransformer(object):
 
             if isinstance(key, string_types):
 
-                # do not go any further and directly return cfn functions and
-                # their values
+                # do not go any further and directly return cfn functions and their values
                 if key.lower() == 'ref' or key.lower() == 'fn::getatt' or key.lower() == 'fn::join':
                     return {key: value}
                 else:
@@ -161,23 +144,19 @@ class CloudFormationTemplateTransformer(object):
                     # recursion for dict values
                     if isinstance(value, dict):
 
-                        result = cls.transform_userdata_dict_to_lines_list(
-                            value, indentation_level + 1)
+                        result = cls.transform_userdata_dict_to_lines_list(value, indentation_level + 1)
 
                         if isinstance(result, dict):
-                            lines.append(
-                                cls.transform_kv_to_cfn_join(indented_key, result))
+                            lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
                         elif isinstance(result, list):
                             result.reverse()
                             lines.extend(result)
                             lines.append(indented_key + ':')
                         else:
-                            raise TemplateErrorException(
-                                "Failed to convert user-data dict to list of lines")
+                            raise TemplateErrorException("Failed to convert user-data dict to list of lines")
 
                     else:
-                        lines.append(
-                            cls.transform_kv_to_cfn_join(indented_key, value))
+                        lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
             else:
                 lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
 
@@ -213,15 +192,13 @@ class CloudFormationTemplateTransformer(object):
             value = dictionary[key]
 
             if isinstance(value, dict):
-                dictionary[key] = cls.transform_dict_values(
-                    value, value_handler)
+                dictionary[key] = cls.transform_dict_values(value, value_handler)
 
             elif isinstance(value, list):
                 value_list = []
                 for item in value:
                     if isinstance(item, dict):
-                        value_list.append(
-                            cls.transform_dict_values(item, value_handler))
+                        value_list.append(cls.transform_dict_values(item, value_handler))
                     elif isinstance(item, string_types):
                         value_list.append(value_handler(item))
                     else:
