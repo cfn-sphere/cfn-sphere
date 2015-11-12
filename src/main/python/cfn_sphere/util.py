@@ -1,7 +1,7 @@
 import logging
 import json
 import yaml
-import urllib2
+from six.moves.urllib import request as urllib2
 import datetime
 from cfn_sphere.exceptions import CfnSphereException
 

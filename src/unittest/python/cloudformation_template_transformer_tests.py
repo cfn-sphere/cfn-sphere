@@ -3,9 +3,11 @@ from cfn_sphere.aws.cloudformation.template_transformer import CloudFormationTem
 from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 from cfn_sphere.exceptions import TemplateErrorException
 from mock import Mock, mock
+import six
 
 
 class CloudFormationTemplateTransformerTests(unittest2.TestCase):
+
     def test_transform_dict_values_executes_value_handler_for_all_matching_prefixes(self):
         dictionary = {'a': 'foo123', 'b': {'c': 'foo234'}}
         handler = Mock()
@@ -13,9 +15,8 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
         result = CloudFormationTemplateTransformer.transform_dict_values(dictionary, handler)
         expected_calls = [mock.call('foo123'), mock.call('foo234')]
-
-        self.assertListEqual(expected_calls, handler.mock_calls)
-        self.assertEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
+        six.assertCountEqual(self, expected_calls, handler.mock_calls)
+        six.assertCountEqual(self, result, {'a': 'foo', 'b': {'c': 'foo'}})
 
     def test_transform_userdata_dict_to_lines_list(self):
         result = CloudFormationTemplateTransformer.transform_userdata_dict_to_lines_list({'my-key': 'my-value'})
@@ -138,8 +139,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-
-        self.assertDictEqual(expected, value)
+        six.assertCountEqual(self, expected, value)
 
     def test_render_taupage_user_data_accepts_multiple_sub_dicts(self):
         input = {
@@ -309,8 +309,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                 }
             }
         }
-
-        self.assertEqual(expected, result.body_dict)
+        six.assertCountEqual(self, expected, result.body_dict)
 
     def test_transform_template_transforms_list_values(self):
         template_dict = {

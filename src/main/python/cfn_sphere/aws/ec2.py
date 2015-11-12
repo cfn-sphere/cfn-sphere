@@ -23,6 +23,6 @@ class Ec2Api(object):
     def get_latest_taupage_image_id(self):
         images = {image.creationDate: image.id for image in self.get_taupage_images()}
 
-        creation_dates = images.keys()
+        creation_dates = list(images.keys())
         creation_dates.sort(reverse=True)
         return images[creation_dates[0]]

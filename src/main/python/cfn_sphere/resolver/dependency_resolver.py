@@ -70,4 +70,4 @@ class DependencyResolver(object):
 if __name__ == "__main__":
     stacks = ['a', 'b', 'c']
     managed_stacks = []
-    print DependencyResolver.filter_unmanaged_stacks(managed_stacks, stacks)
+    print (DependencyResolver.filter_unmanaged_stacks(managed_stacks, stacks))

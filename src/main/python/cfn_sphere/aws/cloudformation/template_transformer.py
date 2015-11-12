@@ -1,5 +1,5 @@
 from cfn_sphere.exceptions import TemplateErrorException
-
+from six import string_types
 
 class CloudFormationTemplateTransformer(object):
     @classmethod
@@ -23,7 +23,7 @@ class CloudFormationTemplateTransformer(object):
             for item in value:
                 if item.startswith('|'):
                     raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
-        elif isinstance(value, basestring):
+        elif isinstance(value, string_types):
             if value.startswith('|'):
                 raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
 
@@ -43,7 +43,7 @@ class CloudFormationTemplateTransformer(object):
         if not value:
             return key, value
 
-        if isinstance(key, basestring):
+        if isinstance(key, string_types):
 
             if str(key).lower() == '@taupageuserdata@':
 
@@ -66,7 +66,7 @@ class CloudFormationTemplateTransformer(object):
         if not value:
             return key, value
 
-        if isinstance(key, basestring):
+        if isinstance(key, string_types):
             if key.lower().startswith('|join|'):
                 if not isinstance(value, list):
                     raise TemplateErrorException("Value of '|join|' must be of type list")
@@ -79,10 +79,10 @@ class CloudFormationTemplateTransformer(object):
 
     @staticmethod
     def transform_kv_to_cfn_join(key, value):
-        if isinstance(value, basestring) and ':' in key:
+        if isinstance(value, string_types) and ':' in key:
             key = "'{0}'".format(key)
 
-        if isinstance(value, basestring) and ':' in value:
+        if isinstance(value, string_types) and ':' in value:
             value = "'{0}'".format(value)
 
         return {'Fn::Join': [': ', [key, value]]}
@@ -92,7 +92,7 @@ class CloudFormationTemplateTransformer(object):
         if not value:
             return value
 
-        if isinstance(value, basestring):
+        if isinstance(value, string_types):
             if value.lower().startswith('|ref|'):
                 referenced_value = value[5:]
 
@@ -108,7 +108,7 @@ class CloudFormationTemplateTransformer(object):
         if not value:
             return value
 
-        if isinstance(value, basestring):
+        if isinstance(value, string_types):
             if value.lower().startswith('|getatt|'):
                 elements = value.split('|', 3)
 
@@ -134,7 +134,7 @@ class CloudFormationTemplateTransformer(object):
             else:
                 indented_key = key
 
-            if isinstance(key, basestring):
+            if isinstance(key, string_types):
 
                 # do not go any further and directly return cfn functions and their values
                 if key.lower() == 'ref' or key.lower() == 'fn::getatt' or key.lower() == 'fn::join':
@@ -199,14 +199,14 @@ class CloudFormationTemplateTransformer(object):
                 for item in value:
                     if isinstance(item, dict):
                         value_list.append(cls.transform_dict_values(item, value_handler))
-                    elif isinstance(item, basestring):
+                    elif isinstance(item, string_types):
                         value_list.append(value_handler(item))
                     else:
                         value_list.append(item)
 
                 dictionary[key] = value_list
 
-            elif isinstance(value, basestring):
+            elif isinstance(value, string_types):
                 dictionary[key] = value_handler(value)
             else:
                 dictionary[key] = value

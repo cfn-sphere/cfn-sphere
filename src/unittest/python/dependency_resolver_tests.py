@@ -28,7 +28,7 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertTrue(DependencyResolver.is_parameter_reference('|ref|'))
 
     def test_get_stack_order_returns_a_valid_order(self):
-        stacks = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': 'Ref::vpc.id'}}),
+        stacks = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id'}}),
                   'app1': StackConfig(
                       {'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
                   'app2': StackConfig({'template-url': 'horst.yml',
