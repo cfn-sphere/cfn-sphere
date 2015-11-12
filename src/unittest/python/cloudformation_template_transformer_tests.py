@@ -3,6 +3,7 @@ from cfn_sphere.aws.cloudformation.template_transformer import CloudFormationTem
 from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 from cfn_sphere.exceptions import TemplateErrorException
 from mock import Mock, mock
+import six
 
 
 class CloudFormationTemplateTransformerTests(unittest2.TestCase):
@@ -14,9 +15,12 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
         result = CloudFormationTemplateTransformer.transform_dict_values(dictionary, handler)
         expected_calls = [mock.call('foo123'), mock.call('foo234')]
-
-        self.assertListEqual(expected_calls, handler.mock_calls)
-        self.assertEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
+        if six.PY2:
+            self.assertItemsEqual(expected_calls, handler.mock_calls)
+            self.assertItemsEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
+        else:
+            self.assertCountEqual(expected_calls, handler.mock_calls)
+            self.assertCountEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
 
     def test_transform_userdata_dict_to_lines_list(self):
         result = CloudFormationTemplateTransformer.transform_userdata_dict_to_lines_list({'my-key': 'my-value'})
@@ -139,8 +143,10 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-
-        self.assertDictEqual(expected, value)
+        if six.PY2:
+            self.assertItemsEqual(expected, value)
+        else:
+            self.assertCountEqual(expected, value)
 
     def test_render_taupage_user_data_accepts_multiple_sub_dicts(self):
         input = {
@@ -310,8 +316,10 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                 }
             }
         }
-
-        self.assertEqual(expected, result.body_dict)
+        if six.PY2:
+            self.assertItemsEqual(expected, result.body_dict)
+        else:
+            self.assertCountEqual(expected, result.body_dict)
 
     def test_transform_template_transforms_list_values(self):
         template_dict = {
