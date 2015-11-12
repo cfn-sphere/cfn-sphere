@@ -15,12 +15,8 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
         result = CloudFormationTemplateTransformer.transform_dict_values(dictionary, handler)
         expected_calls = [mock.call('foo123'), mock.call('foo234')]
-        if six.PY2:
-            self.assertItemsEqual(expected_calls, handler.mock_calls)
-            self.assertItemsEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
-        else:
-            self.assertCountEqual(expected_calls, handler.mock_calls)
-            self.assertCountEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
+        six.assertCountEqual(self, expected_calls, handler.mock_calls)
+        six.assertCountEqual(self, result, {'a': 'foo', 'b': {'c': 'foo'}})
 
     def test_transform_userdata_dict_to_lines_list(self):
         result = CloudFormationTemplateTransformer.transform_userdata_dict_to_lines_list({'my-key': 'my-value'})
@@ -143,10 +139,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        if six.PY2:
-            self.assertItemsEqual(expected, value)
-        else:
-            self.assertCountEqual(expected, value)
+        self.assertCountEqual(self, expected, value)
 
     def test_render_taupage_user_data_accepts_multiple_sub_dicts(self):
         input = {
@@ -316,10 +309,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                 }
             }
         }
-        if six.PY2:
-            self.assertItemsEqual(expected, result.body_dict)
-        else:
-            self.assertCountEqual(expected, result.body_dict)
+        self.assertCountEqual(self, expected, result.body_dict)
 
     def test_transform_template_transforms_list_values(self):
         template_dict = {
