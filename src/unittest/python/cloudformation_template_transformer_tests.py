@@ -139,7 +139,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        self.assertCountEqual(self, expected, value)
+        six.assertCountEqual(self, expected, value)
 
     def test_render_taupage_user_data_accepts_multiple_sub_dicts(self):
         input = {
@@ -309,7 +309,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                 }
             }
         }
-        self.assertCountEqual(self, expected, result.body_dict)
+        six.assertCountEqual(self, expected, result.body_dict)
 
     def test_transform_template_transforms_list_values(self):
         template_dict = {
