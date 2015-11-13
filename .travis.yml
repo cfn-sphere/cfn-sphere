@@ -1,24 +1,32 @@
+sudo: false
 language: python
 python:
-- '2.7'
-- '3.4'
-- '3.5'
-- pypy
+  - '2.7'
+  - '3.3'
+  - '3.4'
+  - '3.5'
+  - "pypy"
+  - "pypy3"
 before_install:
-- git fetch --unshallow
-env:
-- AWS_DEFAULT_REGION=eu-west-1
+  - git fetch --unshallow
 install:
-- pip install pybuilder
-- pip install coveralls
-- pyb install_dependencies
-script: pyb -X run_unit_tests
+  - pip install pybuilder
+  - pip install coveralls
+  - pyb install_dependencies
+script: 
+  - pyb -X run_unit_tests
 after_success:
-- coveralls --verbose
+  - coveralls --verbose
+before_deploy:
+  - pyb -v -X package
 deploy:
   provider: pypi
   user: marco-hoyer
   password:
     secure: a6gMmv6xqZ5lKUzfu/s7A4n1ljKVScVTrugxmGWH0CFEYlc90aO7Q/gXp7TKhEDo4Is408+PXuyPTcRytGuzfAfcYWbmOCJQfwUude0CZPUZWM+uEut5wcav7EUVWPx7TkIQM1yB9pPx4apg+asfGRuoHW1z4kKSrs3VsdSl3ktHAqFUC1H/7Mu+itpwFR+enIAqnsH/CB8SHla4bOu6fWo6p2xOglcmn0OJIMwbW9Qo11BC6NXo7r8z2AFIKzEvFViP57j9nTxzo/GawFM3n1H4l1uKVxPlBPXrduyhYy1yoC3rXmjRlhS3Q5uyjSXhFy7awRCXSjR60Dx8xF1j9cTnW0u7E812lqio4OzVAOweejmJjqpFVsnENBd3okn7RnpHstTF8fQjw8MQ4zZOw3oYUx3orCIvHaAp+bTwBib2XxZ4ihl1nDK6t5QPXtQ3aiww02ddCQEezfU1t5gZQdfCgmbY+xvwWu42riWOLyF9bnT++tlwd/f2JxkLlR9oi8pbPzLr9nohkCCNqTSv1vYiYi+OGW+Euz3Fdzjz4deV9hRMiU9shNsIgUpksv5mKJ81EP+iebkonXh5NsFNk2ZgxtrE6pihA+7yULhnhRc0VwHKFYR1u5VSD0pe9eD8Sl/wIwPUfb/JUrLJC/FOgFo5nDYdNZljz359n+yhreg=
+  distributions: 'sdist'
+  skip_cleanup: true
   on:
-    branch: stable 
+    repo: cfn-sphere/cfn-sphere
+    branch: stable
+    python: '3.5'
