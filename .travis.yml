@@ -11,6 +11,6 @@ install:
   - pip install coveralls
   - pyb install_dependencies
 
-script: "pyb -X verify analyze"
+script: "pyb -X run_unit_tests"
 after_success:
   - coveralls --verbose
