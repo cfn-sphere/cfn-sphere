@@ -59,6 +59,79 @@ Install package:
 
     sudo yum install cfn-sphere
 
+## Template Reference
+
+### References
+#### CloudFormation Syntax
+```JSON
+{
+    "Key": {
+        "Ref": "myResource"
+    }
+}
+```
+#### Cfn-Sphere Yaml Syntax
+```YAML
+Key: "|Ref|myResource"
+```
+#### Cfn-Sphere Json Syntax
+```JSON
+{
+    "Key": "|Ref|myResource"
+}
+```
+### Attribute References
+#### CloudFormation Syntax
+```JSON
+{
+    "Key": {
+        "Fn::GetAtt": ["myResource", "attribute"]
+    }
+}
+```
+#### Cfn-Sphere Yaml Syntax
+```YAML
+Key: "|GetAtt|myResource|attribute"
+```
+#### Cfn-Sphere Json Syntax
+```JSON
+{
+    "Key": "|GetAtt|myResource|attribute"
+}
+```
+### String Joins
+#### CloudFormation Syntax
+```JSON
+{
+    "Key": {
+        "Fn: : Join": [
+            "-",
+            [
+                "a",
+                "b"
+            ]
+        ]
+    }
+}
+```
+#### Cfn-Sphere Yaml Syntax
+```YAML
+Key: 
+  "|Join|-":
+  - "a"
+  - "b"
+```
+#### Cfn-Sphere Json Syntax
+```JSON
+{
+    "Key": {
+        "|Join|-": [
+            "a",
+            "b"
+        ]
+    }
+}
+```
 
 ## Build
 
