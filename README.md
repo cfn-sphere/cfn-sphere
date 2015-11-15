@@ -20,47 +20,7 @@ https://github.com/cfn-sphere/cfn-sphere/wiki
 
 ### As python artifact:
 
-**This might be the easiest solution for you**
-
     pip install cfn-sphere
-
-### Debian / Ubuntu Packages:
-
-**.deb packages are untested right now! Use Python artifacts instead!**
-
-Install repo gpg key and required package:
-
-    curl https://packagecloud.io/gpg.key | apt-key add -
-    apt-get install -y apt-transport-https
-
-Put a file named /etc/apt.sources.list.d/cfn-sphere.list with the following content if your distro version is wheezy:
-
-    deb https://packagecloud.io/marco-hoyer/cfn-sphere/debian/ wheezy main
-    deb-src https://packagecloud.io/marco-hoyer/cfn-sphere/debian/ wheezy main
-
-Install package:
-
-    sudo apt-get install cfn-sphere
-
-### RHEL6 RPM:
-
-    sudo yum install pygpgme
-
-Put a file named /etc/yum.repos.d/cfn-sphere.repo with the following content:
-
-    [cfn-sphere]
-    name=cfn-sphere
-    baseurl=https://packagecloud.io/marco-hoyer/cfn-sphere/el/6/$basearch
-    repo_gpgcheck=1
-    gpgcheck=0
-    enabled=1
-    gpgkey=https://packagecloud.io/gpg.key
-    sslverify=1
-    sslcacert=/etc/pki/tls/certs/ca-bundle.crt
-
-Install package:
-
-    sudo yum install cfn-sphere
 
 ## Build
 
