@@ -13,6 +13,9 @@ A CLI tool intended to simplify AWS CloudFormation handling.
 - helper features easing the use of cfn functions like Fn::Join, Ref or Fn::GetAtt
 - easy user-data definition for https://github.com/zalando-stups/taupage
 
+## Documentation
+https://github.com/cfn-sphere/cfn-sphere/wiki
+
 ## Install
 
 ### As python artifact:
@@ -58,80 +61,6 @@ Put a file named /etc/yum.repos.d/cfn-sphere.repo with the following content:
 Install package:
 
     sudo yum install cfn-sphere
-
-## Template Reference
-
-### References
-#### CloudFormation Syntax
-```JSON
-{
-    "Key": {
-        "Ref": "myResource"
-    }
-}
-```
-#### Cfn-Sphere Yaml Syntax
-```YAML
-Key: "|Ref|myResource"
-```
-#### Cfn-Sphere Json Syntax
-```JSON
-{
-    "Key": "|Ref|myResource"
-}
-```
-### Attribute References
-#### CloudFormation Syntax
-```JSON
-{
-    "Key": {
-        "Fn::GetAtt": ["myResource", "attribute"]
-    }
-}
-```
-#### Cfn-Sphere Yaml Syntax
-```YAML
-Key: "|GetAtt|myResource|attribute"
-```
-#### Cfn-Sphere Json Syntax
-```JSON
-{
-    "Key": "|GetAtt|myResource|attribute"
-}
-```
-### String Joins
-#### CloudFormation Syntax
-```JSON
-{
-    "Key": {
-        "Fn: : Join": [
-            "-",
-            [
-                "a",
-                "b"
-            ]
-        ]
-    }
-}
-```
-#### Cfn-Sphere Yaml Syntax
-```YAML
-Key: 
-  "|Join|-":
-  - "a"
-  - "b"
-```
-#### Cfn-Sphere Json Syntax
-```JSON
-{
-    "Key": {
-        "|Join|-": [
-            "a",
-            "b"
-        ]
-    }
-}
-```
 
 ## Build
 
