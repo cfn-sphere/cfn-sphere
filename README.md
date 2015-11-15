@@ -32,7 +32,7 @@ Requirements:
 
 Execute:
 
-    git clone https://github.com/marco-hoyer/cfn-sphere.git
+    git clone https://github.com/cfn-sphere/cfn-sphere.git
     cd cfn-sphere
     virtualenv .venv --python=python2.7
     source .venv/bin/activate
