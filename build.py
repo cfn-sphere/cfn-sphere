@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from pybuilder.core import use_plugin, init, Author
 
 use_plugin("python.core")
