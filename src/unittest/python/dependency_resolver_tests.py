@@ -94,7 +94,7 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertListEqual(managed_stacks, DependencyResolver.filter_unmanaged_stacks(managed_stacks, stacks))
 
     def test_parse_stack_reference_value_returns_none_for_non_reference(self):
-        self.assertIsNone(DependencyResolver.parse_stack_reference_value('foo'))
+        self.assertEqual((None, None),DependencyResolver.parse_stack_reference_value('foo'))
 
     def test_parse_stack_reference_value_returns_stack_and_output_name_tuple(self):
         self.assertEqual(('stack', 'output'), DependencyResolver.parse_stack_reference_value('|ref|stack.output'))
