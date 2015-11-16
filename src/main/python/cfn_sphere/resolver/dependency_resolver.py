@@ -8,7 +8,7 @@ class DependencyResolver(object):
     @staticmethod
     def parse_stack_reference_value(value):
         if not value:
-            return None
+            return None, None
 
         if value.lower().startswith('|ref|'):
             components = value.split('|')
@@ -26,7 +26,7 @@ class DependencyResolver(object):
 
             return stack_name, output_name
         else:
-            return None
+            return None, None
 
     @staticmethod
     def is_parameter_reference(value):
@@ -45,7 +45,7 @@ class DependencyResolver(object):
             graph.add_node(name)
         for name, data in desired_stacks.items():
             if data:
-                for key, value in data.parameters.items():
+                for _, value in data.parameters.items():
                     if cls.is_parameter_reference(value):
                         dependant_stack, _ = cls.parse_stack_reference_value(value)
                         graph.add_edge(dependant_stack, name)

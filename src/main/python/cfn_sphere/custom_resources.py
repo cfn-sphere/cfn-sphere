@@ -10,7 +10,7 @@ class CustomResourceHandler(object):
         if not custom_resources_dict:
             return
 
-        for resource, resource_description in custom_resources_dict.items():
+        for _, resource_description in custom_resources_dict.items():
             if resource_description['Type'] == "Custom::SNS::Subscription":
                 cls.handle_sns_subscription(resource_description, stack)
 
