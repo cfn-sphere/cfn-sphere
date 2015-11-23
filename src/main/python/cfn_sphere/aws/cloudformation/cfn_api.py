@@ -43,13 +43,13 @@ class CloudFormation(object):
     def get_stack(self, stack_name):
         return self.conn.describe_stacks(stack_name)[0]
 
-    def validate_stack_is_ready_for_updates(self, stack_name):
-        stack = self.get_stack(stack_name)
+    def validate_stack_is_ready_for_updates(self, stack):
+        cfn_stack = self.get_stack(stack.name)
         valid_states = ["CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"]
 
-        if stack.stack_status not in valid_states:
+        if cfn_stack.stack_status not in valid_states:
             raise CfnStackActionFailedException(
-                "Stack {0} is in '{1}' state.".format(stack.stack_name, stack.stack_status))
+                "Stack {0} is in '{1}' state.".format(cfn_stack.stack_name, cfn_stack.stack_status))
 
     def get_stack_state(self, stack_name):
         stack = self.conn.describe_stacks(stack_name)

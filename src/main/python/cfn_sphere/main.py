@@ -40,7 +40,7 @@ class StackActionHandler(object):
 
             if stack_name in existing_stacks:
 
-                self.cfn.validate_stack_is_ready_for_updates(stack_name)
+                self.cfn.validate_stack_is_ready_for_updates(stack)
                 self.cfn.update_stack(stack)
             else:
                 self.cfn.create_stack(stack)
