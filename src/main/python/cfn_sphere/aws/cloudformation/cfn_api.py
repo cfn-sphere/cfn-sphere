@@ -84,34 +84,45 @@ class CloudFormation(object):
             self.logger.info("Create completed for {0}".format(stack.name))
         except BotoServerError as e:
             message = get_message_from_boto_server_error(e)
-            raise CfnStackActionFailedException(
-                "Could not create stack {0}. Cfn API responded with: {1}".format(stack.name, message))
+            raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, message))
 
     def update_stack(self, stack):
-        assert isinstance(stack, CloudFormationStack)
         try:
+            # update only if neccessary
+            try:
+                self.conn.update_stack(stack.name,
+                                       template_body=stack.template.get_template_json(),
+                                       parameters=stack.get_parameters_list(),
+                                       capabilities=['CAPABILITY_IAM'])
+            except BotoServerError as e:
+                message = get_message_from_boto_server_error(e)
+
+                if message == "No updates are to be performed.":
+                    self.logger.info("Stack {0} doesn't need an update".format(stack.name))
+                    return
+                else:
+                    self.logger.info(
+                        "Updating stack {0} from template {1} with parameters:\n{2}".format(stack.name,
+                                                                                            stack.template.name,
+                                                                                            get_pretty_parameters_string(
+                                                                                                stack.parameters)))
+                    raise
+
             self.logger.info(
-                "Updating stack {0} from template {1} with parameters:\n{2}".format(stack.name, stack.template.name,
+                "Updating stack {0} from template {1} with parameters:\n{2}".format(stack.name,
+                                                                                    stack.template.name,
                                                                                     get_pretty_parameters_string(
                                                                                         stack.parameters)))
 
-            self.conn.update_stack(stack.name,
-                                   template_body=stack.template.get_template_json(),
-                                   parameters=stack.get_parameters_list(),
-                                   capabilities=['CAPABILITY_IAM'])
-
             self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
             self.logger.info("Update completed for {0}".format(stack.name))
+
         except BotoServerError as e:
             message = get_message_from_boto_server_error(e)
+            raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, message))
 
-            if message == "No updates are to be performed.":
-                self.logger.info("Nothing to do: {0}.".format(message))
-            else:
-                raise CfnStackActionFailedException("{0}.".format(message))
 
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
-
         logging.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
 
         seen_event_ids = []
@@ -151,7 +162,6 @@ class CloudFormation(object):
             "Timeout occurred waiting for '{0}' on stack {1}".format(expected_event, stack_name))
 
     def wait_for_stack_action_to_complete(self, stack_name, action, timeout):
-
         allowed_actions = ["create", "update", "delete"]
         assert action.lower() in allowed_actions, "action argument must be one of {0}".format(allowed_actions)
 
