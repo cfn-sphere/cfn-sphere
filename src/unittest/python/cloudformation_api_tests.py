@@ -5,12 +5,13 @@ from mock import Mock, patch
 from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
 from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.aws.cloudformation.cfn_api import CloudFormation
+from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 from boto.cloudformation.stack import StackEvent, Stack
+from boto.exception import BotoServerError
 from boto.resultset import ResultSet
 
 
 class CloudFormationApiTests(unittest2.TestCase):
-
     @patch('cfn_sphere.aws.cloudformation.cfn_api.cloudformation')
     def test_get_stacks_correctly_calls_aws_api(self, cloudformation_mock):
         stacks = [Mock(spec=Stack), Mock(spec=Stack)]
@@ -177,3 +178,62 @@ class CloudFormationApiTests(unittest2.TestCase):
                                                                               capabilities=['CAPABILITY_IAM'],
                                                                               parameters=[('a', 'b')],
                                                                               template_body={'key': 'value'})
+
+    @patch('cfn_sphere.aws.cloudformation.cfn_api.cloudformation.connect_to_region')
+    def test_validate_stack_is_ready_for_updates_raises_exception_on_unknown_stack_state(self, cloudformation_mock):
+        describe_stack_mock = Mock()
+        describe_stack_mock.stack_status = "FOO"
+        describe_stack_mock.stack_name = "my-stack"
+
+        cloudformation_mock.return_value.describe_stacks.return_value = [describe_stack_mock]
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        with self.assertRaises(CfnStackActionFailedException):
+            cfn.validate_stack_is_ready_for_updates(stack)
+
+        cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
+
+    @patch('cfn_sphere.aws.cloudformation.cfn_api.cloudformation.connect_to_region')
+    def test_validate_stack_is_ready_for_updates_raises_exception_on_bad_stack_state(self, cloudformation_mock):
+        describe_stack_mock = Mock()
+        describe_stack_mock.stack_status = "UPDATE_IN_PROGRESS"
+        describe_stack_mock.stack_name = "my-stack"
+
+        cloudformation_mock.return_value.describe_stacks.return_value = [describe_stack_mock]
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        with self.assertRaises(CfnStackActionFailedException):
+            cfn.validate_stack_is_ready_for_updates(stack)
+
+        cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
+
+    @patch('cfn_sphere.aws.cloudformation.cfn_api.cloudformation.connect_to_region')
+    def test_validate_stack_is_ready_for_updates_raises_proper_exception_on_boto_error(self, cloudformation_mock):
+        cloudformation_mock.return_value.describe_stacks.side_effect = BotoServerError('400', 'Bad Request')
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        with self.assertRaises(CfnSphereBotoError):
+            cfn.validate_stack_is_ready_for_updates(stack)
+
+        cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
+
+    @patch('cfn_sphere.aws.cloudformation.cfn_api.cloudformation.connect_to_region')
+    def test_validate_stack_is_ready_for_updates_passes_if_stack_is_in_good_state(self, cloudformation_mock):
+        describe_stack_mock = Mock()
+        describe_stack_mock.stack_status = "UPDATE_COMPLETE"
+        describe_stack_mock.stack_name = "my-stack"
+
+        cloudformation_mock.return_value.describe_stacks.return_value = [describe_stack_mock]
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        cfn.validate_stack_is_ready_for_updates(stack)
+
+        cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')

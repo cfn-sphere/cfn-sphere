@@ -6,7 +6,7 @@ from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger, get_message_from_boto_server_error, get_cfn_api_server_time, \
     get_pretty_parameters_string
 from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
-from cfn_sphere.exceptions import CfnStackActionFailedException
+from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
 
 class CloudFormation(object):
@@ -44,7 +44,11 @@ class CloudFormation(object):
         return self.conn.describe_stacks(stack_name)[0]
 
     def validate_stack_is_ready_for_updates(self, stack):
-        cfn_stack = self.get_stack(stack.name)
+        try:
+            cfn_stack = self.get_stack(stack.name)
+        except BotoServerError as e:
+            raise CfnSphereBotoError(e)
+
         valid_states = ["CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"]
 
         if cfn_stack.stack_status not in valid_states:
