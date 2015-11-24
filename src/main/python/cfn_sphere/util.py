@@ -1,6 +1,7 @@
 import logging
 import json
 import yaml
+from prettytable import PrettyTable
 from six.moves.urllib import request as urllib2
 import datetime
 from cfn_sphere.exceptions import CfnSphereException
@@ -30,11 +31,12 @@ def convert_file(file_path):
 
 
 def get_pretty_parameters_string(parameter_dict):
-    parameters_string = ""
-    for key, value in parameter_dict.items():
-        parameters_string = parameters_string + "{0} = {1}\n".format(key, value)
+    table = PrettyTable(["Parameter", "Value"])
 
-    return parameters_string
+    for key, value in parameter_dict.items():
+        table.add_row([key, value])
+
+    return table.get_string(sortby="Parameter")
 
 
 def convert_json_to_yaml_string(data):
