@@ -3,8 +3,7 @@ import time
 from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
-from cfn_sphere.util import get_logger, get_message_from_boto_server_error, get_cfn_api_server_time, \
-    get_pretty_parameters_string
+from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string
 from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
@@ -68,6 +67,13 @@ class CloudFormation(object):
 
         return parameters
 
+    def is_boto_no_update_required_exception(self, exception):
+
+        if isinstance(exception, BotoServerError) and exception.message == "No updates are to be performed.":
+            return True
+        else:
+            return False
+
     def create_stack(self, stack):
         assert isinstance(stack, CloudFormationStack)
         try:
@@ -83,43 +89,39 @@ class CloudFormation(object):
             self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
             self.logger.info("Create completed for {0}".format(stack.name))
         except BotoServerError as e:
-            message = get_message_from_boto_server_error(e)
-            raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, message))
+            raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e.message))
 
     def update_stack(self, stack):
         try:
-            # update only if neccessary
+
             try:
                 self.conn.update_stack(stack.name,
                                        template_body=stack.template.get_template_json(),
                                        parameters=stack.get_parameters_list(),
                                        capabilities=['CAPABILITY_IAM'])
             except BotoServerError as e:
-                message = get_message_from_boto_server_error(e)
 
-                if message == "No updates are to be performed.":
-                    self.logger.info("Stack {0} doesn't need an update".format(stack.name))
+                if self.is_boto_no_update_required_exception(e):
+                    self.logger.info("Stack {0} does not need an update".format(stack.name))
                     return
                 else:
                     self.logger.info(
-                        "Updating stack {0} from template {1} with parameters:\n{2}".format(stack.name,
-                                                                                            stack.template.name,
-                                                                                            get_pretty_parameters_string(
-                                                                                                stack.parameters)))
+                        "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
+                                                                                stack.template.name,
+                                                                                get_pretty_parameters_string(
+                                                                                    stack.parameters)))
                     raise
 
             self.logger.info(
-                "Updating stack {0} from template {1} with parameters:\n{2}".format(stack.name,
-                                                                                    stack.template.name,
-                                                                                    get_pretty_parameters_string(
-                                                                                        stack.parameters)))
+                "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
+                                                                        stack.template.name,
+                                                                        get_pretty_parameters_string(stack.parameters)))
 
             self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
             self.logger.info("Update completed for {0}".format(stack.name))
 
         except BotoServerError as e:
-            message = get_message_from_boto_server_error(e)
-            raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, message))
+            raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e.message))
 
 
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):

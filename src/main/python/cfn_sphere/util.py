@@ -55,10 +55,6 @@ def convert_dict_to_json_string(data):
     return json.dumps(data, indent=2)
 
 
-def get_message_from_boto_server_error(boto_server_error):
-    return boto_server_error.message
-
-
 def get_cfn_api_server_time():
     url = "http://aws.amazon.com"
 

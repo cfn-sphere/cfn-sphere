@@ -4,8 +4,7 @@ import sys
 import boto
 import click
 import logging
-from cfn_sphere.util import convert_file, get_logger, get_message_from_boto_server_error, convert_dict_to_json_string, \
-    get_latest_version
+from cfn_sphere.util import convert_file, get_logger, convert_dict_to_json_string, get_latest_version
 from cfn_sphere.config import Config
 from cfn_sphere.main import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
@@ -25,8 +24,7 @@ def get_current_account_alias():
         click.echo("Authentication error! Please check credentials: {0}".format(e))
         sys.exit(1)
     except BotoServerError as e:
-        message = get_message_from_boto_server_error(e)
-        click.echo("AWS API Error: {0}".format(message))
+        click.echo("AWS API Error: {0}".format(e.message))
         sys.exit(1)
     except Exception as e:
         click.echo("Unknown error occurred loading users account alias: {0}".format(e))
