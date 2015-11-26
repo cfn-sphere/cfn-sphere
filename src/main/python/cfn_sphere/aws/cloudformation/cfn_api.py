@@ -123,7 +123,6 @@ class CloudFormation(object):
         except BotoServerError as e:
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e.message))
 
-
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
         logging.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
 
@@ -149,7 +148,7 @@ class CloudFormation(object):
                                     "Stack is in {0} state".format(event.resource_status))
                             if event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
                                 self.logger.error(
-                                    "Failed to create stack (Reason: {1})".format(event.resource_status_reason))
+                                    "Failed to create stack (Reason: {0})".format(event.resource_status_reason))
                             if event.resource_status.endswith("ROLLBACK_COMPLETE"):
                                 raise CfnStackActionFailedException("Rollback occured")
                         else:
