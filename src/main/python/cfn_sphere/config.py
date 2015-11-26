@@ -44,7 +44,7 @@ class Config(object):
         except IOError as e:
             raise NoConfigException("Could not read yaml file: {0}".format(e))
         except ScannerError as e:
-            raise NoConfigException("Could not parse yaml {0}: {1}".format(e.problem_mark, e.problem))
+            raise NoConfigException("Could not parse {0}: {1} {2}".format(config_file, e.problem, e.problem_mark))
 
     def get(self):
         return self.dict
@@ -63,5 +63,5 @@ class StackConfig(object):
 
 
 if __name__ == "__main__":
-    reader = Config("resources/myapp.yml")
+    reader = Config("/tmp/stacks.yml")
     print(reader.get())

@@ -17,7 +17,7 @@ class CloudFormationTemplateLoader(object):
     @staticmethod
     def _fs_get_template(url, working_dir):
         """
-        Load cfn template from filesyste
+        Load cfn template from filesystem
 
         :param url: str template path
         :return: dict repr of cfn template
