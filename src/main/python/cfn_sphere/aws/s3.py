@@ -15,7 +15,7 @@ class S3(object):
         return protocol, bucket_name, key
 
     def get_contents_from_url(self, url):
-        (protocol, bucket_name, key_name) = self._parse_url(url)
+        (_, bucket_name, key_name) = self._parse_url(url)
         bucket = self.conn.get_bucket(bucket_name)
         key = bucket.get_key(key_name)
         return key.get_contents_as_string()
