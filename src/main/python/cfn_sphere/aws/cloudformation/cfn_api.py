@@ -124,7 +124,7 @@ class CloudFormation(object):
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e.message))
 
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
-        logging.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
+        self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
 
         seen_event_ids = []
         start = time.time()
