@@ -7,13 +7,13 @@ class CloudFormationTemplateTransformer(object):
     def transform_template(cls, template):
         template_dict = template.body_dict
 
-        template_dict = cls.transform_dict_values(template_dict, cls.transform_reference_string)
-        template_dict = cls.transform_dict_values(template_dict, cls.transform_getattr_string)
-        template_dict = cls.transform_dict_keys(template_dict, cls.transform_join_key)
-        template_dict = cls.transform_dict_keys(template_dict, cls.transform_taupage_user_data_key)
+        template_dict = cls.scan_dict_values(template_dict, cls.transform_reference_string)
+        template_dict = cls.scan_dict_values(template_dict, cls.transform_getattr_string)
+        template_dict = cls.scan_dict_keys(template_dict, cls.transform_join_key)
+        template_dict = cls.scan_dict_keys(template_dict, cls.transform_taupage_user_data_key)
 
-        template_dict = cls.transform_dict_values(template_dict, cls.check_for_leftover_reference_values)
-        template_dict = cls.transform_dict_keys(template_dict, cls.check_for_leftover_reference_keys)
+        template_dict = cls.scan_dict_values(template_dict, cls.check_for_leftover_reference_values)
+        template_dict = cls.scan_dict_keys(template_dict, cls.check_for_leftover_reference_keys)
 
         template.body_dict = template_dict
         return template
@@ -165,17 +165,17 @@ class CloudFormationTemplateTransformer(object):
         return lines
 
     @classmethod
-    def transform_dict_keys(cls, dictionary, key_handler):
+    def scan_dict_keys(cls, dictionary, key_handler):
         for key in dictionary:
             value = dictionary[key]
 
             if isinstance(value, dict):
-                dictionary[key] = cls.transform_dict_keys(value, key_handler)
+                dictionary[key] = cls.scan_dict_keys(value, key_handler)
 
             if isinstance(value, list):
                 for item in value:
                     if isinstance(item, dict):
-                        cls.transform_dict_keys(item, key_handler)
+                        cls.scan_dict_keys(item, key_handler)
 
             new_key, new_value = key_handler(key, value)
 
@@ -188,18 +188,18 @@ class CloudFormationTemplateTransformer(object):
         return dictionary
 
     @classmethod
-    def transform_dict_values(cls, dictionary, value_handler):
+    def scan_dict_values(cls, dictionary, value_handler):
         for key in dictionary:
             value = dictionary[key]
 
             if isinstance(value, dict):
-                dictionary[key] = cls.transform_dict_values(value, value_handler)
+                dictionary[key] = cls.scan_dict_values(value, value_handler)
 
             elif isinstance(value, list):
                 value_list = []
                 for item in value:
                     if isinstance(item, dict):
-                        value_list.append(cls.transform_dict_values(item, value_handler))
+                        value_list.append(cls.scan_dict_values(item, value_handler))
                     elif isinstance(item, string_types):
                         value_list.append(value_handler(item))
                     else:

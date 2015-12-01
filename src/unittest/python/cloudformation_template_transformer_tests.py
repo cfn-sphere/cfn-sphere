@@ -8,12 +8,23 @@ import six
 
 class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
-    def test_transform_dict_values_executes_value_handler_for_all_matching_prefixes(self):
+    def test_scan_dict_keys_executes_key_handler_for_all_matching_keys(self):
+        dictionary = {'key': 'value'}
+        handler = Mock()
+        handler.return_value = 'new-key', 'new-value'
+
+        result = CloudFormationTemplateTransformer.scan_dict_keys(dictionary, handler)
+        expected_calls = [mock.call('key', 'value'), mock.call('new-key', 'new-value')]
+
+        six.assertCountEqual(self, expected_calls, handler.mock_calls)
+        six.assertCountEqual(self, result, {'new-key': 'new-value'})
+
+    def test_scan_dict_values_executes_value_handler_for_all_matching_prefixes(self):
         dictionary = {'a': 'foo123', 'b': {'c': 'foo234'}}
         handler = Mock()
         handler.return_value = "foo"
 
-        result = CloudFormationTemplateTransformer.transform_dict_values(dictionary, handler)
+        result = CloudFormationTemplateTransformer.scan_dict_values(dictionary, handler)
         expected_calls = [mock.call('foo123'), mock.call('foo234')]
         six.assertCountEqual(self, expected_calls, handler.mock_calls)
         six.assertCountEqual(self, result, {'a': 'foo', 'b': {'c': 'foo'}})
