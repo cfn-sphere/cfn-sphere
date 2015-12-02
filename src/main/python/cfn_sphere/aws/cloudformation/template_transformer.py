@@ -144,24 +144,22 @@ class CloudFormationTemplateTransformer(object):
 
                     # recursion for dict values
                     if isinstance(value, dict):
-
                         result = cls.transform_dict_to_yaml_lines_list(value, indentation_level + 1)
-
                         if isinstance(result, dict):
                             lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
                         elif isinstance(result, list):
-                            result.reverse()
-                            lines.extend(result)
                             lines.append(indented_key + ':')
+                            lines.extend(result)
                         else:
                             raise TemplateErrorException("Failed to convert dict to list of lines")
+                    elif isinstance(value, list):
+                        lines.extend([indented_key + ':'] + ['- {0}'.format(item) for item in value])
 
                     else:
                         lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
             else:
                 lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
 
-        lines.reverse()
         return lines
 
     @classmethod

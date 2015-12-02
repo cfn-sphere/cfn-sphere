@@ -44,7 +44,6 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
     def test_transform_dict_to_yaml_lines_list_accepts_list_values(self):
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({'my-key': ['a', 'b']})
-        print result
         self.assertEqual(['my-key:', '- a', '- b'], result)
 
     def test_transform_join_key_creates_valid_cfn_join(self):
