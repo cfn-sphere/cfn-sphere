@@ -29,18 +29,23 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         six.assertCountEqual(self, expected_calls, handler.mock_calls)
         six.assertCountEqual(self, result, {'a': 'foo', 'b': {'c': 'foo'}})
 
-    def test_transform_userdata_dict_to_lines_list(self):
-        result = CloudFormationTemplateTransformer.transform_userdata_dict_to_lines_list({'my-key': 'my-value'})
+    def test_transform_dict_to_yaml_lines_list(self):
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({'my-key': 'my-value'})
         self.assertEqual([{'Fn::Join': [': ', ['my-key', 'my-value']]}], result)
 
-    def test_transform_userdata_dict_to_lines_list_indents_sub_dicts(self):
-        result = CloudFormationTemplateTransformer.transform_userdata_dict_to_lines_list(
+    def test_transform_dict_to_yaml_lines_list_indents_sub_dicts(self):
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(
             {'my-key': {'my-sub-key': 'value'}})
         self.assertEqual(['my-key:', {'Fn::Join': [': ', ['  my-sub-key', 'value']]}], result)
 
-    def test_transform_userdata_dict_to_lines_list_accepts_integer_values(self):
-        result = CloudFormationTemplateTransformer.transform_userdata_dict_to_lines_list({'my-key': 3})
+    def test_transform_dict_to_yaml_lines_list_accepts_integer_values(self):
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({'my-key': 3})
         self.assertEqual([{'Fn::Join': [': ', ['my-key', 3]]}], result)
+
+    def test_transform_dict_to_yaml_lines_list_accepts_list_values(self):
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({'my-key': ['a', 'b']})
+        print result
+        self.assertEqual(['my-key:', '- a', '- b'], result)
 
     def test_transform_join_key_creates_valid_cfn_join(self):
         result = CloudFormationTemplateTransformer.transform_join_key('|join|-', ['a', 'b'])

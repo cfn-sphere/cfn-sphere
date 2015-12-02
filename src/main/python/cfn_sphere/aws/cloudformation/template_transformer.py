@@ -52,7 +52,7 @@ class CloudFormationTemplateTransformer(object):
                     raise TemplateErrorException("Value of 'TaupageUserData' must be of type dict")
 
                 lines = ['#taupage-ami-config']
-                lines.extend(cls.transform_userdata_dict_to_lines_list(value))
+                lines.extend(cls.transform_dict_to_yaml_lines_list(value))
 
                 return "UserData", {
                     'Fn::Base64': {
@@ -124,7 +124,7 @@ class CloudFormationTemplateTransformer(object):
         return value
 
     @classmethod
-    def transform_userdata_dict_to_lines_list(cls, userdata_dict, indentation_level=0):
+    def transform_dict_to_yaml_lines_list(cls, userdata_dict, indentation_level=0):
         lines = []
 
         for key, value in userdata_dict.items():
@@ -145,7 +145,7 @@ class CloudFormationTemplateTransformer(object):
                     # recursion for dict values
                     if isinstance(value, dict):
 
-                        result = cls.transform_userdata_dict_to_lines_list(value, indentation_level + 1)
+                        result = cls.transform_dict_to_yaml_lines_list(value, indentation_level + 1)
 
                         if isinstance(result, dict):
                             lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
@@ -154,7 +154,7 @@ class CloudFormationTemplateTransformer(object):
                             lines.extend(result)
                             lines.append(indented_key + ':')
                         else:
-                            raise TemplateErrorException("Failed to convert user-data dict to list of lines")
+                            raise TemplateErrorException("Failed to convert dict to list of lines")
 
                     else:
                         lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
