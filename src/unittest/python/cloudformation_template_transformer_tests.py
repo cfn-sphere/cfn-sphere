@@ -7,7 +7,6 @@ import six
 
 
 class CloudFormationTemplateTransformerTests(unittest2.TestCase):
-
     def test_scan_dict_keys_executes_key_handler_for_all_matching_keys(self):
         dictionary = {'key': 'value'}
         handler = Mock()
@@ -94,7 +93,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         result = CloudFormationTemplateTransformer.transform_getattr_string('')
         self.assertEqual('', result)
 
-    def test_render_taupage_user_data(self):
+    def test_transform_taupage_user_data_key(self):
         input = {
             "application_id": "stackName",
             "application_version": "imageVersion",
@@ -154,78 +153,58 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
+        self.assertEqual("UserData", key)
         six.assertCountEqual(self, expected, value)
 
-    def test_render_taupage_user_data_accepts_multiple_sub_dicts(self):
+    def test_transform_yaml_user_data_key(self):
         input = {
-            "foo": {
-                'baa': {'key': 'value'}
+            "application_id": "stackName",
+            "application_version": "imageVersion",
+            "environment": {
+                "SSO_KEY": "mySsoKey",
+                "QUEUE_URL": {"ref": "myQueueUrl"}
             }
         }
-        expected = {'Fn::Base64':
-            {
-                'Fn::Join':
-                    [
-                        '\n',
-                        [
-                            '#taupage-ami-config',
-                            'foo:',
-                            '  baa:',
-                            {'Fn::Join': [': ', ['    key', 'value']]}
-                        ]
-                    ]
-            }
-        }
-
-        key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        self.assertDictEqual(expected, value)
-
-    def test_transform_taupage_user_data_accepts_int_key_value(self):
-        input = {'ports': {8080: 9000}}
-
-        key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        expected = {
-            "Fn::Base64": {
-                "Fn::Join":
-                    [
-                        "\n",
-                        [
-                            "#taupage-ami-config",
-                            "ports:",
-                            {"Fn::Join": [": ", ["  8080", 9000]]}
-                        ]
-                    ]
-            }
-        }
-
-        self.assertDictEqual(expected, value)
-
-    def test_transform_taupage_user_data_accepts_joins(self):
-        input = {
-            "source": {"Fn::Join": [":", ["my-registry/my-app", {"Ref": "appVersion"}]]}
-        }
-
         expected = {
             "Fn::Base64": {
                 "Fn::Join": [
                     "\n",
                     [
-                        "#taupage-ami-config",
                         {
                             "Fn::Join": [
                                 ": ",
                                 [
-                                    "source",
+                                    "application_id",
+                                    "stackName"
+                                ]
+                            ]
+                        },
+                        {
+                            "Fn::Join": [
+                                ": ",
+                                [
+                                    "application_version",
+                                    "imageVersion"
+                                ]
+                            ]
+                        },
+                        "environment:",
+                        {
+                            "Fn::Join": [
+                                ": ",
+                                [
+                                    "  SSO_KEY",
+                                    "mySsoKey"
+                                ]
+                            ]
+                        },
+                        {
+                            "Fn::Join": [
+                                ": ",
+                                [
+                                    "  QUEUE_URL",
                                     {
-                                        "Fn::Join": [
-                                            ":",
-                                            [
-                                                "my-registry/my-app",
-                                                {
-                                                    "Ref": "appVersion"
-                                                }
-                                            ]
-                                        ]
+                                        "ref": "myQueueUrl"
                                     }
                                 ]
                             ]
@@ -235,10 +214,66 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
             }
         }
 
-        key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
-        # import json
-        # print value
-        self.assertDictEqual(expected, value)
+        key, value = CloudFormationTemplateTransformer.transform_yaml_user_data_key('@YamlUserData@', input)
+        self.assertEqual("UserData", key)
+        six.assertCountEqual(self, expected, value)
+
+    def test_transform_dict_to_yaml_lines_list_accepts_multiple_sub_dicts(self):
+        input = {
+            "foo": {
+                'baa': {'key': 'value'}
+            }
+        }
+        expected = [
+            'foo:',
+            '  baa:',
+            {'Fn::Join': [': ', ['    key', 'value']]}
+
+        ]
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        six.assertCountEqual(self, expected, result)
+
+    def test_transform_dict_to_yaml_lines_list_accepts_int_key_value(self):
+        input = {'ports': {8080: 9000}}
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        expected = [
+            "ports:",
+            {"Fn::Join": [": ", ["  8080", 9000]]}
+        ]
+
+        six.assertCountEqual(self, expected, result)
+
+    def test_transform_dict_to_yaml_lines_list_accepts_joins(self):
+        input = {
+            "source": {"Fn::Join": [":", ["my-registry/my-app", {"Ref": "appVersion"}]]}
+        }
+
+        expected = [
+            {
+                "Fn::Join": [
+                    ": ",
+                    [
+                        "source",
+                        {
+                            "Fn::Join": [
+                                ":",
+                                [
+                                    "my-registry/my-app",
+                                    {
+                                        "Ref": "appVersion"
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            }
+        ]
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        six.assertCountEqual(self, expected, result)
 
     def test_transform_kv_to_cfn_join_accepts_int_key_value(self):
         result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join(8080, 9000)

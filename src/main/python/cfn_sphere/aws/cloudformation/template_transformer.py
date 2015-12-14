@@ -11,6 +11,7 @@ class CloudFormationTemplateTransformer(object):
         template_dict = cls.scan_dict_values(template_dict, cls.transform_getattr_string)
         template_dict = cls.scan_dict_keys(template_dict, cls.transform_join_key)
         template_dict = cls.scan_dict_keys(template_dict, cls.transform_taupage_user_data_key)
+        template_dict = cls.scan_dict_keys(template_dict, cls.transform_yaml_user_data_key)
 
         template_dict = cls.scan_dict_values(template_dict, cls.check_for_leftover_reference_values)
         template_dict = cls.scan_dict_keys(template_dict, cls.check_for_leftover_reference_keys)
@@ -53,6 +54,28 @@ class CloudFormationTemplateTransformer(object):
 
                 lines = ['#taupage-ami-config']
                 lines.extend(cls.transform_dict_to_yaml_lines_list(value))
+
+                return "UserData", {
+                    'Fn::Base64': {
+                        'Fn::Join': ['\n', lines]
+                    }
+                }
+
+        return key, value
+
+    @classmethod
+    def transform_yaml_user_data_key(cls, key, value):
+        if not value:
+            return key, value
+
+        if isinstance(key, string_types):
+
+            if str(key).lower() == '@yamluserdata@':
+
+                if not isinstance(value, dict):
+                    raise TemplateErrorException("Value of 'YamlUserData' must be of type dict")
+
+                lines = cls.transform_dict_to_yaml_lines_list(value)
 
                 return "UserData", {
                     'Fn::Base64': {
@@ -191,31 +214,31 @@ class CloudFormationTemplateTransformer(object):
         return result_dict
 
     @classmethod
-    def scan_dict_values(cls, dictionary, value_handler):
-        for key in dictionary:
-            value = dictionary[key]
+    def scan_dict_values(cls, original_dict, value_handler):
+        result_dict = {}
 
+        for key, value in original_dict.items():
             if isinstance(value, dict):
-                dictionary[key] = cls.scan_dict_values(value, value_handler)
+                result_dict[key] = cls.scan_dict_values(value, value_handler)
 
             elif isinstance(value, list):
-                value_list = []
+                new_list_value = []
                 for item in value:
                     if isinstance(item, dict):
-                        value_list.append(cls.scan_dict_values(item, value_handler))
+                        new_list_value.append(cls.scan_dict_values(item, value_handler))
                     elif isinstance(item, string_types):
-                        value_list.append(value_handler(item))
+                        new_list_value.append(value_handler(item))
                     else:
-                        value_list.append(item)
+                        new_list_value.append(item)
 
-                dictionary[key] = value_list
+                result_dict[key] = new_list_value
 
             elif isinstance(value, string_types):
-                dictionary[key] = value_handler(value)
+                result_dict[key] = value_handler(value)
             else:
-                dictionary[key] = value
+                result_dict[key] = value
 
-        return dictionary
+        return result_dict
 
 
 if __name__ == "__main__":
