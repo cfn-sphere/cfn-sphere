@@ -1,10 +1,9 @@
 import networkx
-from networkx.exception import NetworkXUnfeasible
-from cfn_sphere.exceptions import CfnSphereException
+from networkx.exception import NetworkXUnfeasible, NetworkXNoCycle
+from cfn_sphere.exceptions import CfnSphereException, InvalidDependencyGraphException, CyclicDependencyException
 
 
 class DependencyResolver(object):
-
     @staticmethod
     def parse_stack_reference_value(value):
         if not value:
@@ -56,13 +55,23 @@ class DependencyResolver(object):
     def filter_unmanaged_stacks(managed_stacks, stacks):
         return [stack for stack in stacks if stack in managed_stacks]
 
+    @staticmethod
+    def analyse_cyclic_dependencies(graph):
+        try:
+            cycle = networkx.find_cycle(graph)
+            dependency_string = ', '.join("%s <-- %s" % tup for tup in cycle)
+            raise CyclicDependencyException("Found cyclic dependency between stacks: {0}".format(dependency_string))
+        except NetworkXNoCycle:
+            pass
+
     @classmethod
     def get_stack_order(cls, desired_stacks):
         graph = cls.create_stacks_directed_graph(desired_stacks)
         try:
             order = networkx.topological_sort_recursive(graph)
         except NetworkXUnfeasible as e:
-            raise Exception("Could not define an order of stacks: {0}".format(e))
+            cls.analyse_cyclic_dependencies(graph)
+            raise InvalidDependencyGraphException("Could not define an order of stacks: {0}".format(e))
 
         return cls.filter_unmanaged_stacks(desired_stacks, order)
 

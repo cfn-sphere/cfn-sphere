@@ -1,5 +1,6 @@
 import unittest2
-from cfn_sphere.config import Config, StackConfig, NoConfigException
+
+from cfn_sphere.stack_config.config import Config, StackConfig, NoConfigException
 
 
 class ConfigTests(unittest2.TestCase):

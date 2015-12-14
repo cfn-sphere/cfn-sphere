@@ -1,16 +1,18 @@
 #!/usr/bin/python
 
 import sys
+import logging
+
 import boto
 import click
-import logging
+from boto.exception import NoAuthHandlerFound, BotoServerError
+
 from cfn_sphere.util import convert_file, get_logger, convert_dict_to_json_string, get_latest_version
-from cfn_sphere.config import Config
+from cfn_sphere.stack_config.config import Config
 from cfn_sphere.main import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.aws.cloudformation.template_loader import CloudFormationTemplateLoader
 from cfn_sphere.aws.cloudformation.template_transformer import CloudFormationTemplateTransformer
-from boto.exception import NoAuthHandlerFound, BotoServerError
 
 VERSION = '${version}'
 LOGGER = get_logger(root=True)

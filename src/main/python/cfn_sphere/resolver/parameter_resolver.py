@@ -1,8 +1,9 @@
+from boto.exception import BotoServerError
+
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.cloudformation.cfn_api import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
-from cfn_sphere.resolver.dependency_resolver import DependencyResolver
-from boto.exception import BotoServerError
+from cfn_sphere.stack_config.dependency_resolver import DependencyResolver
 
 
 class ParameterResolverException(Exception):

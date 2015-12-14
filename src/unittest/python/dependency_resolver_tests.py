@@ -1,8 +1,8 @@
 import unittest2
 
-from cfn_sphere.resolver.dependency_resolver import DependencyResolver
-from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.config import StackConfig
+from cfn_sphere.stack_config.dependency_resolver import DependencyResolver
+from cfn_sphere.exceptions import CfnSphereException, CyclicDependencyException
+from cfn_sphere.stack_config.config import StackConfig
 
 
 class DependencyResolverTests(unittest2.TestCase):
@@ -71,10 +71,13 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertEqual(result, len(DependencyResolver.get_stack_order(stacks)))
 
     def test_get_stack_order_raises_exception_on_cyclic_dependency(self):
-        stacks = {'app1': {'parameters': {'a': 'Ref::app2.id'}},
-                  'app2': {'parameters': {'a': 'Ref::app1.id'}}
-                  }
-        with self.assertRaises(Exception):
+        stacks = {
+            'app1': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|app2.id'}}),
+            'app2': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|app3.id'}}),
+            'app3': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|app1.id'}})
+        }
+
+        with self.assertRaises(CyclicDependencyException):
             DependencyResolver.get_stack_order(stacks)
 
     def test_filter_unmanaged_stacks(self):
@@ -94,7 +97,7 @@ class DependencyResolverTests(unittest2.TestCase):
         self.assertListEqual(managed_stacks, DependencyResolver.filter_unmanaged_stacks(managed_stacks, stacks))
 
     def test_parse_stack_reference_value_returns_none_for_non_reference(self):
-        self.assertEqual((None, None),DependencyResolver.parse_stack_reference_value('foo'))
+        self.assertEqual((None, None), DependencyResolver.parse_stack_reference_value('foo'))
 
     def test_parse_stack_reference_value_returns_stack_and_output_name_tuple(self):
         self.assertEqual(('stack', 'output'), DependencyResolver.parse_stack_reference_value('|ref|stack.output'))
