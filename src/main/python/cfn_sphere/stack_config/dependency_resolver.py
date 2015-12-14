@@ -59,7 +59,7 @@ class DependencyResolver(object):
     def analyse_cyclic_dependencies(graph):
         try:
             cycle = networkx.find_cycle(graph)
-            dependency_string = ', '.join("%s <-- %s" % tup for tup in cycle)
+            dependency_string = ' => '.join("[%s is referenced by %s]" % tup for tup in cycle)
             raise CyclicDependencyException("Found cyclic dependency between stacks: {0}".format(dependency_string))
         except NetworkXNoCycle:
             pass
