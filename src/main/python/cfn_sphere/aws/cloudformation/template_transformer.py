@@ -163,27 +163,32 @@ class CloudFormationTemplateTransformer(object):
         return lines
 
     @classmethod
-    def scan_dict_keys(cls, dictionary, key_handler):
-        for key in dictionary:
-            value = dictionary[key]
+    def scan_dict_keys(cls, original_dict, key_handler):
+        result_dict = {}
 
+        for key, value in original_dict.items():
             if isinstance(value, dict):
-                dictionary[key] = cls.scan_dict_keys(value, key_handler)
+                new_dict_value = cls.scan_dict_keys(value, key_handler)
+                new_key, new_value = key_handler(key, new_dict_value)
+                result_dict[new_key] = new_value
 
-            if isinstance(value, list):
+            elif isinstance(value, list):
+                new_list_value = []
+
                 for item in value:
                     if isinstance(item, dict):
-                        cls.scan_dict_keys(item, key_handler)
+                        new_list_value.append(cls.scan_dict_keys(item, key_handler))
+                    else:
+                        new_list_value.append(item)
 
-            new_key, new_value = key_handler(key, value)
+                new_key, new_value = key_handler(key, new_list_value)
+                result_dict[new_key] = new_value
 
-            if new_key != key or new_value != value:
-                dictionary[new_key] = new_value
+            else:
+                new_key, new_value = key_handler(key, value)
+                result_dict[new_key] = new_value
 
-            if new_key != key:
-                dictionary.pop(key)
-
-        return dictionary
+        return result_dict
 
     @classmethod
     def scan_dict_values(cls, dictionary, value_handler):

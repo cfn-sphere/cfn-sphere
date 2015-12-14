@@ -14,7 +14,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         handler.return_value = 'new-key', 'new-value'
 
         result = CloudFormationTemplateTransformer.scan_dict_keys(dictionary, handler)
-        expected_calls = [mock.call('key', 'value'), mock.call('new-key', 'new-value')]
+        expected_calls = [mock.call('key', 'value')]
 
         six.assertCountEqual(self, expected_calls, handler.mock_calls)
         self.assertDictEqual(result, {'new-key': 'new-value'})
@@ -265,6 +265,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+        
         expected = {
             "key1": {
                 "Ref": "value"
@@ -344,7 +345,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
         expected = {'key1': {'key2': [{'foo': {'Fn::Join': ['', ['a', 'b']]}, 'key3': 'value3'}]}}
 
-        self.assertEqual(expected, result.body_dict)
+        six.assertCountEqual(self, expected, result.body_dict)
 
     def test_transform_template_transforms_join_with_embedded_ref(self):
         template_dict = {
