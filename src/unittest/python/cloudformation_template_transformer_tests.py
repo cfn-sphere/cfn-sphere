@@ -265,7 +265,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
         }
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
-        
+
         expected = {
             "key1": {
                 "Ref": "value"

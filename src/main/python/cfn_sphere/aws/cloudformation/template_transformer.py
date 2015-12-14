@@ -138,7 +138,7 @@ class CloudFormationTemplateTransformer(object):
             if isinstance(key, string_types):
 
                 # do not go any further and directly return cfn functions and their values
-                if key.lower() == 'ref' or key.lower() == 'fn::getatt' or key.lower() == 'fn::join':
+                if key.lower() in ['ref', 'fn::getatt', 'fn::join']:
                     return {key: value}
                 else:
 
