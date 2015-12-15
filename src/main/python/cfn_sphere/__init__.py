@@ -48,3 +48,10 @@ class StackActionHandler(object):
                 self.cfn.create_stack(stack)
 
             CustomResourceHandler.process_post_resources(stack)
+
+    def delete_stacks(self):
+        stacks = self.config.stacks
+        stack_processing_order = DependencyResolver().get_stack_order(stacks)
+        stack_processing_order.reverse()
+        for stack_name in stack_processing_order:
+            self.cfn.delete_stack(stack_name)

@@ -134,6 +134,16 @@ class CloudFormation(object):
         except BotoServerError as e:
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e.message))
 
+    def delete_stack(self, stack_name):
+        try:
+            self.logger.info("Deleting stack {0}".format(stack_name))
+            self.conn.delete_stack(stack_name)
+
+            self.wait_for_stack_action_to_complete(stack_name, "delete", 600)
+            self.logger.info("Deletion completed for {0}".format(stack_name))
+        except BotoServerError as e:
+            raise CfnStackActionFailedException("Could not delete {0}: {1}".format(stack_name, e.message))
+
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
         self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
 
