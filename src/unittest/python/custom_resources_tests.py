@@ -1,11 +1,13 @@
-import unittest2
-from mock import patch, Mock
-import yaml
 from textwrap import dedent
+
+import unittest2
+from mock import patch
+import yaml
+
 from cfn_sphere.custom_resources import CustomResourceHandler
 from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
-from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
+from cfn_sphere.aws.cfn import CloudFormationStack
+from cfn_sphere.template import CloudFormationTemplate
 
 
 class CustomResourceHandlerTests(unittest2.TestCase):

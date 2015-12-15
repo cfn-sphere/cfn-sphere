@@ -1,9 +1,10 @@
 import unittest2
-from cfn_sphere.aws.cloudformation.template_transformer import CloudFormationTemplateTransformer
-from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
-from cfn_sphere.exceptions import TemplateErrorException
+from cfn_sphere.template import CloudFormationTemplate
 from mock import Mock, mock
 import six
+
+from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
+from cfn_sphere.exceptions import TemplateErrorException
 
 
 class CloudFormationTemplateTransformerTests(unittest2.TestCase):

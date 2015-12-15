@@ -6,7 +6,7 @@ import unittest2
 from boto import cloudformation
 
 from cfn_sphere.main import StackActionHandler
-from cfn_sphere.stack_config.config import Config
+from cfn_sphere.stack_configuration import Config
 
 LOGGER = logging.getLogger(__name__)
 

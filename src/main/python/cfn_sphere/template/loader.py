@@ -1,8 +1,10 @@
 import os
 import json
+
 import yaml
+
 from cfn_sphere.aws.s3 import S3
-from cfn_sphere.aws.cloudformation.template import CloudFormationTemplate
+from cfn_sphere.template import CloudFormationTemplate
 from cfn_sphere.exceptions import TemplateErrorException
 
 

@@ -1,16 +1,16 @@
 import unittest2
 from mock import Mock, patch
-from cfn_sphere.main import StackActionHandler
-from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
+from cfn_sphere import StackActionHandler
+from cfn_sphere.aws.cfn import CloudFormationStack
 
 
 class StackActionHandlerTests(unittest2.TestCase):
-    @patch('cfn_sphere.main.CloudFormation')
-    @patch('cfn_sphere.main.ParameterResolver')
-    @patch('cfn_sphere.main.DependencyResolver')
-    @patch('cfn_sphere.main.CloudFormationTemplateLoader')
-    @patch('cfn_sphere.main.CloudFormationStack')
-    @patch('cfn_sphere.main.CustomResourceHandler')
+    @patch('cfn_sphere.CloudFormation')
+    @patch('cfn_sphere.ParameterResolver')
+    @patch('cfn_sphere.DependencyResolver')
+    @patch('cfn_sphere.CloudFormationTemplateLoader')
+    @patch('cfn_sphere.CloudFormationStack')
+    @patch('cfn_sphere.CustomResourceHandler')
     def test_create_or_update_tests_exits_gracefully_if_preexisting_stack_disappears(self,
                                                                                      custom_resource_mock,
                                                                                      stack_mock,

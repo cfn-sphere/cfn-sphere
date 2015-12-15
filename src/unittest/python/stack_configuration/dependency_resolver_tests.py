@@ -1,8 +1,8 @@
 import unittest2
 
-from cfn_sphere.stack_config.dependency_resolver import DependencyResolver
+from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.exceptions import CfnSphereException, CyclicDependencyException
-from cfn_sphere.stack_config.config import StackConfig
+from cfn_sphere.stack_configuration import StackConfig
 
 
 class DependencyResolverTests(unittest2.TestCase):

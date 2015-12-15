@@ -1,7 +1,7 @@
 import unittest2
 from mock import patch
 
-from cfn_sphere.resolver.parameter_resolver import ParameterResolver
+from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 
 
 class ParameterResolverTests(unittest2.TestCase):
@@ -17,45 +17,45 @@ class ParameterResolverTests(unittest2.TestCase):
     def test_convert_list_to_string_returns_empty_list_on_empty_list(self):
         self.assertEqual("", ParameterResolver.convert_list_to_string([]))
 
-    @patch('cfn_sphere.resolver.parameter_resolver.ParameterResolver.convert_list_to_string')
-    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.resolver.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.convert_list_to_string')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_resolve_parameter_values_calls_convert_list_to_string_on_list_value(self, ec2_api, cfn, convert_list_to_string_mock):
         ParameterResolver().resolve_parameter_values({'foo': ['a', 'b']}, 'foo')
         convert_list_to_string_mock.assert_called_once_with(['a', 'b'])
 
-    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.resolver.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_resolve_parameter_values_raises_exception_on_none_value(self, ec2_api, cfn):
         with self.assertRaises(NotImplementedError):
             ParameterResolver().resolve_parameter_values({'foo': None}, 'foo')
 
-    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.resolver.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_resolve_parameter_values_returns_list_with_string_value(self, ec2_api, cfn):
         result = ParameterResolver().resolve_parameter_values({'foo': "baa"}, 'foo')
         self.assertEqual({'foo': 'baa'}, result)
 
-    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.resolver.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_resolve_parameter_values_returns_str_representation_of_false(self, ec2_api, cfn):
         result = ParameterResolver().resolve_parameter_values({'foo': False}, 'foo')
         self.assertEqual({'foo': 'false'}, result)
 
-    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.resolver.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_resolve_parameter_values_returns_str_representation_of_int(self, ec2_api, cfn):
         result = ParameterResolver().resolve_parameter_values({'foo': 5}, 'foo')
         self.assertEqual({'foo': '5'}, result)
 
-    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.resolver.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_resolve_parameter_values_returns_str_representation_of_float(self, ec2_api, cfn):
         result = ParameterResolver().resolve_parameter_values({'foo': 5.555}, 'foo')
         self.assertEqual({'foo': '5.555'}, result)
 
-    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.resolver.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_get_actual_value_returns_stacks_actual_value(self, _, cfn_mock):
         cfn_mock.return_value.get_stack_parameters_dict.return_value = {'my-key': 'my-actual-value'}
 
@@ -65,8 +65,8 @@ class ParameterResolverTests(unittest2.TestCase):
         cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
         self.assertEqual('my-actual-value', result)
 
-    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.resolver.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_get_actual_value_returns_default_value(self, _, cfn_mock):
         cfn_mock.return_value.get_stack_parameters_dict.return_value = {'not-my-key': 'my-actual-value'}
 

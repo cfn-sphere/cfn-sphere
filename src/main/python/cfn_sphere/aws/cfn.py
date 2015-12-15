@@ -4,8 +4,19 @@ from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string
-from cfn_sphere.aws.cloudformation.stack import CloudFormationStack
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
+
+
+class CloudFormationStack(object):
+    def __init__(self, template, parameters, name, region, timeout=600):
+        self.template = template
+        self.parameters = parameters
+        self.name = name
+        self.region = region
+        self.timeout = timeout
+
+    def get_parameters_list(self):
+        return [(key, value) for key, value in self.parameters.items()]
 
 
 class CloudFormation(object):
