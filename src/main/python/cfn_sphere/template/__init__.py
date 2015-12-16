@@ -1,12 +1,9 @@
 import json
-from cfn_sphere.util import get_logger
 
 
 class CloudFormationTemplate(object):
     def __init__(self, body_dict, name):
-        self.logger = get_logger()
         self.name = name
-        self.body_dict = body_dict
         self.template_format_version = body_dict.get('AWSTemplateFormatVersion', "2010-09-09")
         self.description = body_dict.get('Description', "")
         self.parameters = body_dict.get('Parameters', {})

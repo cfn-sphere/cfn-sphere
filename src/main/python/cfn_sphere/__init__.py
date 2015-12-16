@@ -33,11 +33,10 @@ class StackActionHandler(object):
             template_url = stack_config.template_url
             working_dir = stack_config.working_dir
 
-            template = CloudFormationTemplateLoader.get_template_from_url(template_url, working_dir)
-            template = CloudFormationTemplateTransformer.transform_template(template)
+            raw_template = CloudFormationTemplateLoader.get_template_from_url(template_url, working_dir)
+            template = CloudFormationTemplateTransformer.transform_template(raw_template)
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)
-
             stack = CloudFormationStack(template, parameters, stack_name, self.region, stack_config.timeout)
 
             if stack_name in existing_stacks:

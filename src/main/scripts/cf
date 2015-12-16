@@ -9,7 +9,7 @@ from boto.exception import NoAuthHandlerFound, BotoServerError
 
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 
-from cfn_sphere.util import convert_file, get_logger, convert_dict_to_json_string, get_latest_version
+from cfn_sphere.util import convert_file, get_logger, get_latest_version
 from cfn_sphere.stack_configuration import Config
 from cfn_sphere import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
@@ -103,7 +103,7 @@ def render_template(filename):
     loader = CloudFormationTemplateLoader()
     template = loader.get_template_from_url(filename, None)
     template = CloudFormationTemplateTransformer.transform_template(template)
-    click.echo(convert_dict_to_json_string(template.body_dict))
+    click.echo(template.get_template_json())
 
 
 if __name__ == '__main__':

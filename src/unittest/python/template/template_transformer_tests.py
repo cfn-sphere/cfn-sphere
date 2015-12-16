@@ -290,15 +290,16 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
     def test_transform_template_properly_renders_dict(self):
         template_dict = {
-            'key1': '|ref|value',
-            'key2': '|getatt|resource|attribute',
-            '@TaupageUserData@':
-                {
-                    'key1': 'value',
-                    'key2': {'ref': 'value'},
-                    'key3': {'|join|.': ['a', 'b', 'c']}
-                }
-        }
+            'Resources': {
+                'key1': '|ref|value',
+                'key2': '|getatt|resource|attribute',
+                '@TaupageUserData@':
+                    {
+                        'key1': 'value',
+                        'key2': {'ref': 'value'},
+                        'key3': {'|join|.': ['a', 'b', 'c']}
+                    }
+            }}
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
 
@@ -361,41 +362,41 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
                 }
             }
         }
-        six.assertCountEqual(self, expected, result.body_dict)
+        six.assertCountEqual(self, expected, result.resources)
 
     def test_transform_template_transforms_list_values(self):
         template_dict = {
-            'key1': ["|ref|foo", "a", "b"]
+            'Resources': {'key1': ["|ref|foo", "a", "b"]}
         }
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
         expected = {'key1': [{'Ref': 'foo'}, 'a', 'b']}
 
-        self.assertEqual(expected, result.body_dict)
+        self.assertEqual(expected, result.resources)
 
     def test_transform_template_transforms_dict_list_items(self):
         template_dict = {
-            'key1': {'key2': [{'key3': 'value3', 'foo': {'|Join|': ['a', 'b']}}]}
+            'Resources': {'key1': {'key2': [{'key3': 'value3', 'foo': {'|Join|': ['a', 'b']}}]}}
         }
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
         expected = {'key1': {'key2': [{'foo': {'Fn::Join': ['', ['a', 'b']]}, 'key3': 'value3'}]}}
 
-        six.assertCountEqual(self, expected, result.body_dict)
+        six.assertCountEqual(self, expected, result.resources)
 
     def test_transform_template_transforms_join_with_embedded_ref(self):
         template_dict = {
-            'key1': {"|join|.": ["|ref|foo", "b"]}
+            'Resources': {'key1': {"|join|.": ["|ref|foo", "b"]}}
         }
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
         expected = {'key1': {'Fn::Join': ['.', [{'Ref': 'foo'}, 'b']]}}
 
-        self.assertEqual(expected, result.body_dict)
+        self.assertEqual(expected, result.resources)
 
     def test_transform_template_raises_exception_on_unknown_reference_value(self):
         template_dict = {
-            'key1': "|foo|foo"
+            'Resources': {'key1': "|foo|foo"}
         }
 
         with self.assertRaises(TemplateErrorException):
@@ -403,7 +404,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
     def test_transform_template_raises_exception_on_unknown_reference_key(self):
         template_dict = {
-            '|key|': "foo"
+            'Resources': {'|key|': "foo"}
         }
 
         with self.assertRaises(TemplateErrorException):
@@ -411,7 +412,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
     def test_transform_template_raises_exception_on_unknown_at_reference_key(self):
         template_dict = {
-            '@foo@': "foo"
+            'Resources': {'@foo@': "foo"}
         }
 
         with self.assertRaises(TemplateErrorException):
@@ -419,7 +420,7 @@ class CloudFormationTemplateTransformerTests(unittest2.TestCase):
 
     def test_transform_template_raises_exception_on_embedded_reference(self):
         template_dict = {
-            'key1': {"foo": ["|foo|foo", "b"]}
+            'Resources': {'key1': {"foo": ["|foo|foo", "b"]}}
         }
 
         with self.assertRaises(TemplateErrorException):

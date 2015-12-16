@@ -5,18 +5,28 @@ from six import string_types
 class CloudFormationTemplateTransformer(object):
     @classmethod
     def transform_template(cls, template):
-        template_dict = template.body_dict
+        resources = template.resources
+        outputs = template.outputs
 
-        template_dict = cls.scan_dict_values(template_dict, cls.transform_reference_string)
-        template_dict = cls.scan_dict_values(template_dict, cls.transform_getattr_string)
-        template_dict = cls.scan_dict_keys(template_dict, cls.transform_join_key)
-        template_dict = cls.scan_dict_keys(template_dict, cls.transform_taupage_user_data_key)
-        template_dict = cls.scan_dict_keys(template_dict, cls.transform_yaml_user_data_key)
+        resources = cls.scan_dict_values(resources, cls.transform_reference_string)
+        resources = cls.scan_dict_values(resources, cls.transform_getattr_string)
+        resources = cls.scan_dict_keys(resources, cls.transform_join_key)
+        resources = cls.scan_dict_keys(resources, cls.transform_taupage_user_data_key)
+        resources = cls.scan_dict_keys(resources, cls.transform_yaml_user_data_key)
+        resources = cls.scan_dict_values(resources, cls.check_for_leftover_reference_values)
+        resources = cls.scan_dict_keys(resources, cls.check_for_leftover_reference_keys)
 
-        template_dict = cls.scan_dict_values(template_dict, cls.check_for_leftover_reference_values)
-        template_dict = cls.scan_dict_keys(template_dict, cls.check_for_leftover_reference_keys)
+        outputs = cls.scan_dict_values(outputs, cls.transform_reference_string)
+        outputs = cls.scan_dict_values(outputs, cls.transform_getattr_string)
+        outputs = cls.scan_dict_keys(outputs, cls.transform_join_key)
+        outputs = cls.scan_dict_keys(outputs, cls.transform_taupage_user_data_key)
+        outputs = cls.scan_dict_keys(outputs, cls.transform_yaml_user_data_key)
+        outputs = cls.scan_dict_values(outputs, cls.check_for_leftover_reference_values)
+        outputs = cls.scan_dict_keys(outputs, cls.check_for_leftover_reference_keys)
 
-        template.body_dict = template_dict
+        template.resources = resources
+        template.outputs = outputs
+
         return template
 
     @staticmethod
