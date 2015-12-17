@@ -78,8 +78,8 @@ class CloudFormation(object):
 
         return parameters
 
-    def is_boto_no_update_required_exception(self, exception):
-
+    @staticmethod
+    def is_boto_no_update_required_exception(exception):
         if isinstance(exception, BotoServerError) and exception.message == "No updates are to be performed.":
             return True
         else:

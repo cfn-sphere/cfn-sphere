@@ -239,3 +239,49 @@ class CloudFormationApiTests(unittest2.TestCase):
         cfn.validate_stack_is_ready_for_action(stack)
 
         cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_get_stack_parameters_dict_returns_proper_dict(self, get_stack_mock):
+        cfn = CloudFormation()
+
+        parameter_1 = Mock()
+        parameter_1.key = "myKey1"
+        parameter_1.value = "myValue1"
+        parameter_2 = Mock()
+        parameter_2.key = "myKey2"
+        parameter_2.value = "myValue2"
+
+        stack_mock = Mock()
+        stack_mock.parameters = [parameter_1, parameter_2]
+        get_stack_mock.return_value = stack_mock
+
+        result = cfn.get_stack_parameters_dict('foo')
+
+        self.assertDictEqual({'myKey1': 'myValue1', 'myKey2': 'myValue2'}, result)
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_get_stack_parameters_dict_returns_empty_dict_for_empty_parameters(self, get_stack_mock):
+        cfn = CloudFormation()
+
+        stack_mock = Mock()
+        stack_mock.parameters = []
+        get_stack_mock.return_value = stack_mock
+
+        result = cfn.get_stack_parameters_dict('foo')
+
+        self.assertDictEqual({}, result)
+
+    def test_is_boto_no_update_required_exception_returns_false_with_other_exception(self):
+        exception = Mock(spec=Exception)
+        exception.message = "No updates are to be performed."
+        self.assertFalse(CloudFormation.is_boto_no_update_required_exception(exception))
+
+    def test_is_boto_no_update_required_exception_returns_false_without_message(self):
+        exception = Mock(spec=BotoServerError)
+        exception.message = "Something went wrong."
+        self.assertFalse(CloudFormation.is_boto_no_update_required_exception(exception))
+
+    def test_is_boto_no_update_required_exception_returns_true_for_message(self):
+        exception = Mock(spec=BotoServerError)
+        exception.message = "No updates are to be performed."
+        self.assertTrue(CloudFormation.is_boto_no_update_required_exception(exception))
