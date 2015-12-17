@@ -241,7 +241,8 @@ class CloudFormationApiTests(unittest2.TestCase):
         cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
-    def test_get_stack_parameters_dict_returns_proper_dict(self, get_stack_mock):
+    @patch('cfn_sphere.aws.cfn.cloudformation.connect_to_region')
+    def test_get_stack_parameters_dict_returns_proper_dict(self, _, get_stack_mock):
         cfn = CloudFormation()
 
         parameter_1 = Mock()
@@ -260,7 +261,8 @@ class CloudFormationApiTests(unittest2.TestCase):
         self.assertDictEqual({'myKey1': 'myValue1', 'myKey2': 'myValue2'}, result)
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
-    def test_get_stack_parameters_dict_returns_empty_dict_for_empty_parameters(self, get_stack_mock):
+    @patch('cfn_sphere.aws.cfn.cloudformation.connect_to_region')
+    def test_get_stack_parameters_dict_returns_empty_dict_for_empty_parameters(self, _, get_stack_mock):
         cfn = CloudFormation()
 
         stack_mock = Mock()
