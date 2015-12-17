@@ -78,6 +78,35 @@ def sync(filename, debug, confirm):
         sys.exit(1)
 
 
+@cli.command(help="Delete all stacks in a stack configuration")
+@click.argument('filename', type=click.Path(exists=True))
+@click.option('--debug', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
+@click.option('--confirm', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+def delete(filename, debug, confirm):
+    if debug:
+        LOGGER.setLevel(logging.DEBUG)
+    else:
+        LOGGER.setLevel(logging.INFO)
+
+    if not confirm:
+        check_update_available()
+        click.confirm('This action will delete all stacks in {0} from account: {1}\nAre you sure?'.format(
+            filename, get_current_account_alias()), abort=True)
+
+    try:
+
+        config = Config(filename)
+        StackActionHandler(config).delete_stacks()
+    except CfnSphereException as e:
+        LOGGER.error(e)
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.error("Failed with unexpected error".format(e))
+        LOGGER.exception(e)
+        sys.exit(1)
+
+
 @cli.command(help="Convert JSON to YAML or vice versa")
 @click.argument('filename', type=click.Path(exists=True))
 @click.option('--debug', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
