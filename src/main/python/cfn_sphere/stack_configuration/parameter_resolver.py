@@ -1,13 +1,10 @@
 from boto.exception import BotoServerError
 
+from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
-
-
-class ParameterResolverException(Exception):
-    pass
 
 
 class ParameterResolver(object):
@@ -58,7 +55,7 @@ class ParameterResolver(object):
             artifact = artifacts[key]
             return artifact
         except KeyError:
-            raise ParameterResolverException("Could not get a valid value for {0}.".format(key))
+            raise CfnSphereException("Could not get a valid value for {0}.".format(key))
 
     @staticmethod
     def is_keep_value(value):
@@ -72,18 +69,17 @@ class ParameterResolver(object):
     def get_default_from_keep_value(value):
         return value.split('|', 2)[2]
 
-    def get_actual_value(self, key, value, stack_name):
+    def get_latest_value(self, key, value, stack_name):
         try:
-            actual_stack_parameters = self.cfn.get_stack_parameters_dict(stack_name)
-            actual_value = actual_stack_parameters.get(key, None)
-            if actual_value:
-                self.logger.info("Will keep '{0}' as actual value for {1}".format(actual_value, key))
-                return actual_value
+            latest_stack_parameters = self.cfn.get_stack_parameters_dict(stack_name)
+            latest_value = latest_stack_parameters.get(key, None)
+            if latest_value:
+                self.logger.info("Will keep '{0}' as latest value for {1}".format(latest_value, key))
+                return latest_value
             else:
                 return self.get_default_from_keep_value(value)
-        except BotoServerError:
-            self.logger.info("Will use default value for {0}".format(key))
-            return self.get_default_from_keep_value(value)
+        except BotoServerError as e:
+            raise CfnSphereException("Could not get latest value for {0}: {1}".format(key, e))
 
     def resolve_parameter_values(self, parameters_dict, stack_name):
         parameters = {}
@@ -102,7 +98,7 @@ class ParameterResolver(object):
                     parameters[key] = str(self.get_output_value(referenced_stack + '.' + output_name))
 
                 elif self.is_keep_value(value):
-                    parameters[key] = str(self.get_actual_value(key, value, stack_name))
+                    parameters[key] = str(self.get_latest_value(key, value, stack_name))
 
                 elif self.is_taupage_ami_reference(value):
                     parameters[key] = str(self.ec2.get_latest_taupage_image_id())

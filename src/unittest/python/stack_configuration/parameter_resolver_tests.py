@@ -1,6 +1,7 @@
+from boto.exception import BotoServerError
 import unittest2
 from mock import patch
-
+from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 
 
@@ -56,25 +57,34 @@ class ParameterResolverTests(unittest2.TestCase):
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    def test_get_actual_value_returns_stacks_actual_value(self, _, cfn_mock):
+    def test_get_latest_value_returns_stacks_actual_value(self, _, cfn_mock):
         cfn_mock.return_value.get_stack_parameters_dict.return_value = {'my-key': 'my-actual-value'}
 
         pr = ParameterResolver()
-        result = pr.get_actual_value('my-key', '|keepOrUse|default-value', 'my-stack')
+        result = pr.get_latest_value('my-key', '|keepOrUse|default-value', 'my-stack')
 
         cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
         self.assertEqual('my-actual-value', result)
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    def test_get_actual_value_returns_default_value(self, _, cfn_mock):
+    def test_get_latest_value_returns_default_value(self, _, cfn_mock):
         cfn_mock.return_value.get_stack_parameters_dict.return_value = {'not-my-key': 'my-actual-value'}
 
         pr = ParameterResolver()
-        result = pr.get_actual_value('my-key', '|keepOrUse|default-value', 'my-stack')
+        result = pr.get_latest_value('my-key', '|keepOrUse|default-value', 'my-stack')
 
         cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
         self.assertEqual('default-value', result)
+
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
+    def test_get_latest_value_returns_default_value(self, _, cfn_mock):
+        cfn_mock.return_value.get_stack_parameters_dict.side_effect = BotoServerError("500","foo")
+
+        resolver = ParameterResolver()
+        with self.assertRaises(CfnSphereException):
+            resolver.get_latest_value('my-key', '|keepOrUse|default-value', 'my-stack')
 
     def test_is_keep_value_returns_true_for_keep_keyword(self):
         result = ParameterResolver.is_keep_value('|keeporuse|')
