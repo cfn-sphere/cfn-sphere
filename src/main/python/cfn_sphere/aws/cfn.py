@@ -53,7 +53,7 @@ class CloudFormation(object):
     def get_stack(self, stack_name):
         return self.conn.describe_stacks(stack_name)[0]
 
-    def validate_stack_is_ready_for_updates(self, stack):
+    def validate_stack_is_ready_for_action(self, stack):
         try:
             cfn_stack = self.get_stack(stack.name)
         except BotoServerError as e:
@@ -134,15 +134,19 @@ class CloudFormation(object):
         except BotoServerError as e:
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e.message))
 
-    def delete_stack(self, stack_name):
+    def delete_stack(self, stack):
         try:
-            self.logger.info("Deleting stack {0}".format(stack_name))
-            self.conn.delete_stack(stack_name)
+            self.logger.info("Deleting stack {0}".format(stack.name))
+            self.conn.delete_stack(stack.name)
 
-            self.wait_for_stack_action_to_complete(stack_name, "delete", 600)
-            self.logger.info("Deletion completed for {0}".format(stack_name))
+            try:
+                self.wait_for_stack_action_to_complete(stack.name, "delete", 600)
+            except BotoServerError as e:
+                self.logger.info(e)
+
+            self.logger.info("Deletion completed for {0}".format(stack.name))
         except BotoServerError as e:
-            raise CfnStackActionFailedException("Could not delete {0}: {1}".format(stack_name, e.message))
+            raise CfnStackActionFailedException("Could not delete {0}: {1}".format(stack.name, e.message))
 
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
         self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
