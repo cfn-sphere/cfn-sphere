@@ -25,7 +25,7 @@ class StackActionHandler(object):
 
         if len(stack_processing_order) > 1:
             self.logger.info(
-                "Will process stacks in the following order: {0}".format(", ".join(stack_processing_order)))
+                "Will create/update stacks in the following order: {0}".format(", ".join(stack_processing_order)))
 
         for stack_name in stack_processing_order:
             stack_config = self.config.stacks.get(stack_name)
@@ -41,7 +41,7 @@ class StackActionHandler(object):
 
             if stack_name in existing_stacks:
 
-                self.cfn.validate_stack_is_ready_for_updates(stack)
+                self.cfn.validate_stack_is_ready_for_action(stack)
                 self.cfn.update_stack(stack)
             else:
                 self.cfn.create_stack(stack)
@@ -49,8 +49,18 @@ class StackActionHandler(object):
             CustomResourceHandler.process_post_resources(stack)
 
     def delete_stacks(self):
+        existing_stacks = self.cfn.get_stack_names()
         stacks = self.config.stacks
+
         stack_processing_order = DependencyResolver().get_stack_order(stacks)
         stack_processing_order.reverse()
+
+        self.logger.info("Will delete stacks in the following order: {0}".format(", ".join(stack_processing_order)))
+
         for stack_name in stack_processing_order:
-            self.cfn.delete_stack(stack_name)
+            if stack_name in existing_stacks:
+                stack = CloudFormationStack(None, None, stack_name, None, None)
+                self.cfn.validate_stack_is_ready_for_action(stack)
+                self.cfn.delete_stack(stack)
+            else:
+                self.logger.info("Stack {0} is already deleted".format(stack_name))
