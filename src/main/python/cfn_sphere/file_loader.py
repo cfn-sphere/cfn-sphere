@@ -1,6 +1,5 @@
 import os
 import json
-
 import yaml
 
 from cfn_sphere.aws.s3 import S3
@@ -8,16 +7,17 @@ from cfn_sphere.template import CloudFormationTemplate
 from cfn_sphere.exceptions import TemplateErrorException
 
 
-class CloudFormationTemplateLoader(object):
+class FileLoader(object):
+
     @classmethod
-    def get_template_from_url(cls, url, working_dir):
+    def get_file_from_url(cls, url, working_dir):
         if url.lower().startswith("s3://"):
-            return CloudFormationTemplate(body_dict=cls._s3_get_template(url), name=os.path.basename(url))
+            return CloudFormationTemplate(body_dict=cls._s3_get_file(url), name=os.path.basename(url))
         else:
-            return CloudFormationTemplate(body_dict=cls._fs_get_template(url, working_dir), name=os.path.basename(url))
+            return CloudFormationTemplate(body_dict=cls._fs_get_file(url, working_dir), name=os.path.basename(url))
 
     @staticmethod
-    def _fs_get_template(url, working_dir):
+    def _fs_get_file(url, working_dir):
         """
         Load cfn template from filesystem
 
@@ -33,13 +33,11 @@ class CloudFormationTemplateLoader(object):
                     return json.loads(template_file.read())
                 if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                     return yaml.load(template_file.read())
-        except ValueError as e:
-            raise TemplateErrorException("Could not load template from {0}: {1}".format(url, e))
-        except IOError as e:
-            raise TemplateErrorException("Could not load template from {0}: {1}".format(url, e))
+        except Exception as e:
+            raise TemplateErrorException("Could not load file from {0}: {1}".format(url, e))
 
     @staticmethod
-    def _s3_get_template(url):
+    def _s3_get_file(url):
         s3 = S3()
         try:
             if url.lower().endswith(".json"):
@@ -49,4 +47,4 @@ class CloudFormationTemplateLoader(object):
             raise TemplateErrorException(
                 "{0} has an unknown file type. Please provide an url with [.json|.yml|.yaml] extension")
         except Exception as e:
-            raise TemplateErrorException(e)
+            raise TemplateErrorException("Could not load file from {0}: {1}".format(url, e))

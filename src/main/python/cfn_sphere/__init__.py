@@ -4,7 +4,7 @@ from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 from cfn_sphere.aws.cfn import CloudFormation
-from cfn_sphere.template.loader import CloudFormationTemplateLoader
+from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.aws.cfn import CloudFormationStack
 from cfn_sphere.custom_resources import CustomResourceHandler
 from cfn_sphere.util import get_logger
@@ -33,7 +33,7 @@ class StackActionHandler(object):
             template_url = stack_config.template_url
             working_dir = stack_config.working_dir
 
-            raw_template = CloudFormationTemplateLoader.get_template_from_url(template_url, working_dir)
+            raw_template = FileLoader.get_file_from_url(template_url, working_dir)
             template = CloudFormationTemplateTransformer.transform_template(raw_template)
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)

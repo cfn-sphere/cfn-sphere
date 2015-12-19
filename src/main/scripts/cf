@@ -8,12 +8,12 @@ import click
 from boto.exception import NoAuthHandlerFound, BotoServerError
 
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
-
 from cfn_sphere.util import convert_file, get_logger, get_latest_version
 from cfn_sphere.stack_configuration import Config
 from cfn_sphere import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.template.loader import CloudFormationTemplateLoader
+from cfn_sphere.file_loader import FileLoader
+
 
 VERSION = '${version}'
 LOGGER = get_logger(root=True)
@@ -129,8 +129,8 @@ def convert(filename, debug):
 def render_template(filename):
     check_update_available()
 
-    loader = CloudFormationTemplateLoader()
-    template = loader.get_template_from_url(filename, None)
+    loader = FileLoader()
+    template = loader.get_file_from_url(filename, None)
     template = CloudFormationTemplateTransformer.transform_template(template)
     click.echo(template.get_template_json())
 

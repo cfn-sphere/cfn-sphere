@@ -9,7 +9,7 @@ class StackActionHandlerTests(unittest2.TestCase):
     @patch('cfn_sphere.CloudFormation')
     @patch('cfn_sphere.ParameterResolver')
     @patch('cfn_sphere.DependencyResolver')
-    @patch('cfn_sphere.CloudFormationTemplateLoader')
+    @patch('cfn_sphere.FileLoader')
     @patch('cfn_sphere.CloudFormationStack')
     @patch('cfn_sphere.CustomResourceHandler')
     def test_create_or_update_tests_exits_gracefully_if_preexisting_stack_disappears(self,
@@ -48,7 +48,7 @@ class StackActionHandlerTests(unittest2.TestCase):
     @patch('cfn_sphere.CloudFormation')
     @patch('cfn_sphere.ParameterResolver')
     @patch('cfn_sphere.DependencyResolver')
-    @patch('cfn_sphere.CloudFormationTemplateLoader')
+    @patch('cfn_sphere.FileLoader')
     @patch('cfn_sphere.CloudFormationStack')
     @patch('cfn_sphere.CustomResourceHandler')
     def test_delete_stacks(self,
@@ -82,7 +82,7 @@ class StackActionHandlerTests(unittest2.TestCase):
     @patch('cfn_sphere.CloudFormation')
     @patch('cfn_sphere.ParameterResolver')
     @patch('cfn_sphere.DependencyResolver')
-    @patch('cfn_sphere.CloudFormationTemplateLoader')
+    @patch('cfn_sphere.FileLoader')
     @patch('cfn_sphere.CloudFormationStack')
     @patch('cfn_sphere.CustomResourceHandler')
     def test_delete_stacks_uses_the_correct_order(self,
