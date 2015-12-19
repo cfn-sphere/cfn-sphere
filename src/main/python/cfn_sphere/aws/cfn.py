@@ -32,6 +32,12 @@ class CloudFormation(object):
         self.logger.debug("Connected to cloudformation API at {0} with access key id: {1}".format(
             region, self.conn.aws_access_key_id))
 
+    def stack_exists(self, stack_name):
+        if stack_name in self.get_stack_names():
+            return True
+        else:
+            return False
+
     def get_stacks(self):
         try:
             result = []

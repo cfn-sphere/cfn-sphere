@@ -1,6 +1,6 @@
 from boto.exception import BotoServerError
 
-from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
@@ -71,14 +71,17 @@ class ParameterResolver(object):
 
     def get_latest_value(self, key, value, stack_name):
         try:
-            latest_stack_parameters = self.cfn.get_stack_parameters_dict(stack_name)
-            latest_value = latest_stack_parameters.get(key, None)
-            if latest_value:
-                self.logger.info("Will keep '{0}' as latest value for {1}".format(latest_value, key))
-                return latest_value
+            if self.cfn.stack_exists(stack_name):
+                latest_stack_parameters = self.cfn.get_stack_parameters_dict(stack_name)
+                latest_value = latest_stack_parameters.get(key, None)
+                if latest_value:
+                    self.logger.info("Will keep '{0}' as latest value for {1}".format(latest_value, key))
+                    return latest_value
+                else:
+                    return self.get_default_from_keep_value(value)
             else:
                 return self.get_default_from_keep_value(value)
-        except BotoServerError as e:
+        except CfnSphereBotoError as e:
             raise CfnSphereException("Could not get latest value for {0}: {1}".format(key, e))
 
     def resolve_parameter_values(self, parameters_dict, stack_name):
