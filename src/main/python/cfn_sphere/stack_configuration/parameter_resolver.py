@@ -1,5 +1,3 @@
-from boto.exception import BotoServerError
-
 from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.cfn import CloudFormation

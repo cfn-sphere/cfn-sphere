@@ -2,9 +2,11 @@
 
 import sys
 import logging
+import traceback
 
 import boto
 import click
+
 from boto.exception import NoAuthHandlerFound, BotoServerError
 
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
@@ -71,10 +73,12 @@ def sync(filename, debug, confirm):
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
+        LOGGER.debug(traceback.print_exc())
         sys.exit(1)
     except Exception as e:
         LOGGER.error("Failed with unexpected error".format(e))
         LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
 
 
@@ -100,10 +104,12 @@ def delete(filename, debug, confirm):
         StackActionHandler(config).delete_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
+        LOGGER.debug(traceback.print_exc())
         sys.exit(1)
     except Exception as e:
         LOGGER.error("Failed with unexpected error".format(e))
         LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
 
 
