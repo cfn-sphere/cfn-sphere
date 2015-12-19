@@ -1,7 +1,7 @@
 from boto.exception import BotoServerError
 import unittest2
 from mock import patch
-from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 
 
@@ -80,7 +80,7 @@ class ParameterResolverTests(unittest2.TestCase):
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     def test_get_latest_value_returns_default_value(self, _, cfn_mock):
-        cfn_mock.return_value.get_stack_parameters_dict.side_effect = BotoServerError("500","foo")
+        cfn_mock.return_value.get_stack_parameters_dict.side_effect = CfnSphereBotoError(BotoServerError("500", "foo"))
 
         resolver = ParameterResolver()
         with self.assertRaises(CfnSphereException):
