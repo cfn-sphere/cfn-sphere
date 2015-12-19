@@ -1,5 +1,7 @@
 from boto import connect_s3
 from six.moves.urllib.parse import urlparse
+from boto.exception import BotoServerError
+from cfn_sphere.exceptions import CfnSphereBotoError
 
 
 class S3(object):
@@ -15,7 +17,10 @@ class S3(object):
         return protocol, bucket_name, key
 
     def get_contents_from_url(self, url):
-        (_, bucket_name, key_name) = self._parse_url(url)
-        bucket = self.conn.get_bucket(bucket_name)
-        key = bucket.get_key(key_name)
-        return key.get_contents_as_string()
+        try:
+            (_, bucket_name, key_name) = self._parse_url(url)
+            bucket = self.conn.get_bucket(bucket_name)
+            key = bucket.get_key(key_name)
+            return key.get_contents_as_string()
+        except BotoServerError as e:
+            raise CfnSphereBotoError(e)

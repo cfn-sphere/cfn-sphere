@@ -33,13 +33,16 @@ class CloudFormation(object):
             region, self.conn.aws_access_key_id))
 
     def get_stacks(self):
-        result = []
-        response = self.conn.describe_stacks()
-        result.extend(response)
-        while response.next_token:
-            response = self.conn.describe_stacks(next_token=response.next_token)
+        try:
+            result = []
+            response = self.conn.describe_stacks()
             result.extend(response)
-        return result
+            while response.next_token:
+                response = self.conn.describe_stacks(next_token=response.next_token)
+                result.extend(response)
+            return result
+        except BotoServerError as e:
+            raise CfnSphereBotoError(e)
 
     def get_stack_names(self):
         return [stack.stack_name for stack in self.get_stacks()]
@@ -51,7 +54,10 @@ class CloudFormation(object):
         return stacks_dict
 
     def get_stack(self, stack_name):
-        return self.conn.describe_stacks(stack_name)[0]
+        try:
+            return self.conn.describe_stacks(stack_name)[0]
+        except BotoServerError as e:
+            raise CfnSphereBotoError(e)
 
     def validate_stack_is_ready_for_action(self, stack):
         try:
@@ -66,8 +72,11 @@ class CloudFormation(object):
                 "Stack {0} is in '{1}' state.".format(cfn_stack.stack_name, cfn_stack.stack_status))
 
     def get_stack_state(self, stack_name):
-        stack = self.conn.describe_stacks(stack_name)
-        return stack.status
+        try:
+            stack = self.conn.describe_stacks(stack_name)
+            return stack.status
+        except BotoServerError as e:
+            raise CfnSphereBotoError(e)
 
     def get_stack_parameters_dict(self, stack_name):
         parameters = {}
