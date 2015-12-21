@@ -12,7 +12,7 @@ from cfn_sphere.util import get_logger
 
 class StackActionHandler(object):
     def __init__(self, config):
-        self.logger = get_logger()
+        self.logger = get_logger(root=True)
         self.config = config
         self.region = config.region
         self.cfn = CloudFormation(region=self.region)

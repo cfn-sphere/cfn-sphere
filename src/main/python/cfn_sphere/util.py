@@ -8,7 +8,7 @@ from cfn_sphere.exceptions import CfnSphereException
 
 
 def get_logger(root=False):
-    logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s: %(message)s',
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%d.%m.%Y %H:%M:%S')
     if root:
         return logging.getLogger('cfn_sphere')

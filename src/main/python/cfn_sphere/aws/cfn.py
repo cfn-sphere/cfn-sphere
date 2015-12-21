@@ -21,7 +21,7 @@ class CloudFormationStack(object):
 
 class CloudFormation(object):
     def __init__(self, region="eu-west-1"):
-        logging.getLogger('boto').setLevel(logging.FATAL)
+        logging.getLogger("boto").setLevel(logging.FATAL)
         self.logger = get_logger()
 
         self.conn = cloudformation.connect_to_region(region)
