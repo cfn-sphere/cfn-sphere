@@ -2,7 +2,6 @@
 
 import sys
 import logging
-import traceback
 
 import boto
 import click
@@ -73,7 +72,8 @@ def sync(filename, debug, confirm):
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
-        LOGGER.debug(traceback.print_exc())
+        if debug:
+            LOGGER.exception(e)
         sys.exit(1)
     except Exception as e:
         LOGGER.error("Failed with unexpected error".format(e))
@@ -104,7 +104,8 @@ def delete(filename, debug, confirm):
         StackActionHandler(config).delete_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
-        LOGGER.debug(traceback.print_exc())
+        if debug:
+            LOGGER.exception(e)
         sys.exit(1)
     except Exception as e:
         LOGGER.error("Failed with unexpected error".format(e))
