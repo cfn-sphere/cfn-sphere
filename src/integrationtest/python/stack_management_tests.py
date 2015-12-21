@@ -3,6 +3,7 @@ import logging
 
 import unittest2
 from boto import cloudformation
+from boto.ec2 import autoscale
 from boto.exception import BotoServerError
 
 from cfn_sphere import StackActionHandler
@@ -74,6 +75,37 @@ class CreateStacksTest(unittest2.TestCase):
 
         self.assertEqual(vpc_stack_outputs["id"], instance_stack_parameters["vpcID"])
         self.assertEqual(vpc_stack_outputs["subnet"], instance_stack_parameters["subnetID"])
+
+    def test_userdata(self):
+        autoscale_conn = autoscale.connect_to_region("eu-west-1")
+        instance_stack_resources = self.cfn_conn.describe_stack_resource("cfn-sphere-test-instances", "lc")
+        lc_name = \
+            instance_stack_resources["DescribeStackResourceResponse"]["DescribeStackResourceResult"][
+                "StackResourceDetail"][
+                "PhysicalResourceId"]
+        lc = autoscale_conn.get_all_launch_configurations(names=[lc_name])[0]
+
+        user_data_lines = lc.user_data.split('\n')
+
+        self.assertEqual("#taupage-ami-config", user_data_lines[0])
+
+        self.assertTrue("application_version: 1" in user_data_lines)
+        self.assertTrue("  stack: cfn-sphere-test-instances" in user_data_lines)
+
+        dockercfg_root_index = user_data_lines.index("dockercfg:")
+        self.assertEqual("  https://my-private-registry:", user_data_lines[dockercfg_root_index + 1])
+        self.assertEqual("    email: test@example.com", user_data_lines[dockercfg_root_index + 2])
+        self.assertEqual("    auth: my-secret-string", user_data_lines[dockercfg_root_index + 3])
+
+        environment_root_index = user_data_lines.index("environment:")
+        self.assertEqual("  DYNAMO_DB_PREFIX: cfn-sphere-test-instances", user_data_lines[environment_root_index + 1])
+
+        notify_cfn_root_index = user_data_lines.index("notify_cfn:")
+        self.assertEqual("  resource: asg", user_data_lines[notify_cfn_root_index + 1])
+        self.assertEqual("  stack: cfn-sphere-test-instances", user_data_lines[notify_cfn_root_index + 2])
+
+        ports_root_index = user_data_lines.index("ports:")
+        self.assertEqual("  8080: 9000", user_data_lines[ports_root_index + 1])
 
 
 if __name__ == "__main__":
