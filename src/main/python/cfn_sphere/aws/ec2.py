@@ -1,12 +1,14 @@
 from boto import ec2
 from boto.exception import BotoServerError
 from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
+from cfn_sphere.util import with_boto_retry
 
 
 class Ec2Api(object):
     def __init__(self, region="eu-west-1"):
         self.conn = ec2.connect_to_region(region)
 
+    @with_boto_retry()
     def get_taupage_images(self):
         filters = {'name': ['Taupage-AMI-*'],
                    'is-public': ['false'],

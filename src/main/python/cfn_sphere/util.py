@@ -1,10 +1,13 @@
 import logging
 import json
 import yaml
+import time
+from functools import wraps
 from prettytable import PrettyTable
 from six.moves.urllib import request as urllib2
 import datetime
 from cfn_sphere.exceptions import CfnSphereException
+from boto.exception import BotoServerError
 
 
 def get_logger(root=False):
@@ -78,3 +81,30 @@ def get_pypi_package_description():
 
     response = urllib2.urlopen(url, timeout=2)
     return json.load(response)
+
+
+def with_boto_retry(max_retries=3, pause_time_multiplier=5):
+    logger = get_logger()
+    retry_codes = ["Throttling"]
+
+    def decorator(function):
+        @wraps(function)
+        def wrapper(*args, **kwds):
+            retries = 0
+
+            while True:
+                try:
+                    return function(*args, **kwds)
+                except BotoServerError as e:
+                    if e.code not in retry_codes or retries >= max_retries:
+                        raise e
+
+                    sleep_time = pause_time_multiplier * (2 ** retries)
+                    logger.warn(
+                        "{0} failed because of {1}. Will retry in {2}s".format(function.__name__, e.code, sleep_time))
+                    time.sleep(sleep_time)
+                    retries += 1
+
+        return wrapper
+
+    return decorator

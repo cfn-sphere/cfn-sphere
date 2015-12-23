@@ -1,9 +1,11 @@
 import textwrap
 import unittest2
-from mock import patch
+from mock import patch, Mock
 from datetime import datetime
 from cfn_sphere import util
 from cfn_sphere.exceptions import CfnSphereException
+from boto.exception import BotoServerError
+
 
 class StackConfigTests(unittest2.TestCase):
     def test_convert_yaml_to_json_string_returns_valid_json_string(self):
@@ -44,3 +46,57 @@ class StackConfigTests(unittest2.TestCase):
         urlopen_mock.return_value.info.return_value.get.return_value = ""
         with self.assertRaises(CfnSphereException):
             util.get_cfn_api_server_time()
+
+    def test_with_boto_retry_retries_method_call_for_throttling_exception(self):
+        count_func = Mock()
+
+        @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
+        def my_retried_method(count_func):
+            count_func()
+            exception = BotoServerError("400", "error")
+            exception.code = 'Throttling'
+            raise exception
+
+        with self.assertRaises(BotoServerError):
+            my_retried_method(count_func)
+
+        self.assertEqual(2, count_func.call_count)
+
+    def test_with_boto_retry_does_not_retry_for_simple_exception(self):
+        count_func = Mock()
+
+        @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
+        def my_retried_method(count_func):
+            count_func()
+            raise Exception
+
+        with self.assertRaises(Exception):
+            my_retried_method(count_func)
+
+        self.assertEqual(1, count_func.call_count)
+
+    def test_with_boto_retry_does_not_retry_for_another_boto_server_error(self):
+        count_func = Mock()
+
+        @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
+        def my_retried_method(count_func):
+            count_func()
+            exception = BotoServerError("400", "error")
+            exception.code = 'ValidationError'
+            raise exception
+
+        with self.assertRaises(BotoServerError):
+            my_retried_method(count_func)
+
+        self.assertEqual(1, count_func.call_count)
+
+    def test_with_boto_retry_does_not_retry_without_exception(self):
+        count_func = Mock()
+
+        @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
+        def my_retried_method(count_func):
+            count_func()
+            return "foo"
+
+        self.assertEqual("foo", my_retried_method(count_func))
+        self.assertEqual(1, count_func.call_count)

@@ -3,7 +3,7 @@ import time
 from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
-from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string
+from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
 
@@ -38,6 +38,7 @@ class CloudFormation(object):
         else:
             return False
 
+    @with_boto_retry()
     def get_stacks(self):
         try:
             result = []
@@ -59,6 +60,7 @@ class CloudFormation(object):
             stacks_dict[stack.stack_name] = {"parameters": stack.parameters, "outputs": stack.outputs}
         return stacks_dict
 
+    @with_boto_retry()
     def get_stack(self, stack_name):
         try:
             return self.conn.describe_stacks(stack_name)[0]
@@ -77,6 +79,7 @@ class CloudFormation(object):
             raise CfnStackActionFailedException(
                 "Stack {0} is in '{1}' state.".format(cfn_stack.stack_name, cfn_stack.stack_status))
 
+    @with_boto_retry()
     def get_stack_state(self, stack_name):
         try:
             stack = self.conn.describe_stacks(stack_name)
@@ -100,6 +103,29 @@ class CloudFormation(object):
         else:
             return False
 
+    @with_boto_retry()
+    def get_stack_events(self, stack_name):
+        return self.conn.describe_stack_events(stack_name)
+
+    @with_boto_retry()
+    def _create_stack(self, stack):
+        self.conn.create_stack(stack.name,
+                               template_body=stack.template.get_template_json(),
+                               parameters=stack.get_parameters_list(),
+                               capabilities=['CAPABILITY_IAM'])
+
+    @with_boto_retry()
+    def _update_stack(self, stack):
+        self.conn.update_stack(stack.name,
+                               template_body=stack.template.get_template_json(),
+                               parameters=stack.get_parameters_list(),
+                               capabilities=['CAPABILITY_IAM'])
+
+    @with_boto_retry()
+    def _delete_stack(self, stack):
+        self.conn.delete_stack(stack.name)
+
+    @with_boto_retry()
     def create_stack(self, stack):
         assert isinstance(stack, CloudFormationStack)
         try:
@@ -107,10 +133,7 @@ class CloudFormation(object):
                 "Creating stack {0} from template {1} with parameters:\n{2}".format(stack.name, stack.template.name,
                                                                                     get_pretty_parameters_string(
                                                                                         stack.parameters)))
-            self.conn.create_stack(stack.name,
-                                   template_body=stack.template.get_template_json(),
-                                   parameters=stack.get_parameters_list(),
-                                   capabilities=['CAPABILITY_IAM'])
+            self._create_stack(stack)
 
             self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
             self.logger.info("Create completed for {0}".format(stack.name))
@@ -121,10 +144,7 @@ class CloudFormation(object):
         try:
 
             try:
-                self.conn.update_stack(stack.name,
-                                       template_body=stack.template.get_template_json(),
-                                       parameters=stack.get_parameters_list(),
-                                       capabilities=['CAPABILITY_IAM'])
+                self._update_stack(stack)
             except BotoServerError as e:
 
                 if self.is_boto_no_update_required_exception(e):
@@ -152,7 +172,7 @@ class CloudFormation(object):
     def delete_stack(self, stack):
         try:
             self.logger.info("Deleting stack {0}".format(stack.name))
-            self.conn.delete_stack(stack.name)
+            self._delete_stack(stack)
 
             try:
                 self.wait_for_stack_action_to_complete(stack.name, "delete", 600)
@@ -170,7 +190,7 @@ class CloudFormation(object):
         start = time.time()
         while time.time() < (start + timeout):
 
-            events = self.conn.describe_stack_events(stack_name)
+            events = self.get_stack_events(stack_name)
             events.reverse()
 
             for event in events:

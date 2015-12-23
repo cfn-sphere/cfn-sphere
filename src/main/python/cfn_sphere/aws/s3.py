@@ -2,6 +2,7 @@ from boto import connect_s3
 from six.moves.urllib.parse import urlparse
 from boto.exception import BotoServerError
 from cfn_sphere.exceptions import CfnSphereBotoError
+from cfn_sphere.util import with_boto_retry
 
 
 class S3(object):
@@ -16,6 +17,7 @@ class S3(object):
         key = url_components.path.strip('/')
         return protocol, bucket_name, key
 
+    @with_boto_retry()
     def get_contents_from_url(self, url):
         try:
             (_, bucket_name, key_name) = self._parse_url(url)
