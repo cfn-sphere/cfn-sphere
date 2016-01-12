@@ -4,8 +4,8 @@ import json
 class CloudFormationTemplate(object):
     def __init__(self, body_dict, name):
         self.name = name
-        self.template_format_version = body_dict.get('AWSTemplateFormatVersion', "2010-09-09")
-        self.description = body_dict.get('Description', "")
+        self.template_format_version = body_dict.get('AWSTemplateFormatVersion', '2010-09-09')
+        self.description = body_dict.get('Description', '')
         self.metadata = body_dict.get('Metadata', {})
         self.parameters = body_dict.get('Parameters', {})
         self.mappings = body_dict.get('Mappings', {})
