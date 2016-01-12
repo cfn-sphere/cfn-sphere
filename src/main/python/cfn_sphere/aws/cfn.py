@@ -8,10 +8,10 @@ from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoEr
 
 
 class CloudFormationStack(object):
-    def __init__(self, template, parameters, name, region, timeout=600, tags={}):
+    def __init__(self, template, parameters, name, region, timeout=600, tags=None):
         self.template = template
         self.parameters = parameters
-        self.tags = tags
+        self.tags = {} if tags is None else tags
         self.name = name
         self.region = region
         self.timeout = timeout
