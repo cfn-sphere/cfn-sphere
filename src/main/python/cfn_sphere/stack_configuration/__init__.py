@@ -53,6 +53,7 @@ class Config(object):
 class StackConfig(object):
     def __init__(self, stack_config_dict, working_dir=None):
         self.parameters = stack_config_dict.get('parameters', {})
+        self.tags = stack_config_dict.get('tags', {})
         self.timeout = stack_config_dict.get('timeout', 600)
         self.working_dir = working_dir
 
