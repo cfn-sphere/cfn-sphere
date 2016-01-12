@@ -147,7 +147,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack = Mock(spec=CloudFormationStack)
         stack.name = "stack-name"
         stack.get_parameters_list.return_value = [('a', 'b')]
-        stack.get_tags.return_value = [('any-tag', 'any-tag-value')]
+        stack.tags = [('any-tag', 'any-tag-value')]
         stack.parameters = {}
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
@@ -169,7 +169,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack = Mock(spec=CloudFormationStack)
         stack.name = "stack-name"
         stack.get_parameters_list.return_value = [('a', 'b')]
-        stack.get_tags.return_value = [('any-tag', 'any-tag-value')]
+        stack.tags = [('any-tag', 'any-tag-value')]
         stack.parameters = {}
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
