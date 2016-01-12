@@ -8,9 +8,10 @@ from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoEr
 
 
 class CloudFormationStack(object):
-    def __init__(self, template, parameters, name, region, timeout=600):
+    def __init__(self, template, parameters, name, region, timeout=600, tags={}):
         self.template = template
         self.parameters = parameters
+        self.tags = tags
         self.name = name
         self.region = region
         self.timeout = timeout
@@ -18,6 +19,8 @@ class CloudFormationStack(object):
     def get_parameters_list(self):
         return [(key, value) for key, value in self.parameters.items()]
 
+    def get_tags(self):
+        return self.tags
 
 class CloudFormation(object):
     def __init__(self, region="eu-west-1"):
@@ -112,6 +115,7 @@ class CloudFormation(object):
         self.conn.create_stack(stack.name,
                                template_body=stack.template.get_template_json(),
                                parameters=stack.get_parameters_list(),
+                               tags=stack.get_tags(),
                                capabilities=['CAPABILITY_IAM'])
 
     @with_boto_retry()
@@ -119,6 +123,7 @@ class CloudFormation(object):
         self.conn.update_stack(stack.name,
                                template_body=stack.template.get_template_json(),
                                parameters=stack.get_parameters_list(),
+                               tags=stack.get_tags(),
                                capabilities=['CAPABILITY_IAM'])
 
     @with_boto_retry()
