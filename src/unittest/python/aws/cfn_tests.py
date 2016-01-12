@@ -147,6 +147,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack = Mock(spec=CloudFormationStack)
         stack.name = "stack-name"
         stack.get_parameters_list.return_value = [('a', 'b')]
+        stack.tags = [('any-tag', 'any-tag-value')]
         stack.parameters = {}
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
@@ -159,6 +160,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         cloudformation_mock.return_value.create_stack.assert_called_once_with('stack-name',
                                                                               capabilities=['CAPABILITY_IAM'],
                                                                               parameters=[('a', 'b')],
+                                                                              tags=[('any-tag', 'any-tag-value')],
                                                                               template_body={'key': 'value'})
 
     @patch('cfn_sphere.aws.cfn.cloudformation.connect_to_region')
@@ -167,6 +169,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack = Mock(spec=CloudFormationStack)
         stack.name = "stack-name"
         stack.get_parameters_list.return_value = [('a', 'b')]
+        stack.tags = [('any-tag', 'any-tag-value')]
         stack.parameters = {}
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
@@ -179,6 +182,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         cloudformation_mock.return_value.update_stack.assert_called_once_with('stack-name',
                                                                               capabilities=['CAPABILITY_IAM'],
                                                                               parameters=[('a', 'b')],
+                                                                              tags=[('any-tag', 'any-tag-value')],
                                                                               template_body={'key': 'value'})
 
     @patch('cfn_sphere.aws.cfn.cloudformation.connect_to_region')
