@@ -50,9 +50,9 @@ Create a YAML file containing a region and some stacks in a stacks.yml file f.e.
     region: eu-west-1
     stacks:
         test-vpc:
-            template: vpc.yml
+            template-url: vpc.yml
         test-stack:
-            template: app.yml
+            template-url: app.yml
             parameters:
                 vpcID: "|ref|test-vpc.id"
 
