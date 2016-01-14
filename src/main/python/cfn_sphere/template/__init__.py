@@ -14,6 +14,12 @@ class CloudFormationTemplate(object):
         self.outputs = body_dict.get('Outputs', {})
         self.post_custom_resources = body_dict.get('PostCustomResources', {})
 
+    def get_no_echo_parameter_keys(self):
+        if self.parameters:
+            return [key for key, value in self.parameters.items() if str(value.get('NoEcho')).lower() == 'true']
+        else:
+            return []
+
     def get_template_body_dict(self):
         return {
             'AWSTemplateFormatVersion': self.template_format_version,

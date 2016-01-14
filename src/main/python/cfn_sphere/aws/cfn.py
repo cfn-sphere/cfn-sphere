@@ -135,7 +135,7 @@ class CloudFormation(object):
             self.logger.info(
                 "Creating stack {0} from template {1} with parameters:\n{2}".format(stack.name, stack.template.name,
                                                                                     get_pretty_parameters_string(
-                                                                                        stack.parameters)))
+                                                                                        stack)))
             self._create_stack(stack)
 
             self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
@@ -158,13 +158,13 @@ class CloudFormation(object):
                         "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
                                                                                 stack.template.name,
                                                                                 get_pretty_parameters_string(
-                                                                                    stack.parameters)))
+                                                                                    stack)))
                     raise
 
             self.logger.info(
                 "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
                                                                         stack.template.name,
-                                                                        get_pretty_parameters_string(stack.parameters)))
+                                                                        get_pretty_parameters_string(stack)))
 
             self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
             self.logger.info("Update completed for {0}".format(stack.name))

@@ -33,11 +33,17 @@ def convert_file(file_path):
         return convert(filestream.read())
 
 
-def get_pretty_parameters_string(parameter_dict):
+def get_pretty_parameters_string(stack):
     table = PrettyTable(["Parameter", "Value"])
 
-    for key, value in parameter_dict.items():
-        table.add_row([key, value])
+    parameters = stack.parameters
+    no_echo_parameter_keys = stack.template.get_no_echo_parameter_keys()
+
+    for key, value in parameters.items():
+        if key in no_echo_parameter_keys:
+            table.add_row([key, "***"])
+        else:
+            table.add_row([key, value])
 
     return table.get_string(sortby="Parameter")
 
