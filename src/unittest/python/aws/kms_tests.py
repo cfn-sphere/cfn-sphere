@@ -1,3 +1,5 @@
+import base64
+
 import unittest2
 from boto.kms.exceptions import InvalidCiphertextException
 from cfn_sphere.aws.kms import KMS
@@ -11,7 +13,7 @@ class KMSTests(unittest2.TestCase):
         kms_mock.return_value.decrypt.return_value = {'Plaintext': 'decryptedValue'}
 
         self.assertEqual('decryptedValue', KMS().decrypt("ZW5jcnlwdGVkVmFsdWU="))
-        kms_mock.return_value.decrypt.assert_called_once_with("encryptedValue")
+        kms_mock.return_value.decrypt.assert_called_once_with(base64.b64decode("ZW5jcnlwdGVkVmFsdWU="))
 
     @patch('cfn_sphere.aws.kms.kms.connect_to_region')
     def test_invalid_base64(self, kms_mock):
