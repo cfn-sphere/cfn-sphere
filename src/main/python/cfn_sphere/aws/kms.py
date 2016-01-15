@@ -1,3 +1,5 @@
+import binascii
+
 from boto import kms
 from boto.exception import BotoServerError
 from boto.kms.exceptions import InvalidCiphertextException
@@ -15,6 +17,8 @@ class KMS(object):
         try:
             response = self.conn.decrypt(base64.b64decode(encrypted_value))
         except TypeError as e:
+            raise InvalidEncryptedValueException("Could not decode encrypted value: {0}".format(e))
+        except binascii.Error as e:
             raise InvalidEncryptedValueException("Could not decode encrypted value: {0}".format(e))
         except InvalidCiphertextException as e:
             raise InvalidEncryptedValueException("Could not decrypted value: {0}".format(e))
