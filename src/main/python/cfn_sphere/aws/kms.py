@@ -17,11 +17,11 @@ class KMS(object):
         try:
             response = self.conn.decrypt(base64.b64decode(encrypted_value))
         except TypeError as e:
-            raise InvalidEncryptedValueException("Could not decode encrypted value: {0}".format(e))
+            raise InvalidEncryptedValueException("Could not decode encrypted value: {0}".format(e), e)
         except binascii.Error as e:
-            raise InvalidEncryptedValueException("Could not decode encrypted value: {0}".format(e))
+            raise InvalidEncryptedValueException("Could not decode encrypted value: {0}".format(e), e)
         except InvalidCiphertextException as e:
-            raise InvalidEncryptedValueException("Could not decrypted value: {0}".format(e))
+            raise InvalidEncryptedValueException("Could not decrypted value: {0}".format(e), e)
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
 
