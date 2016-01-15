@@ -12,8 +12,6 @@ class KMS(object):
 
     @with_boto_retry()
     def decrypt(self, encrypted_value):
-        print encrypted_value
-
         try:
             response = self.conn.decrypt(base64.b64decode(encrypted_value))
         except TypeError as e:
