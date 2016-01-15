@@ -21,6 +21,8 @@ class CyclicDependencyException(CfnSphereException):
 class InvalidDependencyGraphException(CfnSphereException):
     pass
 
+class InvalidEncryptedValueException(CfnSphereException):
+    pass
 
 class CfnSphereBotoError(CfnSphereException):
     def __init__(self, e):
