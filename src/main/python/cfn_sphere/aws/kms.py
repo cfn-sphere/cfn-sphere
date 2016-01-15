@@ -1,11 +1,15 @@
 import binascii
 
+import six
 from boto import kms
 from boto.exception import BotoServerError
 from boto.kms.exceptions import InvalidCiphertextException
 from cfn_sphere.exceptions import CfnSphereBotoError, InvalidEncryptedValueException
 from cfn_sphere.util import with_boto_retry
-import base64
+if six.PY3:
+    from base64 import decodebytes as base64decode
+else:
+    from base64 import decodestring as base64decode
 
 
 class KMS(object):
@@ -15,7 +19,7 @@ class KMS(object):
     @with_boto_retry()
     def decrypt(self, encrypted_value):
         try:
-            response = self.conn.decrypt(base64.b64decode(encrypted_value))
+            response = self.conn.decrypt(base64decode(encrypted_value))
         except TypeError as e:
             raise InvalidEncryptedValueException("Could not decode encrypted value: {0}".format(e), e)
         except binascii.Error as e:
