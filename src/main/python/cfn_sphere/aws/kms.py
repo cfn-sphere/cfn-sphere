@@ -19,7 +19,7 @@ class KMS(object):
     @with_boto_retry()
     def decrypt(self, encrypted_value):
         try:
-            response = self.conn.decrypt(base64decode(encrypted_value))
+            response = self.conn.decrypt(base64decode(encrypted_value.encode("utf-8")))
         except TypeError as e:
             raise InvalidEncryptedValueException("Could not decode encrypted value: {0}".format(e), e)
         except binascii.Error as e:
