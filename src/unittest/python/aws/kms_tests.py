@@ -13,7 +13,7 @@ class KMSTests(unittest2.TestCase):
         kms_mock.return_value.decrypt.return_value = {'Plaintext': 'decryptedValue'}
 
         self.assertEqual('decryptedValue', KMS().decrypt("ZW5jcnlwdGVkVmFsdWU="))
-        kms_mock.return_value.decrypt.assert_called_once_with(base64.b64decode("ZW5jcnlwdGVkVmFsdWU="))
+        kms_mock.return_value.decrypt.assert_called_once_with(base64.b64decode("ZW5jcnlwdGVkVmFsdWU=".encode()))
 
     @patch('cfn_sphere.aws.kms.kms.connect_to_region')
     def test_invalid_base64(self, kms_mock):
