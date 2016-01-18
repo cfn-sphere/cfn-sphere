@@ -2,6 +2,7 @@ from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
+from cfn_sphere.aws.kms import KMS
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 
 
@@ -14,6 +15,7 @@ class ParameterResolver(object):
         self.logger = get_logger()
         self.cfn = CloudFormation(region)
         self.ec2 = Ec2Api(region)
+        self.kms = KMS(region)
 
     @staticmethod
     def convert_list_to_string(value):
@@ -64,6 +66,10 @@ class ParameterResolver(object):
         return value.lower() == '|latesttaupageami|'
 
     @staticmethod
+    def is_kms(value):
+        return value.lower().startswith('|kms|')
+
+    @staticmethod
     def get_default_from_keep_value(value):
         return value.split('|', 2)[2]
 
@@ -84,6 +90,7 @@ class ParameterResolver(object):
 
     def resolve_parameter_values(self, parameters_dict, stack_name):
         parameters = {}
+
         for key, value in parameters_dict.items():
 
             if isinstance(value, list):
@@ -103,6 +110,9 @@ class ParameterResolver(object):
 
                 elif self.is_taupage_ami_reference(value):
                     parameters[key] = str(self.ec2.get_latest_taupage_image_id())
+
+                elif self.is_kms(value):
+                    parameters[key] = str(self.kms.decrypt(value.split('|', 2)[2]))
 
                 else:
                     parameters[key] = value
