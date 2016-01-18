@@ -14,10 +14,8 @@ class StackActionHandler(object):
     def __init__(self, config):
         self.logger = get_logger(root=True)
         self.config = config
-        self.region = config.region
-        self.tags = config.tags
-        self.cfn = CloudFormation(region=self.region)
-        self.parameter_resolver = ParameterResolver(region=self.region)
+        self.cfn = CloudFormation(region=self.config.region)
+        self.parameter_resolver = ParameterResolver(region=self.config.region)
 
     def create_or_update_stacks(self):
         existing_stacks = self.cfn.get_stack_names()
@@ -34,12 +32,12 @@ class StackActionHandler(object):
             raw_template = FileLoader.get_file_from_url(stack_config.template_url, stack_config.working_dir)
             template = CloudFormationTemplateTransformer.transform_template(raw_template)
 
-            combined_tags = dict(self.tags)
+            combined_tags = dict(self.config.tags)
             combined_tags.update(stack_config.tags)
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)
             stack = CloudFormationStack(template=template, parameters=parameters, tags=combined_tags,
-                                        name=stack_name, region=self.region, timeout=stack_config.timeout)
+                                        name=stack_name, region=self.config.region, timeout=stack_config.timeout)
 
             if stack_name in existing_stacks:
 
