@@ -2,9 +2,10 @@ import textwrap
 import unittest2
 from mock import patch, Mock
 from datetime import datetime
-from cfn_sphere import util
+from cfn_sphere import util, CloudFormationStack
 from cfn_sphere.exceptions import CfnSphereException
 from boto.exception import BotoServerError
+from cfn_sphere.template import CloudFormationTemplate
 
 
 class StackConfigTests(unittest2.TestCase):
@@ -100,3 +101,51 @@ class StackConfigTests(unittest2.TestCase):
 
         self.assertEqual("foo", my_retried_method(count_func))
         self.assertEqual(1, count_func.call_count)
+
+    def test_get_pretty_parameters_string(self):
+        template_body = {
+            'Parameters': {
+                'myParameter1': {
+                    'Type': 'String',
+                    'NoEcho': True
+                },
+                'myParameter2': {
+                    'Type': 'String'
+                },
+                'myParameter3': {
+                    'Type': 'Number',
+                    'NoEcho': 'true'
+                },
+                'myParameter4': {
+                    'Type': 'Number',
+                    'NoEcho': 'false'
+                },
+                'myParameter5': {
+                    'Type': 'Number',
+                    'NoEcho': False
+                }
+            }
+        }
+
+        parameters = {
+            'myParameter1': 'super-secret',
+            'myParameter2': 'not-that-secret',
+            'myParameter3': 'also-super-secret',
+            'myParameter4': 'could-be-public',
+            'myParameter5': 'also-ok'
+        }
+
+        template = CloudFormationTemplate(template_body, 'just-another-template')
+        stack = CloudFormationStack(template, parameters, 'just-another-stack', 'eu-west-1')
+
+        expected_string = """+--------------+-----------------+
+|  Parameter   |      Value      |
++--------------+-----------------+
+| myParameter1 |       ***       |
+| myParameter2 | not-that-secret |
+| myParameter3 |       ***       |
+| myParameter4 | could-be-public |
+| myParameter5 |     also-ok     |
++--------------+-----------------+"""
+
+        self.assertEqual(expected_string, util.get_pretty_parameters_string(stack))

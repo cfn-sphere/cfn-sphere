@@ -19,7 +19,7 @@ description = "cfn-sphere - A CLI tool intended to simplify AWS CloudFormation h
 license = 'APACHE LICENSE, VERSION 2.0'
 summary = 'cfn-sphere AWS CloudFormation management cli'
 url = 'https://github.com/marco-hoyer/cfn-sphere'
-version = '0.1.22'
+version = '0.1.25'
 
 default_task = ['clean', 'analyze', 'package']
 
@@ -42,7 +42,8 @@ def set_properties(project):
     project.set_property('copy_resources_target', '$dir_dist')
     project.get_property('copy_resources_glob').append('setup.cfg')
 
-    project.get_property('filter_resources_glob').extend(['**/cfn_sphere/__init__.py', '**/scripts/cf'])
+    project.get_property('filter_resources_glob').extend(['**/cfn_sphere/__init__.py'])
+    project.set_property('distutils_console_scripts', ['cf=cfn_sphere.cli:main'])
 
     project.set_property('distutils_classifiers', [
         'Development Status :: 4 - Beta',
@@ -64,4 +65,3 @@ def set_properties_for_teamcity_builds(project):
     project.default_task = ['clean', 'install_build_dependencies', 'publish']
     project.set_property('install_dependencies_index_url', os.environ.get('PYPIPROXY_URL'))
     project.get_property('distutils_commands').append('bdist_rpm')
-
