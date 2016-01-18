@@ -14,9 +14,8 @@ from cfn_sphere.stack_configuration import Config
 from cfn_sphere import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.file_loader import FileLoader
+from cfn_sphere import __version__
 
-
-VERSION = '${version}'
 LOGGER = get_logger(root=True)
 logging.getLogger('boto').setLevel(logging.FATAL)
 
@@ -37,7 +36,7 @@ def get_current_account_alias():
 
 def check_update_available():
     latest_version = get_latest_version()
-    if latest_version and VERSION != latest_version:
+    if latest_version and __version__ != latest_version:
         click.confirm(
             "There is an update available (v: {0}). Do you want to continue?".format(latest_version),
             abort=True)
@@ -45,7 +44,7 @@ def check_update_available():
 
 @click.group(help="This tool manages AWS CloudFormation templates "
                   "and stacks by providing an application scope and useful tooling.")
-@click.version_option(version=VERSION)
+@click.version_option(version=__version__)
 def cli():
     pass
 
