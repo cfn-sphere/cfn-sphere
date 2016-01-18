@@ -44,6 +44,8 @@ def set_properties(project):
 
     project.get_property('filter_resources_glob').extend(['**/cfn_sphere/__init__.py', '**/scripts/cf'])
 
+    project.set_property('distutils_console_scripts', ['cf=cfn_sphere.cli:main'])
+
     project.set_property('distutils_classifiers', [
         'Development Status :: 4 - Beta',
         'Environment :: Console',
