@@ -18,6 +18,7 @@ class Config(object):
             raise NoConfigException("Config has invalid content, must be of type dict/yaml")
 
         self.region = self.dict.get('region')
+        self.tags = self.dict.get('tags', {})
         self.stacks = self._parse_stack_configs(self.dict)
 
         self._validate()

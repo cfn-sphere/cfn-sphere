@@ -6,6 +6,7 @@ from cfn_sphere.aws.cfn import CloudFormationStack
 
 
 class StackActionHandlerTests(unittest2.TestCase):
+    @patch('cfn_sphere.stack_configuration.Config')
     @patch('cfn_sphere.CloudFormation')
     @patch('cfn_sphere.ParameterResolver')
     @patch('cfn_sphere.DependencyResolver')
@@ -18,10 +19,12 @@ class StackActionHandlerTests(unittest2.TestCase):
                                                                                      template_loader_mock,
                                                                                      dependency_resolver_mock,
                                                                                      parameter_resolver_mock,
-                                                                                     cfn_mock):
+                                                                                     cfn_mock,
+                                                                                     config_mock):
 
         dependency_resolver_mock.return_value.get_stack_order.return_value = ['a', 'c']
         cfn_mock.return_value.get_stack_names.return_value = ['a', 'd']
+        config_mock.return_value.tags.return_value = {}
 
         stack_a = CloudFormationStack('', [], 'a', '')
         stack_c = CloudFormationStack('', [], 'c', '')
@@ -35,7 +38,7 @@ class StackActionHandlerTests(unittest2.TestCase):
 
         stack_mock.side_effect = stack_side_effect
 
-        handler = StackActionHandler(Mock())
+        handler = StackActionHandler(config_mock)
         handler.create_or_update_stacks()
 
         # stack a needs update
