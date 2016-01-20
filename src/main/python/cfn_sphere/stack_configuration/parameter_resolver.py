@@ -96,6 +96,11 @@ class ParameterResolver(object):
             if isinstance(value, list):
 
                 self.logger.debug("List parameter found for {0}".format(key))
+                for i, item in enumerate(value):
+                    if DependencyResolver.is_parameter_reference(item):
+                        referenced_stack, output_name = DependencyResolver.parse_stack_reference_value(item)
+                        value[i] = str(self.get_output_value(referenced_stack + '.' + output_name))
+
                 value_string = self.convert_list_to_string(value)
                 parameters[key] = value_string
 

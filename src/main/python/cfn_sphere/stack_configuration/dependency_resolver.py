@@ -45,7 +45,12 @@ class DependencyResolver(object):
         for name, data in desired_stacks.items():
             if data:
                 for _, value in data.parameters.items():
-                    if cls.is_parameter_reference(value):
+                    if isinstance(value, list):
+                        for item in value:
+                            if cls.is_parameter_reference(item):
+                                dependant_stack, _ = cls.parse_stack_reference_value(item)
+                                graph.add_edge(dependant_stack, name)
+                    elif cls.is_parameter_reference(value):
                         dependant_stack, _ = cls.parse_stack_reference_value(value)
                         graph.add_edge(dependant_stack, name)
 

@@ -26,6 +26,26 @@ class ParameterResolverTests(unittest2.TestCase):
         ParameterResolver().resolve_parameter_values({'foo': ['a', 'b']}, 'foo')
         convert_list_to_string_mock.assert_called_once_with(['a', 'b'])
 
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
+    def test_resolve_parameter_values_returns_ref_value(self, kms, ec2_api, cfn, get_output_value_mock):
+        get_output_value_mock.return_value = 'bar'
+        result = ParameterResolver().resolve_parameter_values({'foo': '|Ref|stack.output'}, 'foo')
+        get_output_value_mock.assert_called_once_with('stack.output')
+        self.assertEqual({'foo': 'bar'}, result)
+
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
+    def test_resolve_parameter_values_returns_ref_list_value(self, kms, ec2_api, cfn, get_output_value_mock):
+        get_output_value_mock.return_value = 'bar'
+        result = ParameterResolver().resolve_parameter_values({'foo': ['|Ref|stack.output', '|Ref|stack.output']}, 'foo')
+        get_output_value_mock.assert_called_with('stack.output')
+        self.assertEqual({'foo': 'bar,bar'}, result)
+
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
     @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
@@ -131,3 +151,4 @@ class ParameterResolverTests(unittest2.TestCase):
 
         result = ParameterResolver().resolve_parameter_values({'foo': "|kms|encryptedValue"}, 'foo')
         self.assertEqual({'foo': 'decryptedValue'}, result)
+
