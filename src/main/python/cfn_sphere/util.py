@@ -37,11 +37,14 @@ def convert_yaml_to_json_string(data):
         return '{}'
     return json.dumps(yaml.load(data), indent=2)
 
+
 def convert_dict_to_json_string(data):
     return json.dumps(data, indent=2)
 
+
 def get_message_from_boto_server_error(boto_server_error):
     return boto_server_error.message
+
 
 def parse_parameters(parameters):
     """ Parse input parameters from the command line which are separated by ',' and split with '=' """
