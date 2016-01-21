@@ -42,3 +42,8 @@ def convert_dict_to_json_string(data):
 
 def get_message_from_boto_server_error(boto_server_error):
     return boto_server_error.message
+
+def parse_parameters(parameters):
+    """ Parse input parameters from the command line which are separated by ',' and split with '=' """
+    parameter_list = [x for x in parameters.split(',')]
+    return dict([y.split('=') for y in parameter_list])
