@@ -36,8 +36,8 @@ class StackActionHandler(object):
             template = CloudFormationTemplateTransformer.transform_template(template)
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)
-            parameters = ParameterResolver.update_parameters_with_param_dictionary(parameters=parameters,
-                                                                                   param_dictionary=self.cli_params)
+            parameters = self.parameter_resolver.update_parameters_with_param_dictionary(
+                parameters=parameters, param_dictionary=self.cli_params)
 
             stack = CloudFormationStack(template, parameters, stack_name, self.region, stack_config.timeout)
 
