@@ -49,6 +49,36 @@ class ParameterResolverTests(unittest2.TestCase):
         self.assertEqual({'foo': '5.555'}, result)
 
     @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
+    def test_update_parameters_returns_str_representation_of_false(self, _):
+        result = ParameterResolver().update_parameters_with_param_dictionary({'foo': False}, {'foo': True})
+        self.assertEqual({'foo': 'true'}, result)
+
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
+    def test_update_parameters_returns_list_with_string_value(self, _):
+        result = ParameterResolver().update_parameters_with_param_dictionary({'foo': "foo"}, {"foo": "foobar"})
+        self.assertEqual({'foo': 'foobar'}, result)
+
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
+    def test_update_parameters_returns_str_representation_of_int(self, _):
+        result = ParameterResolver().update_parameters_with_param_dictionary({'foo': 0}, {'foo': 5})
+        self.assertEqual({'foo': '5'}, result)
+
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
+    def test_update_parameters_returns_str_representation_of_float(self, _):
+        result = ParameterResolver().update_parameters_with_param_dictionary({'foo': 0}, {'foo': 5.555})
+        self.assertEqual({'foo': '5.555'}, result)
+
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
+    def test_update_parameters_trows_exception_if_key_not_in_stack(self, _):
+        with self.assertRaises(NotImplementedError):
+            ParameterResolver().update_parameters_with_param_dictionary({'foo': "foo"}, {"moppel": "foo"})
+
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
+    def test_update_parameters_trows_exception_if_value_null(self, _):
+        with self.assertRaises(NotImplementedError):
+            ParameterResolver().update_parameters_with_param_dictionary({'foo': "foo"}, {"foo": ""})
+
+    @patch('cfn_sphere.resolver.parameter_resolver.CloudFormation')
     def test_get_actual_value_returns_stacks_actual_value(self, cfn_mock):
         cfn_mock.return_value.get_stack_parameters_dict.return_value = {'my-key': 'my-actual-value'}
 
