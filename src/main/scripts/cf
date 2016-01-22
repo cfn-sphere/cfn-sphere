@@ -39,11 +39,11 @@ def cli():
 
 @cli.command(help="Sync AWS resources with definition file")
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--debug', '-d', is_flag=True, default=False, help="Debug output")
-@click.option('--confirm', '-c', is_flag=True, default=False, help="Override user confirm dialog with yes")
 @click.option('--parameters', '-p', is_flag=True, default=False,
               help="List of params to be overwritten; these have highest priority. eg: --parameters p1=v1,p2=v2")
-def sync(filename, debug, confirm):
+@click.option('--debug', '-d', is_flag=True, default=False, help="Debug output")
+@click.option('--confirm', '-c', is_flag=True, default=False, help="Override user confirm dialog with yes")
+def sync(filename, parameters, debug, confirm):
     if debug:
         LOGGER.setLevel(logging.DEBUG)
     else:
@@ -53,7 +53,8 @@ def sync(filename, debug, confirm):
             'This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
                 get_current_account_alias()), abort=True):
         try:
-            config = Config(filename)
+            config = Config(config_file=filename, config_dict=parameters)
+
             StackActionHandler(config).create_or_update_stacks()
         except CfnSphereException as e:
             LOGGER.error("Failed, {0}".format(e))
@@ -85,6 +86,7 @@ def convert(filename, debug):
               help="List of params to be overwritten; these have highest priority. eg: --parameters p1=v1,p2=v2")
 def render_template(filename):
     loader = CloudFormationTemplateLoader()
+    # TODO clarify whether merge parameters here
     template = loader.get_template_from_url(filename, None)
     template = CloudFormationTemplateTransformer.transform_template(template)
     click.echo(convert_dict_to_json_string(template.body_dict))

@@ -15,3 +15,7 @@ class TemplateErrorException(CfnSphereException):
 
 class NoConfigException(CfnSphereException):
     pass
+
+
+class BadConfigException(CfnSphereException):
+    pass
