@@ -23,7 +23,8 @@ class StackActionHandler(object):
         stack_processing_order = DependencyResolver().get_stack_order(desired_stacks)
 
         if len(stack_processing_order) > 1:
-            self.logger.info("Will process stacks in the following order: {0}".format(", ".join(stack_processing_order)))
+            self.logger.info(
+                "Will process stacks in the following order: {0}".format(", ".join(stack_processing_order)))
 
         for stack_name in stack_processing_order:
             stack_config = self.config.stacks.get(stack_name)
@@ -35,7 +36,8 @@ class StackActionHandler(object):
             template = CloudFormationTemplateTransformer.transform_template(template)
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)
-            parameters = self.parameter_resolver.update_parameters_with_dictionary(parameters, self.cli_params)
+            parameters = ParameterResolver.update_parameters_with_param_dictionary(parameters=parameters,
+                                                                                   param_dictionary=self.cli_params)
 
             stack = CloudFormationStack(template, parameters, stack_name, self.region, stack_config.timeout)
 
