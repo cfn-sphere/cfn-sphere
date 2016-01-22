@@ -17,7 +17,10 @@ class Config(object):
         elif config_file:
             self.dict = self._read_config_file(config_file)
             self.working_dir = os.path.dirname(os.path.realpath(config_file))
-        elif not (config_dict or config_file) or not isinstance(self.dict, dict):
+        else:
+            raise NoConfigException("No config file or config_dict provided")
+
+        if not isinstance(self.dict, dict):
             raise NoConfigException("No config file provided, must be of type dict/yaml")
 
         if cli_params:
