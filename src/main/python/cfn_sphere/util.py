@@ -6,7 +6,7 @@ from functools import wraps
 from prettytable import PrettyTable
 from six.moves.urllib import request as urllib2
 import datetime
-from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.exceptions import CfnSphereException, BadConfigException
 from boto.exception import BotoServerError
 
 
@@ -118,5 +118,8 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
 
 def parse_parameters(parameters):
     """ Parse input parameters from the command line which are separated by ',' and split with '=' """
-    parameter_list = [x for x in parameters.split(',')]
-    return dict([y.split('=') for y in parameter_list])
+    try:
+        parameter_list = [x for x in parameters.split(',')]
+        return dict([y.split('=') for y in parameter_list])
+    except ValueError:
+        raise BadConfigException("No config file provided, must be of type dict/yaml")
