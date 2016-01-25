@@ -1,4 +1,5 @@
 from cfn_sphere.exceptions import NoConfigException, BadConfigException
+from cfn_sphere.util import parse_parameters
 from yaml.scanner import ScannerError
 import yaml
 import os
@@ -10,12 +11,20 @@ class Config(object):
         if config_dict:
             self.dict = config_dict
             self.working_dir = None
-        else:
+        elif config_file:
             self.dict = self._read_config_file(config_file)
             self.working_dir = os.path.dirname(os.path.realpath(config_file))
+        else:
+            raise NoConfigException("No config file or config_dict provided")
 
         if not isinstance(self.dict, dict):
             raise NoConfigException("Config has invalid content, must be of type dict/yaml")
+
+        if cli_params:
+            try:
+                self.cli_params = parse_parameters(cli_params)
+            except ValueError:
+                raise BadConfigException("CLI input is not a valid dictionary")
 
         self.region = self.dict.get('region')
         self.tags = self.dict.get('tags', {})
