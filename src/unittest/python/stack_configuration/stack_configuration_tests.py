@@ -27,12 +27,12 @@ class ConfigTests(unittest2.TestCase):
             Config(config_dict={'region': 'eu-west-1'})
 
     def test_properties_parsing_cli_params(self):
-        config = Config(cli_params="p1=v1,p2=v2",
+        config = Config(cli_params="stack1:p1=v1,stack1:p2=v2",
                         config_dict={'region': 'eu-west-1', 'stacks': {'foo': {'template-url': 'foo.json'}}})
-        self.assertTrue('p1' in config.cli_params)
-        self.assertTrue('p2' in config.cli_params)
-        self.assertTrue('v1' in config.cli_params.values())
-        self.assertTrue('v2' in config.cli_params.values())
+        self.assertTrue('p1' in config.cli_params['stack1'])
+        self.assertTrue('p2' in config.cli_params['stack1'])
+        self.assertTrue('v1' in config.cli_params['stack1'].values())
+        self.assertTrue('v2' in config.cli_params['stack1'].values())
 
     def test_properties_parsing_invalid_cli_params(self):
         with self.assertRaises(BadConfigException):
@@ -41,7 +41,7 @@ class ConfigTests(unittest2.TestCase):
 
     def test_properties_parsing_just_config_file_and_cli_params(self):
         with self.assertRaises(NoConfigException):
-            Config(cli_params="p1=v1,p2=v2", config_dict={'region': 'eu-west-1'})
+            Config(cli_params="stack1:p1=v1,stack1:p2=v2", config_dict={'region': 'eu-west-1'})
 
     def test_properties_parsing_just_cli_params(self):
         with self.assertRaises(NoConfigException):

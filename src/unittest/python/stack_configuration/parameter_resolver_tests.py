@@ -154,30 +154,49 @@ class ParameterResolverTests(unittest2.TestCase):
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     def test_update_parameters_returns_str_representation_of_false(self, _):
-        result = ParameterResolver().update_parameters_with_param_dictionary({'foo': False}, {'foo': True})
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': False}, param_dictionary={'stack1': {'foo': True}}, stack_name='stack1')
         self.assertEqual({'foo': 'true'}, result)
     
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     def test_update_parameters_returns_list_with_string_value(self, _):
-        result = ParameterResolver().update_parameters_with_param_dictionary({'foo': "foo"}, {"foo": "foobar"})
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}}, stack_name='stack1')
         self.assertEqual({'foo': 'foobar'}, result)
-    
+
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     def test_update_parameters_returns_str_representation_of_int(self, _):
-        result = ParameterResolver().update_parameters_with_param_dictionary({'foo': 0}, {'foo': 5})
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': 0}, param_dictionary={'stack1': {'foo': 5}}, stack_name='stack1')
         self.assertEqual({'foo': '5'}, result)
     
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     def test_update_parameters_returns_str_representation_of_float(self, _):
-        result = ParameterResolver().update_parameters_with_param_dictionary({'foo': 0}, {'foo': 5.555})
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': 0}, param_dictionary={'stack1': {'foo': 5.555}}, stack_name='stack1')
         self.assertEqual({'foo': '5.555'}, result)
     
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     def test_update_parameters_trows_exception_if_key_not_in_stack(self, _):
         with self.assertRaises(NotImplementedError):
-            ParameterResolver().update_parameters_with_param_dictionary({'foo': "foo"}, {"moppel": "foo"})
+            ParameterResolver().update_parameters_with_param_dictionary(
+                parameters={'foo': 'foo'}, param_dictionary={'stack1': {'moppel': 'foo'}}, stack_name='stack1')
     
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     def test_update_parameters_trows_exception_if_value_null(self, _):
         with self.assertRaises(NotImplementedError):
-            ParameterResolver().update_parameters_with_param_dictionary({'foo': "foo"}, {"foo": ""})
+            ParameterResolver().update_parameters_with_param_dictionary(
+                parameters={'foo': 'foo'}, param_dictionary={'stack1': {'foo': 'foo', 'foo': ''}}, stack_name='stack1')
+
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    def test_update_parameters_returns_list_with_string_value_for_several_stacks(self, _):
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}, 'stack2': {'foo': 'foofoo'}},
+            stack_name='stack2')
+        self.assertEqual({'foo': 'foofoo'}, result)
+
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    def test_update_parameters_does_nothing_to_other_stacks(self, _):
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
+        self.assertEqual({'foo': 'foo'}, result)

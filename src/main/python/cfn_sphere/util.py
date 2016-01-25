@@ -1,11 +1,13 @@
-import logging
+import datetime
 import json
-import yaml
+import logging
 import time
+from collections import defaultdict
 from functools import wraps
+
+import yaml
 from prettytable import PrettyTable
 from six.moves.urllib import request as urllib2
-import datetime
 from cfn_sphere.exceptions import CfnSphereException, BadConfigException
 from boto.exception import BotoServerError
 
@@ -116,10 +118,16 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
     return decorator
 
 
-def parse_parameters(parameters):
-    """ Parse input parameters from the command line which are separated by ',' and split with '=' """
+def split_parameters_by_stack(parameters):
+    param_dict = defaultdict(dict)
     try:
-        parameter_list = [x for x in parameters.split(',')]
-        return dict([y.split('=') for y in parameter_list])
+        for stack_value_pair in parameters.split(','):
+            new_stack, new_key_value = stack_value_pair.split(':')
+            new_key, new_value = new_key_value.split('=')
+            dictionary = {new_key: new_value}
+            param_dict[new_stack].update(dictionary)
     except ValueError:
-        raise BadConfigException("No config file provided, must be of type dict/yaml")
+        raise BadConfigException("""Format of input parameters is faulty.
+                Use 'stack1:param=value,stack2:param=value'""")
+
+    return param_dict

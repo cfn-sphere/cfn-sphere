@@ -1,5 +1,5 @@
-from cfn_sphere.exceptions import NoConfigException, BadConfigException
-from cfn_sphere.util import parse_parameters
+from cfn_sphere.exceptions import NoConfigException
+from cfn_sphere.util import split_parameters_by_stack
 from yaml.scanner import ScannerError
 import yaml
 import os
@@ -21,10 +21,7 @@ class Config(object):
             raise NoConfigException("Config has invalid content, must be of type dict/yaml")
 
         if cli_params:
-            try:
-                self.cli_params = parse_parameters(cli_params)
-            except ValueError:
-                raise BadConfigException("CLI input is not a valid dictionary")
+            self.cli_params = split_parameters_by_stack(cli_params)
 
         self.region = self.dict.get('region')
         self.tags = self.dict.get('tags', {})
