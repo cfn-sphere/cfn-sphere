@@ -1,11 +1,11 @@
-from cfn_sphere.exceptions import NoConfigException
+from cfn_sphere.exceptions import NoConfigException, BadConfigException
 from yaml.scanner import ScannerError
 import yaml
 import os
 
 
 class Config(object):
-    def __init__(self, config_file=None, config_dict=None):
+    def __init__(self, config_file=None, config_dict=None, cli_params=None):
 
         if config_dict:
             self.dict = config_dict
