@@ -43,6 +43,22 @@ class DependencyResolverTests(unittest2.TestCase):
 
         self.assertEqual(expected, DependencyResolver.get_stack_order(stacks))
 
+    def test_get_stack_order_returns_a_valid_order_from_ref_in_list(self):
+        stacks = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': ['|Ref|vpc.id']}}),
+                  'app1': StackConfig(
+                      {'template-url': 'horst.yml', 'parameters': {'a': ['|Ref|vpc.id'], 'b': ['|Ref|default-sg.id']}}),
+                  'app2': StackConfig({'template-url': 'horst.yml',
+                                       'parameters': {'a': ['|Ref|vpc.id'], 'b': ['|Ref|default-sg.id'],
+                                                      'c': ['|Ref|app1.id']}}),
+                  'vpc': StackConfig({'template-url': 'horst.yml',
+                                      'parameters': {'logBucketName': 'is24-cloudtrail-logs',
+                                                     'includeGlobalServices': False}})
+                  }
+
+        expected = ['vpc', 'default-sg', 'app1', 'app2']
+
+        self.assertEqual(expected, DependencyResolver.get_stack_order(stacks))
+
     def test_get_stack_order_includes_independent_stacks(self):
         stacks = {'default-sg': StackConfig({'template-url': 'horst.yml'}),
                   'app1': StackConfig(
