@@ -119,7 +119,7 @@ class ParameterResolver(object):
                     parameters[key] = value
                 elif isinstance(value, bool):
                     parameters[key] = str(value).lower()
-                elif isinstance(value, int) or isinstance(value, float):
+                elif isinstance(value, (int, float)):
                     parameters[key] = str(value)
                 else:
                     raise NotImplementedError("Cannot handle {0} value for key: {1}".format(type(value), key))
