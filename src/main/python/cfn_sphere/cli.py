@@ -57,7 +57,6 @@ def cli():
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-
 def sync(filename, parameters, debug, confirm):
     if debug:
         LOGGER.setLevel(logging.DEBUG)
