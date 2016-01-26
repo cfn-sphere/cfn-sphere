@@ -38,10 +38,10 @@ class StackActionHandler(object):
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)
 
-            parameters = self.parameter_resolver.update_parameters_with_param_dictionary(
+            merged_parameters = self.parameter_resolver.update_parameters_with_param_dictionary(
                 parameters=parameters, param_dictionary=self.cli_params, stack_name=stack_name)
 
-            stack = CloudFormationStack(template=template, parameters=parameters, tags=combined_tags,
+            stack = CloudFormationStack(template=template, parameters=merged_parameters, tags=combined_tags,
                                         name=stack_name, region=self.config.region, timeout=stack_config.timeout)
 
             if stack_name in existing_stacks:
