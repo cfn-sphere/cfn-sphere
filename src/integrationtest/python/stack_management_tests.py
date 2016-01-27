@@ -57,7 +57,8 @@ class CreateStacksTest(unittest2.TestCase):
     def setUpClass(cls):
         test_resources_dir = get_resources_dir()
         cls.cfn_conn = cloudformation.connect_to_region("eu-west-1")
-        cls.config = Config(config_file=os.path.join(test_resources_dir, "stacks.yml"))
+        cls.config = Config(config_file=os.path.join(test_resources_dir, "stacks.yml"),
+                            cli_params='cfn-sphere-test-instances:appVersion=3,cfn-sphere-test-vpc:testtag=foobar')
         cls.stack_handler = StackActionHandler(cls.config)
 
         LOGGER.info("Syncing stacks")
