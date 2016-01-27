@@ -51,7 +51,7 @@ def cli():
 
 @cli.command(help="Sync AWS resources with definition file")
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--parameters', '-p', is_flag=True, default=False,
+@click.option('--parameters', '-p', default=None, envvar='CFN_SPHERE_PARAMETERS',
               help="List of params to be overwritten; these have highest priority."
                    "eg: --parameters stack1:p1=v1,stack2:p2=v2")
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
@@ -70,7 +70,7 @@ def sync(filename, parameters, debug, confirm):
 
     try:
 
-        config = Config(config_file=filename, config_dict=parameters)
+        config = Config(config_file=filename, cli_params=parameters)
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
@@ -135,14 +135,10 @@ def convert(filename, debug):
 
 @cli.command(help="Render template as it would be used to create/update a stack")
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--parameters', '-p', is_flag=True, default=False,
-              help="List of params to be overwritten; these have highest priority."
-                   "eg: --parameters stack1:p1=v1,stack2:p2=v2")
 def render_template(filename):
     check_update_available()
 
     loader = FileLoader()
-    # TODO implement template parameter migration
     template = loader.get_file_from_url(filename, None)
     template = CloudFormationTemplateTransformer.transform_template(template)
     click.echo(template.get_template_json())
