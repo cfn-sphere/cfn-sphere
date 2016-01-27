@@ -20,9 +20,7 @@ class Config(object):
         if not isinstance(self.dict, dict):
             raise NoConfigException("Config has invalid content, must be of type dict/yaml")
 
-        if cli_params:
-            self.cli_params = split_parameters_by_stack(cli_params)
-
+        self.cli_params = split_parameters_by_stack(cli_params)
         self.region = self.dict.get('region')
         self.tags = self.dict.get('tags', {})
         self.stacks = self._parse_stack_configs(self.dict)

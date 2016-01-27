@@ -120,14 +120,15 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
 
 def split_parameters_by_stack(parameters):
     param_dict = defaultdict(dict)
-    try:
-        for stack_value_pair in parameters.split(','):
-            new_stack, new_key_value = stack_value_pair.split(':')
-            new_key, new_value = new_key_value.split('=')
-            dictionary = {new_key: new_value}
-            param_dict[new_stack].update(dictionary)
-    except ValueError:
-        raise BadConfigException("""Format of input parameters is faulty.
-                Use 'stack1:param=value,stack2:param=value'""")
+    if parameters:
+        try:
+            for stack_value_pair in parameters.split(','):
+                new_stack, new_key_value = stack_value_pair.split(':')
+                new_key, new_value = new_key_value.split('=')
+                dictionary = {new_key: new_value}
+                param_dict[new_stack].update(dictionary)
+        except ValueError:
+            raise BadConfigException("""Format of input parameters is faulty.
+                    Use 'stack1:param=value,stack2:param=value'""")
 
     return param_dict
