@@ -42,6 +42,16 @@ def get_parameter_dict_from_stack(stack):
     return result
 
 
+def update_stack(self):
+    test_resources_dir = get_resources_dir()
+    self.cfn_conn = cloudformation.connect_to_region("eu-west-1")
+    self.config = Config(config_file=os.path.join(test_resources_dir, "stacks.yml"),
+                         cli_params='cfn-sphere-test-instances:appVersion=42,cfn-sphere-test-vpc:testtag=changed')
+    self.stack_handler = StackActionHandler(self.config)
+
+    LOGGER.info("Updating stack with cli params")
+    self.stack_handler.create_or_update_stacks()
+
 class CreateStacksTest(unittest2.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -52,6 +62,7 @@ class CreateStacksTest(unittest2.TestCase):
 
         LOGGER.info("Syncing stacks")
         cls.stack_handler.create_or_update_stacks()
+        update_stack(cls)
 
     @classmethod
     def tearDownClass(cls):
@@ -59,12 +70,12 @@ class CreateStacksTest(unittest2.TestCase):
         cls.stack_handler.delete_stacks()
         verify_stacks_are_gone(cls.cfn_conn, cls.config)
 
-    def test_stacks_are_in_create_complete_state(self):
-        LOGGER.info("Verifying stacks are in CREATE_COMPLETE state")
+    def test_stacks_are_in_update_complete_state(self):
+        LOGGER.info("Verifying stacks are in UPDATE_COMPLETE state")
 
         for stack_name in self.config.stacks.keys():
             stack = self.cfn_conn.describe_stacks(stack_name)[0]
-            self.assertEqual("CREATE_COMPLETE", stack.stack_status)
+            self.assertEqual("UPDATE_COMPLETE", stack.stack_status)
 
     def test_instance_stack_uses_vpc_outputs(self):
         vpc_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-vpc")[0]
@@ -72,9 +83,11 @@ class CreateStacksTest(unittest2.TestCase):
 
         vpc_stack_outputs = get_output_dict_from_stack(vpc_stack)
         instance_stack_parameters = get_parameter_dict_from_stack(instance_stack)
+        vpc_stack_parameters = get_parameter_dict_from_stack(vpc_stack)
 
         self.assertEqual(vpc_stack_outputs["id"], instance_stack_parameters["vpcID"])
         self.assertEqual(vpc_stack_outputs["subnet"], instance_stack_parameters["subnetID"])
+        self.assertEqual(vpc_stack_parameters["testtag"], "changed")
 
     def test_userdata(self):
         autoscale_conn = autoscale.connect_to_region("eu-west-1")
@@ -89,7 +102,7 @@ class CreateStacksTest(unittest2.TestCase):
 
         self.assertEqual("#taupage-ami-config", user_data_lines[0])
 
-        self.assertTrue("application_version: 1" in user_data_lines)
+        self.assertTrue("application_version: 42" in user_data_lines)
         self.assertTrue("  stack: cfn-sphere-test-instances" in user_data_lines)
 
         dockercfg_root_index = user_data_lines.index("dockercfg:")
