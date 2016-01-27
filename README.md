@@ -13,6 +13,7 @@ A CLI tool intended to simplify AWS CloudFormation handling.
 - automatic stack dependency resolution including circular dependency detection
 - helper features easing the use of cfn functions like Fn::Join, Ref or Fn::GetAtt
 - easy user-data definition for https://github.com/zalando-stups/taupage
+- allow stack parameter values updates in command line interface 
 
 ## Documentation
 https://github.com/cfn-sphere/cfn-sphere/wiki
@@ -63,6 +64,11 @@ Write your templates and configure them in your stacks.yml
 A simple command synchronizes your definition with reality!
 
     cf sync myapp-test.yml
+
+### 4. Update it
+A simple command to update a parameter value!
+
+    cf sync --parameters "test-stack:vpcID=ABC123" myapp-test.yml
 
 ## License
 
