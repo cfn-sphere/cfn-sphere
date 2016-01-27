@@ -3,7 +3,7 @@ import unittest2
 from mock import patch, Mock
 from datetime import datetime
 from cfn_sphere import util, CloudFormationStack
-from cfn_sphere.exceptions import CfnSphereException, BadConfigException
+from cfn_sphere.exceptions import CfnSphereException
 from boto.exception import BotoServerError
 from cfn_sphere.template import CloudFormationTemplate
 
@@ -149,15 +149,3 @@ class StackConfigTests(unittest2.TestCase):
 +--------------+-----------------+"""
 
         self.assertEqual(expected_string, util.get_pretty_parameters_string(stack))
-
-    def test_parse_parameters_parsing_cli_params(self):
-        self.assertEqual(cmp(util.split_parameters_by_stack("stack1:p1=v1,stack1:p2=v2"),
-                             {'stack1': {'p1': 'v1', 'p2': 'v2'}}), 0)
-
-    def test_parse_parameters_parsing_invalid_cli_params_throws_exception(self):
-        with self.assertRaises(BadConfigException):
-            util.split_parameters_by_stack("foobar")
-
-    def test_split_parameters_by_stack(self):
-        self.assertEqual(cmp(util.split_parameters_by_stack("stack1:p1=v1,stack1:p2=v2,stack2:p1=v1"),
-                         {'stack1': {'p1': 'v1', 'p2': 'v2'}, 'stack2': {'p1': 'v1'}}), 0)

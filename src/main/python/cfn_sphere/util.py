@@ -2,13 +2,12 @@ import datetime
 import json
 import logging
 import time
-from collections import defaultdict
 from functools import wraps
 
 import yaml
 from prettytable import PrettyTable
 from six.moves.urllib import request as urllib2
-from cfn_sphere.exceptions import CfnSphereException, BadConfigException
+from cfn_sphere.exceptions import CfnSphereException
 from boto.exception import BotoServerError
 
 
@@ -116,19 +115,3 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
         return wrapper
 
     return decorator
-
-
-def split_parameters_by_stack(parameters):
-    param_dict = defaultdict(dict)
-    if parameters:
-        try:
-            for stack_value_pair in parameters.split(','):
-                new_stack_and_parameter, new_value = stack_value_pair.split('=', 1)
-                new_stack, new_key = new_stack_and_parameter.split(':', 1)
-                dictionary = {new_key: new_value}
-                param_dict[new_stack].update(dictionary)
-        except ValueError:
-            raise BadConfigException("""Format of input parameters is faulty.
-                    Use 'stack1:param=value,stack2:param=value'""")
-
-    return param_dict
