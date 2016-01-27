@@ -1,5 +1,9 @@
   AWSTemplateFormatVersion: "2010-09-09"
   Description: "AWS CloudFormation Template for a VPC in eu-west-1 with one subnet"
+  Parameters:
+    testtag:
+      Description: "Subnet tag for integration update test"
+      Type: "String"
   Mappings:
     SubnetConfig:
       VPC-Values:
@@ -20,6 +24,9 @@
         AvailabilityZone: "eu-west-1a"
         VpcId: "|Ref|VPC"
         CidrBlock: "10.10.0.0/18"
+        Tags:
+        - Key: testtag
+          Value: "|Ref|testtag"
   Outputs:
     id:
       Description: "ID of the newly created VPC"
