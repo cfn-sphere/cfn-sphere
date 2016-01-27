@@ -123,8 +123,8 @@ def split_parameters_by_stack(parameters):
     if parameters:
         try:
             for stack_value_pair in parameters.split(','):
-                new_stack, new_key_value = stack_value_pair.split(':')
-                new_key, new_value = new_key_value.split('=')
+                new_stack_and_parameter, new_value = stack_value_pair.split('=', 1)
+                new_stack, new_key = new_stack_and_parameter.split(':', 1)
                 dictionary = {new_key: new_value}
                 param_dict[new_stack].update(dictionary)
         except ValueError:
