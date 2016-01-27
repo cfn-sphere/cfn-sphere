@@ -4,7 +4,7 @@ from cfn_sphere.stack_configuration import Config, StackConfig, NoConfigExceptio
 from cfn_sphere.exceptions import BadConfigException
 
 
-class ConfigTests(unittest2.TestCase):
+class StackConfigurationTests(unittest2.TestCase):
     def test_properties_parsing(self):
         config = Config(
             config_dict={'region': 'eu-west-1', 'tags': {'global-tag': 'global-tag-value'},
