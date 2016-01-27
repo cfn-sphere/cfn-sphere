@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from pybuilder.core import use_plugin, init, Author
+from pybuilder.vcs import VCSRevision
 
 use_plugin("python.core")
 use_plugin("python.unittest")
@@ -19,7 +20,7 @@ description = "cfn-sphere - A CLI tool intended to simplify AWS CloudFormation h
 license = 'APACHE LICENSE, VERSION 2.0'
 summary = 'cfn-sphere AWS CloudFormation management cli'
 url = 'https://github.com/marco-hoyer/cfn-sphere'
-version = '0.1.25'
+version = '0.1.30-%s' % (VCSRevision().get_git_revision_count())
 
 default_task = ['clean', 'analyze', 'package']
 
