@@ -1,22 +1,27 @@
-from cfn_sphere.exceptions import NoConfigException
-from yaml.scanner import ScannerError
-import yaml
+from collections import defaultdict
 import os
+import yaml
+
+from cfn_sphere.exceptions import NoConfigException, BadConfigException
+from yaml.scanner import ScannerError
 
 
 class Config(object):
-    def __init__(self, config_file=None, config_dict=None):
+    def __init__(self, config_file=None, config_dict=None, cli_params=None):
 
         if config_dict:
             self.dict = config_dict
             self.working_dir = None
-        else:
+        elif config_file:
             self.dict = self._read_config_file(config_file)
             self.working_dir = os.path.dirname(os.path.realpath(config_file))
+        else:
+            raise NoConfigException("No config file or config_dict provided")
 
         if not isinstance(self.dict, dict):
             raise NoConfigException("Config has invalid content, must be of type dict/yaml")
 
+        self.cli_params = self._split_parameters_by_stack(cli_params)
         self.region = self.dict.get('region')
         self.tags = self.dict.get('tags', {})
         self.stacks = self._parse_stack_configs(self.dict)
@@ -36,6 +41,22 @@ class Config(object):
         for key, value in config_dict.get('stacks', {}).items():
             stacks_dict[key] = StackConfig(value, self.working_dir)
         return stacks_dict
+
+    @staticmethod
+    def _split_parameters_by_stack(parameters):
+        param_dict = defaultdict(dict)
+        if parameters:
+            try:
+                for stack_value_pair in parameters.split(','):
+                    new_stack_and_parameter, new_value = stack_value_pair.split('=', 1)
+                    new_stack, new_key = new_stack_and_parameter.split(':', 1)
+                    dictionary = {new_key: new_value}
+                    param_dict[new_stack].update(dictionary)
+            except ValueError:
+                raise BadConfigException("""Format of input parameters is faulty.
+                        Use 'stack1:param=value,stack2:param=value'""")
+
+        return param_dict
 
     @staticmethod
     def _read_config_file(config_file):

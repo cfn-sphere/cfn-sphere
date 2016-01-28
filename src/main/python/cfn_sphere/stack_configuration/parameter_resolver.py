@@ -124,11 +124,19 @@ class ParameterResolver(object):
 
             elif isinstance(value, bool):
                 parameters[key] = str(value).lower()
-            elif isinstance(value, int):
-                parameters[key] = str(value)
-            elif isinstance(value, float):
+            elif isinstance(value, (int, float)):
                 parameters[key] = str(value)
             else:
                 raise NotImplementedError("Cannot handle {0} value for key: {1}".format(type(value), key))
+
+        return parameters
+
+    def update_parameters_with_param_dictionary(self, parameters, param_dictionary, stack_name):
+        if stack_name in param_dictionary.keys():
+            for new_key, new_value in param_dictionary[stack_name].items():
+                if new_value and new_key in parameters.keys():
+                    parameters[new_key] = new_value
+                else:
+                    raise NotImplementedError("Key {0} is not a valid key your stack".format(type(new_value)))
 
         return parameters

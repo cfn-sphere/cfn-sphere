@@ -51,10 +51,13 @@ def cli():
 
 @cli.command(help="Sync AWS resources with definition file")
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--debug', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
-@click.option('--confirm', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+@click.option('--parameters', '-p', default=None, envvar='CFN_SPHERE_PARAMETERS',
+              help="List of params to be overwritten; these have highest priority."
+                   "eg: --parameters stack1:p1=v1,stack2:p2=v2")
+@click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def sync(filename, debug, confirm):
+def sync(filename, parameters, debug, confirm):
     if debug:
         LOGGER.setLevel(logging.DEBUG)
     else:
@@ -67,7 +70,7 @@ def sync(filename, debug, confirm):
 
     try:
 
-        config = Config(filename)
+        config = Config(config_file=filename, cli_params=parameters)
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
@@ -83,8 +86,8 @@ def sync(filename, debug, confirm):
 
 @cli.command(help="Delete all stacks in a stack configuration")
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--debug', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
-@click.option('--confirm', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+@click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
 def delete(filename, debug, confirm):
     if debug:
@@ -115,7 +118,7 @@ def delete(filename, debug, confirm):
 
 @cli.command(help="Convert JSON to YAML or vice versa")
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--debug', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
+@click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 def convert(filename, debug):
     check_update_available()
 

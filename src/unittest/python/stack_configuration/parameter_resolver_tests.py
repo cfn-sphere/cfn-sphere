@@ -6,6 +6,18 @@ from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 
 
 class ParameterResolverTests(unittest2.TestCase):
+    def setUp(self):
+        self.cloudformation_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+        self.ec2api_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
+        self.kms_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
+        self.cfn_mock = self.cloudformation_patcher.start()
+        self.ec2api_mock = self.ec2api_patcher.start()
+        self.kms_mock = self.kms_patcher.start()
+
+    def tearDown(self):
+        self.cloudformation_patcher.stop()
+        self.ec2api_patcher.stop()
+        self.kms_patcher.stop()
 
     def test_convert_list_to_string_returns_valid_string(self):
         list = ['a', 'b', 'c']
@@ -19,97 +31,66 @@ class ParameterResolverTests(unittest2.TestCase):
         self.assertEqual("", ParameterResolver.convert_list_to_string([]))
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.convert_list_to_string')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_calls_convert_list_to_string_on_list_value(self, kms, ec2_api, cfn, convert_list_to_string_mock):
+    def test_resolve_parameter_values_calls_convert_list_to_string_on_list_value(self, convert_list_to_string_mock):
         ParameterResolver().resolve_parameter_values({'foo': ['a', 'b']}, 'foo')
         convert_list_to_string_mock.assert_called_once_with(['a', 'b'])
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_returns_ref_value(self, kms, ec2_api, cfn, get_output_value_mock):
+    def test_resolve_parameter_values_returns_ref_value(self, get_output_value_mock):
         get_output_value_mock.return_value = 'bar'
         result = ParameterResolver().resolve_parameter_values({'foo': '|Ref|stack.output'}, 'foo')
         get_output_value_mock.assert_called_once_with('stack.output')
         self.assertEqual({'foo': 'bar'}, result)
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_returns_ref_list_value(self, kms, ec2_api, cfn, get_output_value_mock):
+    def test_resolve_parameter_values_returns_ref_list_value(self, get_output_value_mock):
         get_output_value_mock.return_value = 'bar'
-        result = ParameterResolver().resolve_parameter_values({'foo': ['|Ref|stack.output', '|Ref|stack.output']}, 'foo')
+        result = ParameterResolver().resolve_parameter_values(
+            {'foo': ['|Ref|stack.output', '|Ref|stack.output']}, 'foo')
         get_output_value_mock.assert_called_with('stack.output')
         self.assertEqual({'foo': 'bar,bar'}, result)
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_raises_exception_on_none_value(self, kms, ec2_api, cfn):
+    def test_resolve_parameter_values_raises_exception_on_none_value(self):
         with self.assertRaises(NotImplementedError):
             ParameterResolver().resolve_parameter_values({'foo': None}, 'foo')
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_returns_list_with_string_value(self, kms, ec2_api, cfn):
+    def test_resolve_parameter_values_returns_list_with_string_value(self):
         result = ParameterResolver().resolve_parameter_values({'foo': "baa"}, 'foo')
         self.assertEqual({'foo': 'baa'}, result)
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_returns_str_representation_of_false(self, kms, ec2_api, cfn):
+    def test_resolve_parameter_values_returns_str_representation_of_false(self):
         result = ParameterResolver().resolve_parameter_values({'foo': False}, 'foo')
         self.assertEqual({'foo': 'false'}, result)
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_returns_str_representation_of_int(self, kms, ec2_api, cfn):
+    def test_resolve_parameter_values_returns_str_representation_of_int(self):
         result = ParameterResolver().resolve_parameter_values({'foo': 5}, 'foo')
         self.assertEqual({'foo': '5'}, result)
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_returns_str_representation_of_float(self, kms, ec2_api, cfn):
+    def test_resolve_parameter_values_returns_str_representation_of_float(self):
         result = ParameterResolver().resolve_parameter_values({'foo': 5.555}, 'foo')
         self.assertEqual({'foo': '5.555'}, result)
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_get_latest_value_returns_stacks_actual_value(self, kms,  ec2_api, cfn_mock):
-        cfn_mock.return_value.get_stack_parameters_dict.return_value = {'my-key': 'my-actual-value'}
+    def test_get_latest_value_returns_stacks_actual_value(self):
+        self.cfn_mock.return_value.get_stack_parameters_dict.return_value = {'my-key': 'my-actual-value'}
 
         pr = ParameterResolver()
         result = pr.get_latest_value('my-key', '|keepOrUse|default-value', 'my-stack')
 
-        cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
+        self.cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
         self.assertEqual('my-actual-value', result)
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_get_latest_value_returns_default_value(self, kms, ec2_api, cfn_mock):
-        cfn_mock.return_value.get_stack_parameters_dict.return_value = {'not-my-key': 'my-actual-value'}
+    def test_get_latest_value_returns_default_value_called_once_with_stack(self):
+        self.cfn_mock.return_value.get_stack_parameters_dict.return_value = {'not-my-key': 'my-actual-value'}
 
         pr = ParameterResolver()
         result = pr.get_latest_value('my-key', '|keepOrUse|default-value', 'my-stack')
 
-        cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
+        self.cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
         self.assertEqual('default-value', result)
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_get_latest_value_returns_default_value(self, kms, ec2_api, cfn_mock):
-        cfn_mock.return_value.get_stack_parameters_dict.side_effect = CfnSphereBotoError(BotoServerError("500", "foo"))
+    def test_get_latest_value_returns_default_value(self):
+        self.cfn_mock.return_value.get_stack_parameters_dict.side_effect = CfnSphereBotoError(BotoServerError("500",
+                                                                                                              "foo"))
 
         resolver = ParameterResolver()
         with self.assertRaises(CfnSphereException):
@@ -143,12 +124,34 @@ class ParameterResolverTests(unittest2.TestCase):
         result = ParameterResolver.get_default_from_keep_value('|keepOrUse|')
         self.assertEqual('', result)
 
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-    def test_resolve_parameter_values_returns_decrypted_value(self, kms_mock, ec2_api, cfn):
-        kms_mock.return_value.decrypt.return_value = "decryptedValue"
+    def test_resolve_parameter_values_returns_decrypted_value(self):
+        self.kms_mock.return_value.decrypt.return_value = "decryptedValue"
 
         result = ParameterResolver().resolve_parameter_values({'foo': "|kms|encryptedValue"}, 'foo')
         self.assertEqual({'foo': 'decryptedValue'}, result)
 
+    def test_update_parameters_returns_list_with_string_value(self):
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}}, stack_name='stack1')
+        self.assertEqual({'foo': 'foobar'}, result)
+
+    def test_update_parameters_trows_exception_if_key_not_in_stack(self):
+        with self.assertRaises(NotImplementedError):
+            ParameterResolver().update_parameters_with_param_dictionary(
+                parameters={'foo': 'foo'}, param_dictionary={'stack1': {'moppel': 'foo'}}, stack_name='stack1')
+    
+    def test_update_parameters_trows_exception_if_value_null(self):
+        with self.assertRaises(NotImplementedError):
+            ParameterResolver().update_parameters_with_param_dictionary(
+                parameters={'foo': 'foo'}, param_dictionary={'stack1': {'foo': 'foo', 'bar': ''}}, stack_name='stack1')
+
+    def test_update_parameters_returns_list_with_string_value_for_several_stacks(self):
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}, 'stack2': {'foo': 'foofoo'}},
+            stack_name='stack2')
+        self.assertEqual({'foo': 'foofoo'}, result)
+
+    def test_update_parameters_does_nothing_to_other_stacks(self):
+        result = ParameterResolver().update_parameters_with_param_dictionary(
+            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
+        self.assertEqual({'foo': 'foo'}, result)

@@ -1,11 +1,12 @@
-import logging
+import datetime
 import json
-import yaml
+import logging
 import time
 from functools import wraps
+
+import yaml
 from prettytable import PrettyTable
 from six.moves.urllib import request as urllib2
-import datetime
 from cfn_sphere.exceptions import CfnSphereException
 from boto.exception import BotoServerError
 
