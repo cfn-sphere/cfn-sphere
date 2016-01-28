@@ -42,28 +42,90 @@ def get_parameter_dict_from_stack(stack):
     return result
 
 
-def update_stack(self):
-    test_resources_dir = get_resources_dir()
-    self.cfn_conn = cloudformation.connect_to_region("eu-west-1")
-    self.config = Config(config_file=os.path.join(test_resources_dir, "stacks.yml"),
-                         cli_params='cfn-sphere-test-instances:appVersion=42,cfn-sphere-test-vpc:testtag=changed')
-    self.stack_handler = StackActionHandler(self.config)
-
-    LOGGER.info("Updating stack with cli params")
-    self.stack_handler.create_or_update_stacks()
-
 class CreateStacksTest(unittest2.TestCase):
     @classmethod
     def setUpClass(cls):
         test_resources_dir = get_resources_dir()
         cls.cfn_conn = cloudformation.connect_to_region("eu-west-1")
-        cls.config = Config(config_file=os.path.join(test_resources_dir, "stacks.yml"),
-                            cli_params='cfn-sphere-test-instances:appVersion=3,cfn-sphere-test-vpc:testtag=foobar')
+        cls.config = Config(config_file=os.path.join(test_resources_dir, "stacks.yml"))
         cls.stack_handler = StackActionHandler(cls.config)
 
         LOGGER.info("Syncing stacks")
         cls.stack_handler.create_or_update_stacks()
-        update_stack(cls)
+
+    @classmethod
+    def tearDownClass(cls):
+        LOGGER.info("Cleaning up")
+        cls.stack_handler.delete_stacks()
+        verify_stacks_are_gone(cls.cfn_conn, cls.config)
+
+    def test_stacks_are_in_update_complete_state(self):
+        LOGGER.info("Verifying stacks are in CREATE_COMPLETE state")
+
+        for stack_name in self.config.stacks.keys():
+            stack = self.cfn_conn.describe_stacks(stack_name)[0]
+            self.assertEqual("CREATE_COMPLETE", stack.stack_status)
+
+    def test_instance_stack_uses_vpc_outputs(self):
+        vpc_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-vpc")[0]
+        instance_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-instances")[0]
+
+        vpc_stack_outputs = get_output_dict_from_stack(vpc_stack)
+        instance_stack_parameters = get_parameter_dict_from_stack(instance_stack)
+        vpc_stack_parameters = get_parameter_dict_from_stack(vpc_stack)
+
+        self.assertEqual(vpc_stack_outputs["id"], instance_stack_parameters["vpcID"])
+        self.assertEqual(vpc_stack_outputs["subnet"], instance_stack_parameters["subnetID"])
+        self.assertEqual(vpc_stack_parameters["testtag"], "unchanged")
+
+    def test_userdata(self):
+        autoscale_conn = autoscale.connect_to_region("eu-west-1")
+        instance_stack_resources = self.cfn_conn.describe_stack_resource("cfn-sphere-test-instances", "lc")
+        lc_name = \
+            instance_stack_resources["DescribeStackResourceResponse"]["DescribeStackResourceResult"][
+                "StackResourceDetail"][
+                "PhysicalResourceId"]
+        lc = autoscale_conn.get_all_launch_configurations(names=[lc_name])[0]
+
+        user_data_lines = lc.user_data.split('\n')
+
+        self.assertEqual("#taupage-ami-config", user_data_lines[0])
+
+        self.assertTrue("application_version: 1" in user_data_lines)
+        self.assertTrue("  stack: cfn-sphere-test-instances" in user_data_lines)
+
+        dockercfg_root_index = user_data_lines.index("dockercfg:")
+        self.assertEqual("  https://my-private-registry:", user_data_lines[dockercfg_root_index + 1])
+        self.assertEqual("    email: test@example.com", user_data_lines[dockercfg_root_index + 2])
+        self.assertEqual("    auth: my-secret-string", user_data_lines[dockercfg_root_index + 3])
+
+        environment_root_index = user_data_lines.index("environment:")
+        self.assertEqual("  DYNAMO_DB_PREFIX: cfn-sphere-test-instances", user_data_lines[environment_root_index + 1])
+
+        notify_cfn_root_index = user_data_lines.index("notify_cfn:")
+        self.assertEqual("  resource: asg", user_data_lines[notify_cfn_root_index + 1])
+        self.assertEqual("  stack: cfn-sphere-test-instances", user_data_lines[notify_cfn_root_index + 2])
+
+        ports_root_index = user_data_lines.index("ports:")
+        self.assertEqual("  8080: 9000", user_data_lines[ports_root_index + 1])
+
+
+
+class UpdateStacksWithCliParamsTest(unittest2.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        test_resources_dir = get_resources_dir()
+        cls.cfn_conn = cloudformation.connect_to_region("eu-west-1")
+        cls.config = Config(config_file=os.path.join(test_resources_dir, "stacks.yml"))
+        cls.stack_handler = StackActionHandler(cls.config)
+        LOGGER.info("Creating stacks")
+        cls.stack_handler.create_or_update_stacks()
+
+        cls.config = Config(config_file=os.path.join(test_resources_dir, "stacks.yml"),
+                            cli_params='cfn-sphere-test-instances:appVersion=42,cfn-sphere-test-vpc:testtag=changed')
+        cls.stack_handler = StackActionHandler(cls.config)
+        LOGGER.info("Updating stack with cli params")
+        cls.stack_handler.create_or_update_stacks()
 
     @classmethod
     def tearDownClass(cls):
