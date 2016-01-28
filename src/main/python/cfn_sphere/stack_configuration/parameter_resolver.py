@@ -132,23 +132,11 @@ class ParameterResolver(object):
         return parameters
 
     def update_parameters_with_param_dictionary(self, parameters, param_dictionary, stack_name):
-        for stack, values in param_dictionary.items():
-            if stack == stack_name:
-                for key, value in values.items():
-                    if value and key in parameters.keys():
-                        if isinstance(value, list):
-                            self.logger.debug("List parameter found for {0}".format(key))
-                            value_string = self.convert_list_to_string(value)
-                            parameters[key] = value_string
-                        elif isinstance(value, str):
-                            parameters[key] = value
-                        elif isinstance(value, bool):
-                            parameters[key] = str(value).lower()
-                        elif isinstance(value, (int, float)):
-                            parameters[key] = str(value)
-                        else:
-                            raise NotImplementedError("Cannot handle {0} value for key: {1}".format(type(value), key))
-                    else:
-                        raise NotImplementedError("Key {0} is not a valid key your stack".format(type(value)))
+        if stack_name in param_dictionary.keys():
+            for new_key, new_value in param_dictionary[stack_name].items():
+                if new_value and new_key in parameters.keys():
+                    parameters[new_key] = new_value
+                else:
+                    raise NotImplementedError("Key {0} is not a valid key your stack".format(type(new_value)))
 
         return parameters

@@ -130,26 +130,11 @@ class ParameterResolverTests(unittest2.TestCase):
         result = ParameterResolver().resolve_parameter_values({'foo': "|kms|encryptedValue"}, 'foo')
         self.assertEqual({'foo': 'decryptedValue'}, result)
 
-    def test_update_parameters_returns_str_representation_of_false(self):
-        result = ParameterResolver().update_parameters_with_param_dictionary(
-            parameters={'foo': False}, param_dictionary={'stack1': {'foo': True}}, stack_name='stack1')
-        self.assertEqual({'foo': 'true'}, result)
-
     def test_update_parameters_returns_list_with_string_value(self):
         result = ParameterResolver().update_parameters_with_param_dictionary(
             parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}}, stack_name='stack1')
         self.assertEqual({'foo': 'foobar'}, result)
 
-    def test_update_parameters_returns_str_representation_of_int(self):
-        result = ParameterResolver().update_parameters_with_param_dictionary(
-            parameters={'foo': 0}, param_dictionary={'stack1': {'foo': 5}}, stack_name='stack1')
-        self.assertEqual({'foo': '5'}, result)
-    
-    def test_update_parameters_returns_str_representation_of_float(self):
-        result = ParameterResolver().update_parameters_with_param_dictionary(
-            parameters={'foo': 0}, param_dictionary={'stack1': {'foo': 5.555}}, stack_name='stack1')
-        self.assertEqual({'foo': '5.555'}, result)
-    
     def test_update_parameters_trows_exception_if_key_not_in_stack(self):
         with self.assertRaises(NotImplementedError):
             ParameterResolver().update_parameters_with_param_dictionary(
