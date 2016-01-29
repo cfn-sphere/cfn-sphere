@@ -5,19 +5,29 @@ Parameters:
     Description: "VPC ID"
     Type: "AWS::EC2::VPC::Id"
   subnetID:
-    Description: "VPC Subnet IDs"
+    Description: "VPC Subnet ID"
     Type: "AWS::EC2::Subnet::Id"
+  subnetIDs:
+    Description: "VPC Subnet IDs"
+    Type: "List<AWS::EC2::Subnet::Id>"
   appVersion:
     Description: "Application version"
     Type: "String"
 Resources:
   jobQueue:
     Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: "CfnSphereIntegrationtest"
   secGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
       GroupDescription: "Test Group"
       VpcId: "|Ref|vpcID"
+      Tags:
+        - Key: Name
+          Value: "Cfn-Sphere Integrationtest (do not use!)"
+        - Key: usecase
+          Value: "Cfn-Sphere Integrationtest"
   asg:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -33,6 +43,13 @@ Resources:
       DesiredCapacity: '0'
       VPCZoneIdentifier:
         - "|Ref|subnetID"
+      Tags:
+        - Key: Name
+          Value: "Cfn-Sphere Integrationtest (do not use!)"
+          PropagateAtLaunch: true
+        - Key: usecase
+          Value: "Cfn-Sphere Integrationtest"
+          PropagateAtLaunch: true
   lc:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:

@@ -8,5 +8,8 @@ stacks:
     template-url: templates/instances.yml
     parameters:
       vpcID: "|Ref|cfn-sphere-test-vpc.id"
-      subnetID: "|Ref|cfn-sphere-test-vpc.subnet"
+      subnetID: "|Ref|cfn-sphere-test-vpc.subnetA"
+      subnetIDs:
+      - "|Ref|cfn-sphere-test-vpc.subnetA"
+      - "|Ref|cfn-sphere-test-vpc.subnetB"
       appVersion: "|keepOrUse|1"
