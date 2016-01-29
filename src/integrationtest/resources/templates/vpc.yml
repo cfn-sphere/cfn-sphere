@@ -4,42 +4,53 @@
     testtag:
       Description: "Subnet tag for integration update test"
       Type: "String"
-  Mappings:
-    SubnetConfig:
-      VPC-Values:
-        CIDR: "10.10.0.0/16"
-      Subnet-Values:
-        CIDR: "10.10.0.0/18"
-        AZ: "eu-west-1a"
   Resources:
     VPC:
       Type: "AWS::EC2::VPC"
       Properties:
         EnableDnsSupport: "true"
         EnableDnsHostnames: "true"
-        CidrBlock: "10.10.0.0/18"
+        CidrBlock: "10.10.0.0/16"
         Tags:
           - Key: Name
             Value: "Cfn-Sphere Integrationtest (do not use!)"
           - Key: usecase
             Value: "Cfn-Sphere Integrationtest"
-    Subnet:
+    SubnetA:
       Type: "AWS::EC2::Subnet"
       Properties:
         AvailabilityZone: "eu-west-1a"
         VpcId: "|Ref|VPC"
-        CidrBlock: "10.10.0.0/18"
+        CidrBlock: "10.10.1.0/24"
         Tags:
           - Key: Name
             Value: "Cfn-Sphere Integrationtest (do not use!)"
           - Key: usecase
             Value: "Cfn-Sphere Integrationtest"
-          - Key: testtag
-            Value: "|Ref|testtag"
+    SubnetB:
+      Type: "AWS::EC2::Subnet"
+      Properties:
+        AvailabilityZone: "eu-west-1b"
+        VpcId: "|Ref|VPC"
+        CidrBlock: "10.10.2.0/24"
+        Tags:
+          - Key: Name
+            Value: "Cfn-Sphere Integrationtest (do not use!)"
+          - Key: usecase
+            Value: "Cfn-Sphere Integrationtest"
   Outputs:
     id:
       Description: "ID of the newly created VPC"
       Value: "|Ref|VPC"
-    subnet:
-      Description: "SubnetId of the subnet"
-      Value: "|Ref|Subnet"
+    subnets:
+      Description: "SubnetIds"
+      Value:
+        "|Join|,":
+          - "|Ref|SubnetA"
+          - "|Ref|SubnetB"
+    subnetA:
+      Description: "SubnetId of the subnet in eu-west-1a"
+      Value: "|Ref|SubnetA"
+    subnetB:
+      Description: "SubnetId of the subnet in eu-west-1b"
+      Value: "|Ref|SubnetB"
