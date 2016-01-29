@@ -66,10 +66,9 @@ A simple command synchronizes your definition with reality!
     cf sync myapp-test.yml
 
 #### 3.1 Update Stack with CLI Parameter
-To update a stack without having to modify the templates, simply use the following command to update 
-a single parameter value.
+To update parameters of a stack without having to modify the templates, simply use the `--parameter` or `-p` flag.
 
-    cf sync --parameters "test-stack:vpcID=ABC123" myapp-test.yml
+    cf sync --parameter "test-stack.vpcID=vpc-123" --parameter "test-stack.subnetID=subnet-234" myapp-test.yml
 
 ## License
 

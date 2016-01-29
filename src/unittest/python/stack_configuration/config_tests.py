@@ -26,12 +26,8 @@ class ConfigTests(unittest2.TestCase):
         with self.assertRaises(NoConfigException):
             Config(config_dict={'region': 'eu-west-1'})
 
-    def test_properties_parsing_just_config_file_and_cli_params(self):
-        with self.assertRaises(NoConfigException):
-            Config(cli_params="stack1.p1=v1,stack1.p2=v2", config_dict={'region': 'eu-west-1'})
-
     def test_properties_parsing_cli_params(self):
-        config = Config(cli_params="stack1.p1=v1,stack1.p2=v2",
+        config = Config(cli_params=("stack1.p1=v1", "stack1.p2=v2"),
                         config_dict={'region': 'eu-west-1', 'stacks': {'foo': {'template-url': 'foo.json'}}})
         self.assertTrue('p1' in config.cli_params['stack1'])
         self.assertTrue('p2' in config.cli_params['stack1'])
@@ -42,17 +38,30 @@ class ConfigTests(unittest2.TestCase):
         with self.assertRaises(NoConfigException):
             Config(cli_params="foo")
 
-    def test_parse_cli_parameters_string_throws_exception_on_invalid_syntax(self):
+    def test_parse_cli_parameters_throws_exception_on_invalid_syntax(self):
         with self.assertRaises(CfnSphereException):
-            Config._parse_cli_parameters_string("foobar")
+            Config._parse_cli_parameters(("foo",))
 
-    def test_parse_cli_parameters_string_parses_single_parameter(self):
-        self.assertDictEqual({'stack1': {'p1': 'v1'}}, Config._parse_cli_parameters_string("stack1.p1=v1"))
 
-    def test_parse_cli_parameters_string_parses_multiple_parameters(self):
+
+    def test_parse_cli_parameters_parses_multiple_parameters(self):
         self.assertDictEqual({'stack1': {'p1': 'v1', 'p2': 'v2'}, 'stack2': {'p1': 'v1'}},
-                             Config._parse_cli_parameters_string("stack1.p1=v1,stack1.p2=v2,stack2.p1=v1"))
+                             Config._parse_cli_parameters(("stack1.p1=v1", "stack1.p2=v2", "stack2.p1=v1")))
 
-    def test_parse_cli_parameters_string_accepts_spaces(self):
+    def test_parse_cli_parameters_accepts_spaces(self):
         self.assertDictEqual({'stack1': {'p1': 'v1', 'p2': 'v2'}, 'stack2': {'p1': 'v1'}},
-                             Config._parse_cli_parameters_string("stack1.p1 = v1 , stack1.p2=v2,stack2.p1=v1 "))
+                             Config._parse_cli_parameters(("stack1.p1 = v1 ", "stack1.p2=v2", "stack2.p1=v1 ")))
+
+    def test_parse_cli_parameters_parses_single_string_parameter(self):
+        self.assertDictEqual({'stack1': {'p1': 'v1'}}, Config._parse_cli_parameters(("stack1.p1=v1",)))
+
+    def test_parse_cli_parameters_parses_single_int_parameter(self):
+        self.assertDictEqual({'stack1': {'p1': '2'}}, Config._parse_cli_parameters(("stack1.p1=2",)))
+
+    def test_parse_cli_parameters_accepts_list_of_strings(self):
+        self.assertDictEqual({'stack1': {'p1': 'v1,v2,v3'}},
+                             Config._parse_cli_parameters(("stack1.p1=v1,v2,v3",)))
+
+    def test_parse_cli_parameters_accepts_list_of_int(self):
+        self.assertDictEqual({'stack1': {'p1': '1,2,3'}},
+                             Config._parse_cli_parameters(("stack1.p1=1,2,3",)))

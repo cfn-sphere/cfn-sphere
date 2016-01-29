@@ -131,12 +131,10 @@ class ParameterResolver(object):
 
         return parameters
 
-    def update_parameters_with_param_dictionary(self, parameters, param_dictionary, stack_name):
+    @staticmethod
+    def update_parameters_with_cli_parameters(parameters, param_dictionary, stack_name):
         if stack_name in param_dictionary.keys():
             for new_key, new_value in param_dictionary[stack_name].items():
-                if new_value and new_key in parameters.keys():
-                    parameters[new_key] = new_value
-                else:
-                    raise NotImplementedError("Key {0} is not a valid key your stack".format(type(new_value)))
+                parameters[new_key] = new_value
 
         return parameters

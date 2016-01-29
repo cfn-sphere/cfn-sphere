@@ -21,7 +21,7 @@ class Config(object):
         if not isinstance(self.dict, dict):
             raise NoConfigException("Config has invalid content, must be of type dict/yaml")
 
-        self.cli_params = self._parse_cli_parameters_string(cli_params)
+        self.cli_params = self._parse_cli_parameters(cli_params)
         self.region = self.dict.get('region')
         self.tags = self.dict.get('tags', {})
         self.stacks = self._parse_stack_configs(self.dict)
@@ -43,12 +43,12 @@ class Config(object):
         return stacks_dict
 
     @staticmethod
-    def _parse_cli_parameters_string(parameters):
+    def _parse_cli_parameters(parameters):
         param_dict = defaultdict(dict)
         if parameters:
             try:
-                for stack_value_pair in parameters.split(','):
-                    stack_and_parameter_key, parameter_value = stack_value_pair.split('=', 1)
+                for key_value_parameter_pair in parameters:
+                    stack_and_parameter_key, parameter_value = key_value_parameter_pair.split('=', 1)
                     stack, parameter_key = stack_and_parameter_key.split('.', 1)
 
                     stack_parameter = {parameter_key.strip(): parameter_value.strip()}

@@ -51,13 +51,12 @@ def cli():
 
 @cli.command(help="Sync AWS resources with definition file")
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--parameters', '-p', default=None, envvar='CFN_SPHERE_PARAMETERS',
-              help="List of params to be overwritten; these have highest priority."
-                   "eg: --parameters stack1:p1=v1,stack2:p2=v2")
+@click.option('--parameter', '-p', default=None, envvar='CFN_SPHERE_PARAMETERS', type=click.STRING, multiple=True,
+              help="Stack parameter to overwrite, eg: --parameter stack1:p1=v1")
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def sync(filename, parameters, debug, confirm):
+def sync(filename, parameter, debug, confirm):
     if debug:
         LOGGER.setLevel(logging.DEBUG)
     else:
@@ -70,7 +69,7 @@ def sync(filename, parameters, debug, confirm):
 
     try:
 
-        config = Config(config_file=filename, cli_params=parameters)
+        config = Config(config_file=filename, cli_params=parameter)
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
