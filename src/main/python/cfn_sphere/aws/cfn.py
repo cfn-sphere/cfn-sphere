@@ -6,6 +6,7 @@ from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
+logging.getLogger('boto').setLevel(logging.FATAL)
 
 class CloudFormationStack(object):
     def __init__(self, template, parameters, name, region, timeout=600, tags=None):
@@ -22,7 +23,6 @@ class CloudFormationStack(object):
 
 class CloudFormation(object):
     def __init__(self, region="eu-west-1"):
-        logging.getLogger("boto").setLevel(logging.FATAL)
         self.logger = get_logger()
 
         self.conn = cloudformation.connect_to_region(region)
