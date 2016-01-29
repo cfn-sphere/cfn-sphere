@@ -18,6 +18,11 @@
         EnableDnsSupport: "true"
         EnableDnsHostnames: "true"
         CidrBlock: "10.10.0.0/18"
+        Tags:
+          - Key: Name
+            Value: "Cfn-Sphere Integrationtest (do not use!)"
+          - Key: usecase
+            Value: "Cfn-Sphere Integrationtest"
     Subnet:
       Type: "AWS::EC2::Subnet"
       Properties:
@@ -25,8 +30,12 @@
         VpcId: "|Ref|VPC"
         CidrBlock: "10.10.0.0/18"
         Tags:
-        - Key: testtag
-          Value: "|Ref|testtag"
+          - Key: Name
+            Value: "Cfn-Sphere Integrationtest (do not use!)"
+          - Key: usecase
+            Value: "Cfn-Sphere Integrationtest"
+          - Key: testtag
+            Value: "|Ref|testtag"
   Outputs:
     id:
       Description: "ID of the newly created VPC"
