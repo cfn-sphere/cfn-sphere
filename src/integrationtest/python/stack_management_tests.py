@@ -51,6 +51,12 @@ class CfnSphereIntegrationTest(object):
         self.logger.info("Syncing stacks")
         stack_handler.create_or_update_stacks()
 
+    def sync_stacks_with_parameters_overwrite(self, cli_params):
+        config = Config(config_file=os.path.join(self.test_resources_dir, "stacks.yml"), cli_params=cli_params)
+        stack_handler = StackActionHandler(config)
+        self.logger.info("Syncing stacks")
+        stack_handler.create_or_update_stacks()
+
     def delete_stacks(self):
         StackActionHandler(self.config).delete_stacks()
         self.verify_stacks_are_gone()
@@ -80,7 +86,18 @@ class CfnSphereIntegrationTest(object):
             raise Exception("{0} is not true".format(a))
 
 
-class StackCreationTests(CfnSphereIntegrationTest):
+class StackManagementTests(CfnSphereIntegrationTest):
+    def test_stacks_use_updated_parameters(self):
+        self.logger.info("Verifying stacks use parameters given by cli")
+        vpc_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-vpc")[0]
+        instance_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-instances")[0]
+
+        instance_stack_parameters = self.get_parameter_dict_from_stack(instance_stack)
+        vpc_stack_parameters = self.get_parameter_dict_from_stack(vpc_stack)
+
+        self.assert_equal("2", instance_stack_parameters["appVersion"])
+        self.assert_equal("changed", vpc_stack_parameters["testtag"])
+
     def test_instance_stack_uses_vpc_outputs(self):
         self.logger.info("Verifying cfn-sphere-test-instances uses referenced values from cfn-sphere-test-vpc stack")
 
@@ -140,6 +157,14 @@ class StackCreationTests(CfnSphereIntegrationTest):
         self.test_userdata()
         self.test_instance_stack_uses_vpc_outputs()
 
+        self.logger.info("### Updating stacks ###")
+        self.sync_stacks_with_parameters_overwrite(
+            ("cfn-sphere-test-vpc.testtag=changed", "cfn-sphere-test-instances.appVersion=2"))
+
+        self.logger.info("### Executing tests ###")
+        self.test_stacks_are_in_update_complete_state()
+        self.test_stacks_use_updated_parameters()
+
         if cleanup:
             self.logger.info("### Cleaning up environment ###")
             self.delete_stacks()
@@ -147,4 +172,4 @@ class StackCreationTests(CfnSphereIntegrationTest):
 
 
 if __name__ == "__main__":
-    StackCreationTests().run()
+    StackManagementTests().run()

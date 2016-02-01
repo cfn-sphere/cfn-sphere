@@ -16,6 +16,8 @@
             Value: "Cfn-Sphere Integrationtest (do not use!)"
           - Key: usecase
             Value: "Cfn-Sphere Integrationtest"
+          - Key: testtag
+            Value: "|Ref|testtag"
     SubnetA:
       Type: "AWS::EC2::Subnet"
       Properties:

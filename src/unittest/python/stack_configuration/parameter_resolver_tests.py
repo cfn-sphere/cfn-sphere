@@ -130,25 +130,25 @@ class ParameterResolverTests(unittest2.TestCase):
         result = ParameterResolver().resolve_parameter_values({'foo': "|kms|encryptedValue"}, 'foo')
         self.assertEqual({'foo': 'decryptedValue'}, result)
 
-    def test_update_parameters_with_cli_parameters_returns_list_with_string_value(self):
+    def test_update_parameters_with_cli_parameters_with_string_param_value(self):
         result = ParameterResolver().update_parameters_with_cli_parameters(
-            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}}, stack_name='stack1')
+            parameters={'foo': "foo"}, cli_parameters={'stack1': {'foo': 'foobar'}}, stack_name='stack1')
         self.assertEqual({'foo': 'foobar'}, result)
 
     def test_update_parameters_with_cli_parameters_adds_new_cli_parameter(self):
         result = ParameterResolver().update_parameters_with_cli_parameters(parameters={'foo': 'foo'},
-                                                                           param_dictionary={
+                                                                           cli_parameters={
                                                                                'stack1': {'moppel': 'foo'}},
                                                                            stack_name='stack1')
         self.assertDictEqual({'foo': 'foo', 'moppel': 'foo'}, result)
 
-    def test_update_parameters_with_cli_parameters_returns_list_with_string_value_for_several_stacks(self):
+    def test_update_parameters_with_cli_parameters_with_string_param_value_for_several_stacks(self):
         result = ParameterResolver().update_parameters_with_cli_parameters(
-            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}, 'stack2': {'foo': 'foofoo'}},
+            parameters={'foo': "foo"}, cli_parameters={'stack1': {'foo': 'foobar'}, 'stack2': {'foo': 'foofoo'}},
             stack_name='stack2')
         self.assertEqual({'foo': 'foofoo'}, result)
 
-    def test_update_parameters_with_cli_parameters_doesnt_affect_other_stacks(self):
+    def test_update_parameters_with_cli_parameters_does_not_affect_other_stacks(self):
         result = ParameterResolver().update_parameters_with_cli_parameters(
-            parameters={'foo': "foo"}, param_dictionary={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
+            parameters={'foo': "foo"}, cli_parameters={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
         self.assertEqual({'foo': 'foo'}, result)

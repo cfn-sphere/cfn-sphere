@@ -37,6 +37,11 @@ class Config(object):
             raise NoConfigException(e)
 
     def _parse_stack_configs(self, config_dict):
+        """
+        Create a StackConfig Object for each stack defined in config
+        :param config_dict: dict
+        :return: dict(stack_name: StackConfig)
+        """
         stacks_dict = {}
         for key, value in config_dict.get('stacks', {}).items():
             stacks_dict[key] = StackConfig(value, self.working_dir)
@@ -44,6 +49,11 @@ class Config(object):
 
     @staticmethod
     def _parse_cli_parameters(parameters):
+        """
+        Parse clix parameter tuple
+        :param parameters: tuple with n elements where n is number of cli parameters
+        :return: dict of stacks with k-v parameters
+        """
         param_dict = defaultdict(dict)
         if parameters:
             try:

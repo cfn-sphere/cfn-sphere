@@ -132,9 +132,17 @@ class ParameterResolver(object):
         return parameters
 
     @staticmethod
-    def update_parameters_with_cli_parameters(parameters, param_dictionary, stack_name):
-        if stack_name in param_dictionary.keys():
-            for new_key, new_value in param_dictionary[stack_name].items():
+    def update_parameters_with_cli_parameters(parameters, cli_parameters, stack_name):
+        """
+        Overwrite parameters from stack_config with those provided by user by cli
+        :param parameters: dict
+        :param cli_parameters: dict
+        :param stack_name: string
+        :return: dict
+
+        """
+        if stack_name in cli_parameters.keys():
+            for new_key, new_value in cli_parameters[stack_name].items():
                 parameters[new_key] = new_value
 
         return parameters

@@ -16,7 +16,7 @@ class StackActionHandler(object):
         self.config = config
         self.cfn = CloudFormation(region=self.config.region)
         self.parameter_resolver = ParameterResolver(region=self.config.region)
-        self.cli_params = config.cli_params
+        self.cli_parameters = config.cli_params
 
     def create_or_update_stacks(self):
         existing_stacks = self.cfn.get_stack_names()
@@ -40,7 +40,7 @@ class StackActionHandler(object):
 
             merged_parameters = self.parameter_resolver.update_parameters_with_cli_parameters(
                 parameters=parameters,
-                param_dictionary=self.cli_params,
+                cli_parameters=self.cli_parameters,
                 stack_name=stack_name)
 
             stack = CloudFormationStack(template=template, parameters=merged_parameters, tags=combined_tags,
