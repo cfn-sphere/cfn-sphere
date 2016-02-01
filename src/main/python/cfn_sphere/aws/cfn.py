@@ -4,7 +4,7 @@ from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
-from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError, CfnSphereException
+from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
 logging.getLogger('boto').setLevel(logging.FATAL)
 
@@ -263,6 +263,7 @@ class CloudFormation(object):
             return True
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
+
 
 if __name__ == "__main__":
     cfn = CloudFormation()

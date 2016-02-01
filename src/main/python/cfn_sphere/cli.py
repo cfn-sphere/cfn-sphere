@@ -119,8 +119,11 @@ def delete(config, debug, confirm):
 @cli.command(help="Convert JSON to YAML or vice versa")
 @click.argument('template_file', type=click.Path(exists=True))
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
-def convert(template_file, debug):
-    check_update_available()
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+def convert(template_file, debug, confirm):
+    if not confirm:
+        check_update_available()
 
     if debug:
         LOGGER.setLevel(logging.DEBUG)
@@ -135,8 +138,11 @@ def convert(template_file, debug):
 
 @cli.command(help="Render template as it would be used to create/update a stack")
 @click.argument('template_file', type=click.Path(exists=True))
-def render_template(template_file):
-    check_update_available()
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+def render_template(template_file, confirm):
+    if not confirm:
+        check_update_available()
 
     loader = FileLoader()
     template = loader.get_file_from_url(template_file, None)
@@ -146,8 +152,12 @@ def render_template(template_file):
 
 @cli.command(help="Validate template with CloudFormation API")
 @click.argument('template_file', type=click.Path(exists=True))
-@click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
-def validate_template(template_file, debug):
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+def validate_template(template_file, confirm):
+    if not confirm:
+        check_update_available()
+
     try:
         loader = FileLoader()
         template = loader.get_file_from_url(template_file, None)
@@ -156,8 +166,6 @@ def validate_template(template_file, debug):
         click.echo("Template is valid")
     except CfnSphereException as e:
         LOGGER.error(e)
-        if debug:
-            LOGGER.exception(e)
         sys.exit(1)
     except Exception as e:
         LOGGER.error("Failed with unexpected error".format(e))
