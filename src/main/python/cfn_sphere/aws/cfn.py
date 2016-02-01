@@ -181,7 +181,10 @@ class CloudFormation(object):
             try:
                 self.wait_for_stack_action_to_complete(stack.name, "delete", 600)
             except BotoServerError as e:
-                self.logger.info(e)
+                if e.error_code == "ValidationError" and e.message.endswith("does not exist"):
+                    pass
+                else:
+                    raise
 
             self.logger.info("Deletion completed for {0}".format(stack.name))
         except BotoServerError as e:
@@ -267,4 +270,7 @@ class CloudFormation(object):
 
 if __name__ == "__main__":
     cfn = CloudFormation()
-    print(cfn.get_stacks_dict())
+    try:
+        cfn.get_stack_events("foo")
+    except Exception:
+        pass
