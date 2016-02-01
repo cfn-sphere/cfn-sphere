@@ -4,9 +4,10 @@ from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
-from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
+from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError, CfnSphereException
 
 logging.getLogger('boto').setLevel(logging.FATAL)
+
 
 class CloudFormationStack(object):
     def __init__(self, template, parameters, name, region, timeout=600, tags=None):
@@ -251,6 +252,17 @@ class CloudFormation(object):
         elapsed = end_event.timestamp - start_event.timestamp
         self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
 
+    def validate_template(self, template_body):
+        """
+
+        :param template_body: dict
+        :return: boolean (true if valid)
+        """
+        try:
+            self.conn.validate_template(template_body=template_body)
+            return True
+        except BotoServerError as e:
+            raise CfnSphereBotoError(e)
 
 if __name__ == "__main__":
     cfn = CloudFormation()

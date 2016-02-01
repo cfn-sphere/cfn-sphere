@@ -9,6 +9,7 @@ import click
 from boto.exception import NoAuthHandlerFound, BotoServerError
 
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
+from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.util import convert_file, get_logger, get_latest_version
 from cfn_sphere.stack_configuration import Config
 from cfn_sphere import StackActionHandler
@@ -50,13 +51,13 @@ def cli():
 
 
 @cli.command(help="Sync AWS resources with definition file")
-@click.argument('filename', type=click.Path(exists=True))
+@click.argument('config', type=click.Path(exists=True))
 @click.option('--parameter', '-p', default=None, envvar='CFN_SPHERE_PARAMETERS', type=click.STRING, multiple=True,
               help="Stack parameter to overwrite, eg: --parameter stack1:p1=v1")
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def sync(filename, parameter, debug, confirm):
+def sync(config, parameter, debug, confirm):
     if debug:
         LOGGER.setLevel(logging.DEBUG)
     else:
@@ -69,7 +70,7 @@ def sync(filename, parameter, debug, confirm):
 
     try:
 
-        config = Config(config_file=filename, cli_params=parameter)
+        config = Config(config_file=config, cli_params=parameter)
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
@@ -84,11 +85,11 @@ def sync(filename, parameter, debug, confirm):
 
 
 @cli.command(help="Delete all stacks in a stack configuration")
-@click.argument('filename', type=click.Path(exists=True))
+@click.argument('config', type=click.Path(exists=True))
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def delete(filename, debug, confirm):
+def delete(config, debug, confirm):
     if debug:
         LOGGER.setLevel(logging.DEBUG)
     else:
@@ -97,11 +98,11 @@ def delete(filename, debug, confirm):
     if not confirm:
         check_update_available()
         click.confirm('This action will delete all stacks in {0} from account: {1}\nAre you sure?'.format(
-            filename, get_current_account_alias()), abort=True)
+            config, get_current_account_alias()), abort=True)
 
     try:
 
-        config = Config(filename)
+        config = Config(config)
         StackActionHandler(config).delete_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
@@ -116,31 +117,53 @@ def delete(filename, debug, confirm):
 
 
 @cli.command(help="Convert JSON to YAML or vice versa")
-@click.argument('filename', type=click.Path(exists=True))
+@click.argument('template_file', type=click.Path(exists=True))
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
-def convert(filename, debug):
+def convert(template_file, debug):
     check_update_available()
 
     if debug:
         LOGGER.setLevel(logging.DEBUG)
 
     try:
-        click.echo(convert_file(filename))
+        click.echo(convert_file(template_file))
     except Exception as e:
-        LOGGER.error("Error converting {0}:".format(filename))
+        LOGGER.error("Error converting {0}:".format(template_file))
         LOGGER.exception(e)
         sys.exit(1)
 
 
 @cli.command(help="Render template as it would be used to create/update a stack")
-@click.argument('filename', type=click.Path(exists=True))
-def render_template(filename):
+@click.argument('template_file', type=click.Path(exists=True))
+def render_template(template_file):
     check_update_available()
 
     loader = FileLoader()
-    template = loader.get_file_from_url(filename, None)
+    template = loader.get_file_from_url(template_file, None)
     template = CloudFormationTemplateTransformer.transform_template(template)
     click.echo(template.get_template_json())
+
+
+@cli.command(help="Validate template with CloudFormation API")
+@click.argument('template_file', type=click.Path(exists=True))
+@click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
+def validate_template(template_file, debug):
+    try:
+        loader = FileLoader()
+        template = loader.get_file_from_url(template_file, None)
+        template = CloudFormationTemplateTransformer.transform_template(template)
+        CloudFormation().validate_template(template.get_template_json())
+        click.echo("Template is valid")
+    except CfnSphereException as e:
+        LOGGER.error(e)
+        if debug:
+            LOGGER.exception(e)
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.error("Failed with unexpected error".format(e))
+        LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
+        sys.exit(1)
 
 
 def main():
