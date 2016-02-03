@@ -31,5 +31,8 @@ class CloudFormationTemplate(object):
             'Outputs': self.outputs
         }
 
-    def get_template_json(self):
+    def get_pretty_template_json(self):
         return json.dumps(self.get_template_body_dict(), indent=2)
+
+    def get_template_json(self):
+        return json.dumps(self.get_template_body_dict())

@@ -150,7 +150,7 @@ def render_template(template_file, confirm):
     loader = FileLoader()
     template = loader.get_file_from_url(template_file, None)
     template = CloudFormationTemplateTransformer.transform_template(template)
-    click.echo(template.get_template_json())
+    click.echo(template.get_pretty_template_json())
 
 
 @cli.command(help="Validate template with CloudFormation API")
@@ -165,7 +165,7 @@ def validate_template(template_file, confirm):
         loader = FileLoader()
         template = loader.get_file_from_url(template_file, None)
         template = CloudFormationTemplateTransformer.transform_template(template)
-        CloudFormation().validate_template(template.get_template_json())
+        CloudFormation().validate_template(template)
         click.echo("Template is valid")
     except CfnSphereException as e:
         LOGGER.error(e)
