@@ -255,14 +255,14 @@ class CloudFormation(object):
         elapsed = end_event.timestamp - start_event.timestamp
         self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
 
-    def validate_template(self, template_body):
+    def validate_template(self, template):
         """
 
-        :param template_body: dict
+        :param template_body: CloudFormationTemplate
         :return: boolean (true if valid)
         """
         try:
-            self.conn.validate_template(template_body=template_body)
+            self.conn.validate_template(template_body=template.get_template_json())
             return True
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
