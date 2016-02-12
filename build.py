@@ -40,7 +40,6 @@ def set_properties(project):
     project.set_property('install_dependencies_upgrade', True)
 
     project.set_property('copy_resources_target', '$dir_dist')
-    project.get_property('copy_resources_glob').append('setup.cfg')
 
     project.get_property('filter_resources_glob').extend(['**/cfn_sphere/__init__.py'])
     project.set_property('distutils_console_scripts', ['cf=cfn_sphere.cli:main'])
