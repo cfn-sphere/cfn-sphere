@@ -41,8 +41,9 @@ def check_update_available():
     latest_version = get_latest_version()
     if latest_version and __version__ != latest_version:
         click.confirm(
-            "There is an update available (v: {0}). Do you want to continue?".format(latest_version),
-            abort=True)
+            "There is an update available (v: {0}).\n"
+            "Changelog: https://github.com/cfn-sphere/cfn-sphere/issues?q=milestone%3A{0}+\n"
+            "Do you want to continue?".format(latest_version), abort=True)
 
 
 @click.group(help="This tool manages AWS CloudFormation templates "
