@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import sys
 import logging
 
@@ -28,7 +26,11 @@ def get_current_account_alias():
         click.echo("Authentication error! Please check credentials: {0}".format(e))
         sys.exit(1)
     except BotoServerError as e:
-        click.echo("AWS API Error: {0}".format(e))
+        if e.code == "ExpiredToken":
+            click.echo(e.message)
+        else:
+            click.echo("AWS API Error: {0}".format(e))
+
         sys.exit(1)
     except Exception as e:
         click.echo("Unknown error occurred loading users account alias: {0}".format(e))
@@ -78,7 +80,7 @@ def sync(config, parameter, debug, confirm):
             LOGGER.exception(e)
         sys.exit(1)
     except Exception as e:
-        LOGGER.error("Failed with unexpected error".format(e))
+        LOGGER.error("Failed with unexpected error")
         LOGGER.exception(e)
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
@@ -110,7 +112,7 @@ def delete(config, debug, confirm):
             LOGGER.exception(e)
         sys.exit(1)
     except Exception as e:
-        LOGGER.error("Failed with unexpected error".format(e))
+        LOGGER.error("Failed with unexpected error")
         LOGGER.exception(e)
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
@@ -168,7 +170,7 @@ def validate_template(template_file, confirm):
         LOGGER.error(e)
         sys.exit(1)
     except Exception as e:
-        LOGGER.error("Failed with unexpected error".format(e))
+        LOGGER.error("Failed with unexpected error")
         LOGGER.exception(e)
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
