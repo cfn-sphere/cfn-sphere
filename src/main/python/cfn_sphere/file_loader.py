@@ -1,4 +1,5 @@
 import os
+import codecs
 import json
 import yaml
 
@@ -28,7 +29,7 @@ class FileLoader(object):
             url = os.path.join(working_dir, url)
 
         try:
-            with open(url, 'r') as template_file:
+            with codecs.open(url, 'r', encoding='utf-8') as template_file:
                 if url.lower().endswith(".json"):
                     return json.loads(template_file.read())
                 if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):

@@ -23,6 +23,6 @@ class S3(object):
             (_, bucket_name, key_name) = self._parse_url(url)
             bucket = self.conn.get_bucket(bucket_name)
             key = bucket.get_key(key_name)
-            return key.get_contents_as_string()
+            return key.get_contents_as_string(encoding="utf-8")
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
