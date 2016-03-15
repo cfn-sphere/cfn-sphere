@@ -25,4 +25,4 @@ class KMS(object):
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
 
-        return response['Plaintext']
+        return response['Plaintext'].decode('utf-8')
