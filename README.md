@@ -14,9 +14,10 @@ A CLI tool intended to simplify AWS CloudFormation handling.
 - helper features easing the use of cfn functions like Fn::Join, Ref or Fn::GetAtt
 - easy user-data definition for https://github.com/zalando-stups/taupage
 - allow stack parameter values updates in command line interface 
+- encrypt/decrypt values with AWS KMS (https://aws.amazon.com/de/kms/)
 
 ## Documentation
-https://github.com/cfn-sphere/cfn-sphere/wiki
+**https://github.com/cfn-sphere/cfn-sphere/wiki**
 
 ## Install
 
