@@ -13,6 +13,9 @@ Parameters:
   appVersion:
     Description: "Application version"
     Type: "String"
+  kmsEncryptedValue:
+    Description: "A string encrypted at rest with kms to be decrypted by cfn-sphere before handing it over to cfn"
+    Type: "String"
 Resources:
   jobQueue:
     Type: "AWS::SQS::Queue"
@@ -60,7 +63,7 @@ Resources:
         application_id: "|Ref|AWS::StackName"
         application_version: "|Ref|appVersion"
         source:
-          '|Join|':
+          "|Join|":
             - "my-private-registry/foo"
             - "|Ref|appVersion"
         health_check_path: "/status"
@@ -86,3 +89,4 @@ Resources:
         environment:
           DYNAMO_DB_PREFIX: "|Ref|AWS::StackName"
           JOB_QUEUE_URL: "|Ref|jobQueue"
+        kms_encrypted_value: "|Ref|kmsEncryptedValue"

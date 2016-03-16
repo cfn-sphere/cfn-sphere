@@ -1,7 +1,8 @@
 import os
 import logging
+import yaml
 
-from boto import cloudformation
+from boto import cloudformation, kms
 from boto.ec2 import autoscale
 from boto.exception import BotoServerError
 
@@ -17,6 +18,7 @@ class CfnSphereIntegrationTest(object):
         self.logger.setLevel(logging.INFO)
         self.test_resources_dir = self._get_resources_dir()
         self.cfn_conn = cloudformation.connect_to_region("eu-west-1")
+        self.kms_conn = kms.connect_to_region("eu-west-1")
         self.config = Config(config_file=os.path.join(self.test_resources_dir, "stacks.yml"))
 
     @staticmethod
@@ -123,52 +125,67 @@ class StackManagementTests(CfnSphereIntegrationTest):
                 "PhysicalResourceId"]
         lc = autoscale_conn.get_all_launch_configurations(names=[lc_name])[0]
 
-        user_data_lines = lc.user_data.split('\n')
+        user_data = yaml.load(lc.user_data)
 
-        self.assert_equal("#taupage-ami-config", user_data_lines[0])
+        #raise Exception(user_data)
 
-        self.assert_true("application_version: 1" in user_data_lines)
-        self.assert_true("  stack: cfn-sphere-test-instances" in user_data_lines)
+        # self.assert_equal("#taupage-ami-config", user_data_lines[0])
 
-        dockercfg_root_index = user_data_lines.index("dockercfg:")
-        self.assert_equal("  https://my-private-registry:", user_data_lines[dockercfg_root_index + 1])
-        self.assert_equal("    email: test@example.com", user_data_lines[dockercfg_root_index + 2])
-        self.assert_equal("    auth: my-secret-string", user_data_lines[dockercfg_root_index + 3])
+        self.assert_equal("cfn-sphere-test-instances", user_data["application_id"])
+        self.assert_equal(1, user_data["application_version"])
+        self.assert_equal("my-private-registry/foo1", user_data["source"])
 
-        environment_root_index = user_data_lines.index("environment:")
-        self.assert_equal("  DYNAMO_DB_PREFIX: cfn-sphere-test-instances", user_data_lines[environment_root_index + 1])
+        cloudwatch_logs_config = user_data["cloudwatch_logs"]
+        self.assert_equal("my-syslog-group", cloudwatch_logs_config["/var/log/syslog"])
+        self.assert_equal("my-application-log-group", cloudwatch_logs_config["/var/log/application.log"])
 
-        notify_cfn_root_index = user_data_lines.index("notify_cfn:")
-        self.assert_equal("  resource: asg", user_data_lines[notify_cfn_root_index + 1])
-        self.assert_equal("  stack: cfn-sphere-test-instances", user_data_lines[notify_cfn_root_index + 2])
+        healthcheck_config = user_data["healthcheck"]
+        self.assert_equal("elb", healthcheck_config["type"])
+        self.assert_equal("my-elb", healthcheck_config["loadbalancer_name"])
 
-        ports_root_index = user_data_lines.index("ports:")
-        self.assert_equal("  8080: 9000", user_data_lines[ports_root_index + 1])
+        notify_cfn_config = user_data["notify_cfn"]
+        self.assert_equal("asg", notify_cfn_config["resource"])
+        self.assert_equal("cfn-sphere-test-instances", notify_cfn_config["stack"])
+
+        ports_config = user_data["ports"]
+        self.assert_equal(9000, ports_config[8080])
+
+        docker_config = user_data["dockercfg"]
+        registry_config = docker_config["https://my-private-registry"]
+        self.assert_equal("my-secret-string", registry_config["auth"])
+        self.assert_equal("test@example.com", registry_config["email"])
+
+        environment_config = user_data["environment"]
+        self.assert_equal("cfn-sphere-test-instances", environment_config["DYNAMO_DB_PREFIX"])
+
+        # uncomment this to test kms decryption
+        #self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
 
     def run(self, setup=True, cleanup=True):
-        if setup:
-            self.logger.info("### Preparing tests ###")
-            self.delete_stacks()
-            self.verify_stacks_are_gone()
-            self.sync_stacks()
+        try:
+            if setup:
+                self.logger.info("### Preparing tests ###")
+                self.delete_stacks()
+                self.verify_stacks_are_gone()
+                self.sync_stacks()
 
-        self.logger.info("### Executing tests ###")
-        self.test_stacks_are_in_create_complete_state()
-        self.test_userdata()
-        self.test_instance_stack_uses_vpc_outputs()
+            self.logger.info("### Executing tests ###")
+            self.test_stacks_are_in_create_complete_state()
+            self.test_userdata()
+            self.test_instance_stack_uses_vpc_outputs()
 
-        self.logger.info("### Updating stacks ###")
-        self.sync_stacks_with_parameters_overwrite(
-            ("cfn-sphere-test-vpc.testtag=changed", "cfn-sphere-test-instances.appVersion=2"))
+            self.logger.info("### Updating stacks ###")
+            self.sync_stacks_with_parameters_overwrite(
+                ("cfn-sphere-test-vpc.testtag=changed", "cfn-sphere-test-instances.appVersion=2"))
 
-        self.logger.info("### Executing tests ###")
-        self.test_stacks_are_in_update_complete_state()
-        self.test_stacks_use_updated_parameters()
-
-        if cleanup:
-            self.logger.info("### Cleaning up environment ###")
-            self.delete_stacks()
-            self.verify_stacks_are_gone()
+            self.logger.info("### Executing tests ###")
+            self.test_stacks_are_in_update_complete_state()
+            self.test_stacks_use_updated_parameters()
+        finally:
+            if cleanup:
+                self.logger.info("### Cleaning up environment ###")
+                self.delete_stacks()
+                self.verify_stacks_are_gone()
 
 
 if __name__ == "__main__":
