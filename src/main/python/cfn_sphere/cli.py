@@ -8,6 +8,7 @@ from boto.exception import NoAuthHandlerFound, BotoServerError
 
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.aws.cfn import CloudFormation
+from cfn_sphere.aws.kms import KMS
 from cfn_sphere.util import convert_file, get_logger, get_latest_version
 from cfn_sphere.stack_configuration import Config
 from cfn_sphere import StackActionHandler
@@ -167,6 +168,51 @@ def validate_template(template_file, confirm):
         template = CloudFormationTemplateTransformer.transform_template(template)
         CloudFormation().validate_template(template)
         click.echo("Template is valid")
+    except CfnSphereException as e:
+        LOGGER.error(e)
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.error("Failed with unexpected error")
+        LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
+        sys.exit(1)
+
+
+@cli.command(help="Encrypt a given string with AWS Key Management Service")
+@click.argument('region', type=str)
+@click.argument('keyid', type=str)
+@click.argument('cleartext', type=str)
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+def encrypt(region, keyid, cleartext, confirm):
+    if not confirm:
+        check_update_available()
+
+    try:
+        cipertext = KMS(region).encrypt(keyid, cleartext)
+        click.echo("Ciphertext: {0}".format(cipertext))
+    except CfnSphereException as e:
+        LOGGER.error(e)
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.error("Failed with unexpected error")
+        LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
+        sys.exit(1)
+
+
+@cli.command(help="Decrypt a given ciphertext with AWS Key Management Service")
+@click.argument('region', type=str)
+@click.argument('ciphertext', type=str)
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+def decrypt(region, ciphertext, confirm):
+    if not confirm:
+        check_update_available()
+
+    try:
+        cleartext = KMS(region).decrypt(ciphertext)
+        click.echo("Cleartext: {0}".format(cleartext))
     except CfnSphereException as e:
         LOGGER.error(e)
         sys.exit(1)
