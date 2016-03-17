@@ -7,9 +7,25 @@ from cfn_sphere.exceptions import CfnSphereException
 class ConfigTests(unittest2.TestCase):
     def test_properties_parsing(self):
         config = Config(
-            config_dict={'region': 'eu-west-1', 'tags': {'global-tag': 'global-tag-value'},
-                         'stacks': {'any-stack': {'template-url': 'foo.json', 'tags': {'any-tag': 'any-tag-value'},
-                                                  'parameters': {'any-parameter': 'any-value'}}}})
+                config_dict={
+                    'region': 'eu-west-1',
+                    'tags':   {
+                        'global-tag': 'global-tag-value'
+                    },
+                    'stacks': {
+                        'any-stack': {
+                            'timeout': 99,
+                            'template-url': 'foo.json',
+                            'tags':         {
+                                'any-tag': 'any-tag-value'
+                            },
+                            'parameters':   {
+                                'any-parameter': 'any-value'
+                            }
+                        }
+                    }
+                }
+        )
         self.assertEqual('eu-west-1', config.region)
         self.assertEqual(1, len(config.stacks.keys()))
         self.assertTrue(isinstance(config.stacks['any-stack'], StackConfig))
@@ -17,6 +33,7 @@ class ConfigTests(unittest2.TestCase):
         self.assertEqual({'any-tag': 'any-tag-value'}, config.stacks['any-stack'].tags)
         self.assertEqual({'global-tag': 'global-tag-value'}, config.tags)
         self.assertEqual({'any-parameter': 'any-value'}, config.stacks['any-stack'].parameters)
+        self.assertEqual(99, config.stacks['any-stack'].timeout)
 
     def test_raises_exception_if_no_region_key(self):
         with self.assertRaises(NoConfigException):
@@ -41,8 +58,6 @@ class ConfigTests(unittest2.TestCase):
     def test_parse_cli_parameters_throws_exception_on_invalid_syntax(self):
         with self.assertRaises(CfnSphereException):
             Config._parse_cli_parameters(("foo",))
-
-
 
     def test_parse_cli_parameters_parses_multiple_parameters(self):
         self.assertDictEqual({'stack1': {'p1': 'v1', 'p2': 'v2'}, 'stack2': {'p1': 'v1'}},
