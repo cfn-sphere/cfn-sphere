@@ -30,9 +30,9 @@ class ConfigTests(unittest2.TestCase):
         self.assertEqual(1, len(config.stacks.keys()))
         self.assertTrue(isinstance(config.stacks['any-stack'], StackConfig))
         self.assertEqual('foo.json', config.stacks['any-stack'].template_url)
-        self.assertEqual({'any-tag': 'any-tag-value'}, config.stacks['any-stack'].tags)
-        self.assertEqual({'global-tag': 'global-tag-value'}, config.tags)
-        self.assertEqual({'any-parameter': 'any-value'}, config.stacks['any-stack'].parameters)
+        self.assertDictContainsSubset({'any-tag': 'any-tag-value', 'global-tag': 'global-tag-value'}, config.stacks['any-stack'].tags)
+        self.assertDictContainsSubset({'global-tag': 'global-tag-value'}, config.tags)
+        self.assertDictContainsSubset({'any-parameter': 'any-value'}, config.stacks['any-stack'].parameters)
         self.assertEqual(99, config.stacks['any-stack'].timeout)
 
     def test_raises_exception_if_no_region_key(self):
