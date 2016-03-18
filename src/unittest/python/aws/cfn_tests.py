@@ -10,7 +10,7 @@ from boto.resultset import ResultSet
 from cfn_sphere.template import CloudFormationTemplate
 from cfn_sphere.aws.cfn import CloudFormationStack
 from cfn_sphere.aws.cfn import CloudFormation
-from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
+from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoErrorException
 
 
 class CloudFormationApiTests(unittest2.TestCase):
@@ -224,7 +224,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack = CloudFormationStack('', [], 'my-stack', 'my-region')
 
         cfn = CloudFormation()
-        with self.assertRaises(CfnSphereBotoError):
+        with self.assertRaises(CfnSphereBotoErrorException):
             cfn.validate_stack_is_ready_for_action(stack)
 
         cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')

@@ -1,10 +1,11 @@
-from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
+from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoErrorException
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.aws.kms import KMS
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 
+import pprint
 
 class ParameterResolver(object):
     """
@@ -50,7 +51,7 @@ class ParameterResolver(object):
         """
         artifacts = self.get_stack_outputs()
         self.logger.debug("Looking up key: {0}".format(key))
-        self.logger.debug("Found artifacts: {0}".format(artifacts))
+        self.logger.debug("Found artifacts:\n{0}".format(pprint.pformat(artifacts)))
         try:
             artifact = artifacts[key]
             return artifact
@@ -85,7 +86,7 @@ class ParameterResolver(object):
                     return self.get_default_from_keep_value(value)
             else:
                 return self.get_default_from_keep_value(value)
-        except CfnSphereBotoError as e:
+        except CfnSphereBotoErrorException as e:
             raise CfnSphereException("Could not get latest value for {0}: {1}".format(key, e))
 
     def resolve_parameter_values(self, parameters_dict, stack_name):
@@ -127,7 +128,7 @@ class ParameterResolver(object):
             elif isinstance(value, (int, float)):
                 parameters[key] = str(value)
             else:
-                raise NotImplementedError("Cannot handle {0} value for key: {1}".format(type(value), key))
+                raise NotImplementedError("Cannot handle {0} type for key: {1}".format(type(value), key))
 
         return parameters
 
