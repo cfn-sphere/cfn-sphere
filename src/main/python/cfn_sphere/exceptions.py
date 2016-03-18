@@ -1,41 +1,53 @@
+from boto.exception import BotoServerError
+
+
 class CfnSphereException(Exception):
-    """ The base exception for Cfn-Sphere """
-    pass
+    def __init__(self, message="", boto_exception=None):
+        self.message = message
+        self.str = self.message
+        try:
+            self.request_id = boto_exception.request_id
+            self.str += " (Request ID: {0})".format(self.request_id)
+            self.boto_exception = boto_exception
+        except:
+            pass
+
+    def __str__(self):
+        return self.str
 
 
 class CfnStackActionFailedException(CfnSphereException):
-    """ Raised if a stack modification fails """
     pass
 
-
 class TemplateErrorException(CfnSphereException):
-    """ Raised on invalid templates """
     pass
 
 
 class NoConfigException(CfnSphereException):
-    """ Raised if no stack configuration could be found """
+    pass
+
+
+class BadConfigException(CfnSphereException):
     pass
 
 
 class CyclicDependencyException(CfnSphereException):
-    """ Raised if there are cyclic dependencies between referenced stacks """
     pass
 
 
 class InvalidDependencyGraphException(CfnSphereException):
-    """ Raised if Cfn-Sphere is not able to create a dependency graph for stacks """
     pass
 
 
 class InvalidEncryptedValueException(CfnSphereException):
-    """ Raised if Cfn-Sphere is unable to decrypt a KMS encrypted string """
     pass
 
 
-class CfnSphereBotoError(CfnSphereException):
+class CfnSphereBotoErrorException(CfnSphereException):
     def __init__(self, e):
         self.boto_exception = e
 
     def __str__(self):
-        return "{0}: {1}".format(self.boto_exception.error_code, self.boto_exception.message)
+        return "{0}: {1} (Request ID: {2})".format(self.boto_exception.error_code,
+                                                 self.boto_exception.message,
+                                                 self.boto_exception.request_id)
