@@ -5,10 +5,10 @@ class CfnSphereException(Exception):
     def __init__(self, message="", boto_exception=None):
         self.message = message
         self.str = self.message
+        self.boto_exception = boto_exception
         try:
             self.request_id = boto_exception.request_id
             self.str += " (Request ID: {0})".format(self.request_id)
-            self.boto_exception = boto_exception
         except:
             pass
 
