@@ -17,8 +17,6 @@ class Config(object):
         else:
             raise NoConfigException("No config_file or valid config_dict provided")
 
-
-
         self.cli_params = self._parse_cli_parameters(cli_params)
         self.region = config_dict.get('region')
         self.tags = config_dict.get('tags', {})
