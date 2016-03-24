@@ -9,22 +9,18 @@ from yaml.scanner import ScannerError
 class Config(object):
     def __init__(self, config_file=None, config_dict=None, cli_params=None):
 
-        if config_dict:
-            self.dict = config_dict
+        if isinstance(config_dict, dict):
             self.working_dir = None
         elif config_file:
-            self.dict = self._read_config_file(config_file)
+            config_dict = self._read_config_file(config_file)
             self.working_dir = os.path.dirname(os.path.realpath(config_file))
         else:
-            raise NoConfigException("No config file or config_dict provided")
-
-        if not isinstance(self.dict, dict):
-            raise NoConfigException("Config has invalid content, must be of type dict/yaml")
+            raise NoConfigException("No config_file or valid config_dict provided")
 
         self.cli_params = self._parse_cli_parameters(cli_params)
-        self.region = self.dict.get('region')
-        self.tags = self.dict.get('tags', {})
-        self.stacks = self._parse_stack_configs(self.dict)
+        self.region = config_dict.get('region')
+        self.tags = config_dict.get('tags', {})
+        self.stacks = self._parse_stack_configs(config_dict)
 
         self._validate()
 
@@ -44,7 +40,7 @@ class Config(object):
         """
         stacks_dict = {}
         for key, value in config_dict.get('stacks', {}).items():
-            stacks_dict[key] = StackConfig(value, self.working_dir)
+            stacks_dict[key] = StackConfig(value, working_dir=self.working_dir, default_tags=self.tags)
         return stacks_dict
 
     @staticmethod
@@ -73,20 +69,23 @@ class Config(object):
     def _read_config_file(config_file):
         try:
             with open(config_file, 'r') as f:
-                return yaml.load(f.read())
+                config_dict = yaml.safe_load(f.read())
+                if not isinstance(config_dict, dict):
+                    raise NoConfigException(
+                            "Config file {0} has invalid content, top level element must be a dict".format(config_file))
+
+                return config_dict
         except IOError as e:
-            raise NoConfigException("Could not read yaml file: {0}".format(e))
+            raise NoConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
         except ScannerError as e:
             raise NoConfigException("Could not parse {0}: {1} {2}".format(config_file, e.problem, e.problem_mark))
 
-    def get(self):
-        return self.dict
-
-
 class StackConfig(object):
-    def __init__(self, stack_config_dict, working_dir=None):
+    def __init__(self, stack_config_dict, working_dir=None, default_tags={}):
         self.parameters = stack_config_dict.get('parameters', {})
-        self.tags = stack_config_dict.get('tags', {})
+        self.tags = {}
+        self.tags.update(default_tags)
+        self.tags.update(stack_config_dict.get('tags', {}))
         self.timeout = stack_config_dict.get('timeout', 600)
         self.working_dir = working_dir
 
@@ -94,8 +93,3 @@ class StackConfig(object):
             self.template_url = stack_config_dict['template-url']
         except KeyError as e:
             raise NoConfigException("Stack config needs a {0} key".format(e))
-
-
-if __name__ == "__main__":
-    reader = Config("/tmp/stacks.yml")
-    print(reader.get())

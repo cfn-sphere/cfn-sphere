@@ -33,9 +33,6 @@ class StackActionHandler(object):
             raw_template = FileLoader.get_file_from_url(stack_config.template_url, stack_config.working_dir)
             template = CloudFormationTemplateTransformer.transform_template(raw_template)
 
-            combined_tags = dict(self.config.tags)
-            combined_tags.update(stack_config.tags)
-
             parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)
 
             merged_parameters = self.parameter_resolver.update_parameters_with_cli_parameters(
@@ -43,7 +40,7 @@ class StackActionHandler(object):
                 cli_parameters=self.cli_parameters,
                 stack_name=stack_name)
 
-            stack = CloudFormationStack(template=template, parameters=merged_parameters, tags=combined_tags,
+            stack = CloudFormationStack(template=template, parameters=merged_parameters, tags=self.config.tags,
                                         name=stack_name, region=self.config.region, timeout=stack_config.timeout)
 
             if stack_name in existing_stacks:
