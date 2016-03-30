@@ -7,7 +7,6 @@ from cfn_sphere.util import with_boto_retry
 
 class S3(object):
     def __init__(self):
-        self.client = boto3.client('s3')
         self.s3 = boto3.resource('s3')
 
     @staticmethod
@@ -18,6 +17,7 @@ class S3(object):
         key = url_components.path.strip('/')
         return protocol, bucket_name, key
 
+    #TODO: rething boto exception handling and retry
     @with_boto_retry()
     def get_contents_from_url(self, url):
         try:
