@@ -26,16 +26,21 @@ class CloudFormation(object):
     def __init__(self, region="eu-west-1"):
         self.logger = get_logger()
         self.client = boto3.client('cloudformation', region_name=region)
-        self.resource = boto3.resource('cloudformation', region_name=region)
+        self.resource = boto3.resource('cloudformation', region_name=region)dd commad
 
     def stack_exists(self, stack_name):
+        """
+        Check if a stack exists for given stack_name
+
+        :param stack_name: str
+        :return: bool
+        """
         if stack_name in self.get_stack_names():
             return True
         else:
             return False
 
     def get_stacks(self):
-
         """
         Get all stacks
 
