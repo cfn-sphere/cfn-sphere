@@ -1,9 +1,10 @@
-import unittest2
 import datetime
-from mock import Mock, patch
+
+import unittest2
+from mock import patch
+
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.exceptions import CfnSphereException
-from boto.ec2.image import Image
 
 
 class Ec2ApiTests(unittest2.TestCase):
