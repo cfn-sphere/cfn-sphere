@@ -1,7 +1,7 @@
 import logging
 import time
+import boto3
 from datetime import timedelta
-from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
@@ -25,14 +25,8 @@ class CloudFormationStack(object):
 class CloudFormation(object):
     def __init__(self, region="eu-west-1"):
         self.logger = get_logger()
-
-        self.conn = cloudformation.connect_to_region(region)
-        if not self.conn:
-            self.logger.error("Could not connect to cloudformation API in {0}. Invalid region?".format(region))
-            raise Exception("Got None connection object")
-
-        self.logger.debug("Connected to cloudformation API at {0} with access key id: {1}".format(
-            region, self.conn.aws_access_key_id))
+        self.client = boto3.client('cloudformation', region_name=region)
+        self.resource = boto3.resource('cloudformation', region_name=region)
 
     def stack_exists(self, stack_name):
         if stack_name in self.get_stack_names():
@@ -40,16 +34,23 @@ class CloudFormation(object):
         else:
             return False
 
-    @with_boto_retry()
     def get_stacks(self):
+
+        """
+        Get all stacks
+
+        :return: List(dict)
+        :raise CfnSphereBotoError:
+        """
         try:
-            result = []
-            response = self.conn.describe_stacks()
-            result.extend(response)
-            while response.next_token:
-                response = self.conn.describe_stacks(next_token=response.next_token)
-                result.extend(response)
-            return result
+            stacks = []
+            paginator = self.client.get_paginator('describe_stacks')
+            response_iterator = paginator.paginate()
+
+            for page in response_iterator:
+                stacks.extend(page['Stacks'])
+
+            return stacks
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
 
@@ -62,7 +63,6 @@ class CloudFormation(object):
             stacks_dict[stack.stack_name] = {"parameters": stack.parameters, "outputs": stack.outputs}
         return stacks_dict
 
-    @with_boto_retry()
     def get_stack(self, stack_name):
         try:
             return self.conn.describe_stacks(stack_name)[0]
@@ -270,7 +270,4 @@ class CloudFormation(object):
 
 if __name__ == "__main__":
     cfn = CloudFormation()
-    try:
-        cfn.get_stack_events("foo")
-    except Exception:
-        pass
+    print(cfn.get_stacks())
