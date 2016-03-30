@@ -10,28 +10,51 @@ class Ec2Api(object):
         self.client = boto3.client('ec2', region_name=region)
 
     @with_boto_retry()
-    def get_taupage_images(self):
-        filters = [{'Name': 'name', 'Values': ['Taupage-AMI-*']},
-                   {'Name': 'is-public', 'Values': ['false']},
-                   {'Name': 'state', 'Values': ['available']},
-                   {'Name': 'root-device-type', 'Values': ['ebs']}
-                   ]
+    def get_images(self, name_pattern):
+        """
+        Return list of AMIs matching the given name_pattern
+
+        :param name_pattern: str: AMI name pattern
+        :return: list(dict)
+        :raise CfnSphereException:
+        """
+        filters = [
+            {'Name': 'name', 'Values': [name_pattern]},
+            {'Name': 'is-public', 'Values': ['false']},
+            {'Name': 'state', 'Values': ['available']},
+            {'Name': 'root-device-type', 'Values': ['ebs']}
+        ]
+
         try:
             response = self.client.describe_images(ExecutableUsers=["self"], Filters=filters)
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
 
-        if not response:
+        if not response['Images']:
             raise CfnSphereException("Could not find any private and available Taupage AMI")
 
         return response['Images']
 
-    def get_latest_taupage_image_id(self):
-        images = {image['CreationDate']: image['ImageId'] for image in self.get_taupage_images()}
-
+    @staticmethod
+    def get_latest_image_id(images_list):
+        """
+        Filter image with most recent CreationDate
+        :param images: list(dict)
+        :return str: image id
+        """
+        images = {image['CreationDate']: image['ImageId'] for image in images_list}
         creation_dates = list(images.keys())
         creation_dates.sort(reverse=True)
         return images[creation_dates[0]]
+
+    def get_latest_taupage_image_id(self):
+        """
+        Return the image id of the most recent private AMI matching the name pattern 'Taupage-AMI-*'
+
+        :return: str: image id
+        """
+        taupage_images = self.get_images(name_pattern='Taupage-AMI-*')
+        return self.get_latest_image_id(taupage_images)
 
 
 if __name__ == "__main__":
