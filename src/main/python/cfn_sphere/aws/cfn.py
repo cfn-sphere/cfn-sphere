@@ -105,31 +105,26 @@ class CloudFormation(object):
         else:
             return False
 
-    @with_boto_retry()
     def get_stack_events(self, stack_name):
-        return self.conn.describe_stack_events(stack_name)
+        return self.client.describe_stack_events(stack_name)
 
-    @with_boto_retry()
     def _create_stack(self, stack):
-        self.conn.create_stack(stack.name,
-                               template_body=stack.template.get_template_json(),
-                               parameters=stack.get_parameters_list(),
-                               tags=stack.tags,
-                               capabilities=['CAPABILITY_IAM'])
+        self.client.create_stack(stack.name,
+                                 template_body=stack.template.get_template_json(),
+                                 parameters=stack.get_parameters_list(),
+                                 tags=stack.tags,
+                                 capabilities=['CAPABILITY_IAM'])
 
-    @with_boto_retry()
     def _update_stack(self, stack):
-        self.conn.update_stack(stack.name,
-                               template_body=stack.template.get_template_json(),
-                               parameters=stack.get_parameters_list(),
-                               tags=stack.tags,
-                               capabilities=['CAPABILITY_IAM'])
+        self.client.update_stack(stack.name,
+                                 template_body=stack.template.get_template_json(),
+                                 parameters=stack.get_parameters_list(),
+                                 tags=stack.tags,
+                                 capabilities=['CAPABILITY_IAM'])
 
-    @with_boto_retry()
     def _delete_stack(self, stack):
-        self.conn.delete_stack(stack.name)
+        self.client.delete_stack(stack.name)
 
-    @with_boto_retry()
     def create_stack(self, stack):
         assert isinstance(stack, CloudFormationStack)
         try:
@@ -262,7 +257,7 @@ class CloudFormation(object):
         :return: boolean (true if valid)
         """
         try:
-            self.conn.validate_template(template_body=template.get_template_json())
+            self.client.validate_template(template_body=template.get_template_json())
             return True
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
