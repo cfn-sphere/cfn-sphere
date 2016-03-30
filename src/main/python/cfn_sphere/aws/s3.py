@@ -17,7 +17,7 @@ class S3(object):
         key = url_components.path.strip('/')
         return protocol, bucket_name, key
 
-    #TODO: rething boto exception handling and retry
+    # TODO: rething boto exception handling and retry
     @with_boto_retry()
     def get_contents_from_url(self, url):
         try:
