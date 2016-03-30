@@ -42,7 +42,7 @@ class Ec2Api(object):
     def get_latest_image_id(images_list):
         """
         Filter image with most recent CreationDate
-        :param images: list(dict)
+        :param images_list: list(dict)
         :return str: image id
         """
         images = {image['CreationDate']: image['ImageId'] for image in images_list}
