@@ -40,10 +40,6 @@ class InvalidDependencyGraphException(CfnSphereException):
     pass
 
 
-class InvalidEncryptedValueException(CfnSphereException):
-    pass
-
-
 class CfnSphereBotoError(CfnSphereException):
     def __init__(self, e):
         self.boto_exception = e
