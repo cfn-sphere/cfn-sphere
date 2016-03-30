@@ -26,7 +26,7 @@ class CloudFormation(object):
     def __init__(self, region="eu-west-1"):
         self.logger = get_logger()
         self.client = boto3.client('cloudformation', region_name=region)
-        self.resource = boto3.resource('cloudformation', region_name=region)dd commad
+        self.resource = boto3.resource('cloudformation', region_name=region)
 
     def stack_exists(self, stack_name):
         """
