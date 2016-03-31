@@ -1,8 +1,8 @@
 import logging
 import time
 import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from datetime import timedelta
-from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
@@ -19,7 +19,10 @@ class CloudFormationStack(object):
         self.timeout = timeout
 
     def get_parameters_list(self):
-        return [(key, value) for key, value in self.parameters.items()]
+        return [{"ParameterKey": key, "ParameterValue": value} for key, value in self.parameters.items()]
+
+    def get_tags_list(self):
+        return [{"Key": key, "Value": value} for key, value in self.tags.items()]
 
 
 class CloudFormation(object):
@@ -47,10 +50,7 @@ class CloudFormation(object):
         :return: List(boto3.resources.factory.cloudformation.Stack)
         :raise CfnSphereBotoError:
         """
-        try:
-            return list(self.resource.stacks.all())
-        except BotoServerError as e:
-            raise CfnSphereBotoError(e)
+        return list(self.resource.stacks.all())
 
     def get_stack_names(self):
         """
@@ -78,7 +78,7 @@ class CloudFormation(object):
         """
         try:
             return self.resource.Stack(stack_name)
-        except BotoServerError as e:
+        except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
     def validate_stack_is_ready_for_action(self, stack):
@@ -88,10 +88,7 @@ class CloudFormation(object):
         :param stack: cfn_sphere.aws.cfn.CloudFormationStack
         :raise CfnStackActionFailedException: if the stack is in an invalid state
         """
-        try:
-            cfn_stack = self.get_stack(stack.name)
-        except BotoServerError as e:
-            raise CfnSphereBotoError(e)
+        cfn_stack = self.get_stack(stack.name)
 
         valid_states = ["CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"]
 
@@ -106,10 +103,8 @@ class CloudFormation(object):
         :return: str: stack status
         :raise CfnSphereBotoError:
         """
-        try:
-            return self.get_stack(stack_name).stack_status
-        except BotoServerError as e:
-            raise CfnSphereBotoError(e)
+        return self.get_stack(stack_name).stack_status
+
 
     def get_stack_parameters_dict(self, stack_name):
         """
@@ -132,8 +127,11 @@ class CloudFormation(object):
         :param exception: Exception
         :return: bool
         """
-        if isinstance(exception, BotoServerError) and exception.message == "No updates are to be performed.":
-            return True
+        if isinstance(exception, ClientError):
+            if exception.response["Error"]["Message"] == "No updates are to be performed.":
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -151,7 +149,7 @@ class CloudFormation(object):
         Create cloudformation stack
         :param stack: cfn_sphere.aws.cfn.CloudFormationStack
         """
-        self.resource.create_stack(
+        self.client.create_stack(
             StackName=stack.name,
             TemplateBody=stack.template.get_template_json(),
             Parameters=stack.get_parameters_list(),
@@ -160,7 +158,7 @@ class CloudFormation(object):
                 'CAPABILITY_IAM'
             ],
             OnFailure='DELETE',
-            Tags=stack.tags
+            Tags=stack.get_tags_list()
         )
 
     def _update_stack(self, stack):
@@ -172,12 +170,10 @@ class CloudFormation(object):
             StackName=stack.name,
             TemplateBody=stack.template.get_template_json(),
             Parameters=stack.get_parameters_list(),
-            TimeoutInMinutes=123,
             Capabilities=[
                 'CAPABILITY_IAM'
             ],
-            OnFailure='DELETE',
-            Tags=stack.tags
+            Tags=stack.get_tags_list()
         )
 
     def _delete_stack(self, stack):
@@ -191,22 +187,23 @@ class CloudFormation(object):
         assert isinstance(stack, CloudFormationStack)
         try:
             self.logger.info(
-                "Creating stack {0} from template {1} with parameters:\n{2}".format(stack.name, stack.template.name,
+                "Creating stack {0} from template {1} with parameters:\n{2}".format(stack.name,
+                                                                                    stack.template.name,
                                                                                     get_pretty_parameters_string(
                                                                                         stack)))
             self._create_stack(stack)
 
             self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
             self.logger.info("Create completed for {0}".format(stack.name))
-        except BotoServerError as e:
-            raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e.message), e)
+        except (BotoCoreError, ClientError) as e:
+            raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e))
 
     def update_stack(self, stack):
         try:
 
             try:
                 self._update_stack(stack)
-            except BotoServerError as e:
+            except ClientError as e:
 
                 if self.is_boto_no_update_required_exception(e):
                     self.logger.info("Stack {0} does not need an update".format(stack.name))
@@ -226,9 +223,8 @@ class CloudFormation(object):
 
             self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
             self.logger.info("Update completed for {0}".format(stack.name))
-
-        except BotoServerError as e:
-            raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e.message), e)
+        except (BotoCoreError, ClientError) as e:
+            raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e))
 
     def delete_stack(self, stack):
         try:
@@ -237,15 +233,15 @@ class CloudFormation(object):
 
             try:
                 self.wait_for_stack_action_to_complete(stack.name, "delete", 600)
-            except BotoServerError as e:
-                if e.error_code == "ValidationError" and e.message.endswith("does not exist"):
+            except (BotoCoreError, ClientError) as e:
+                if e.error_code == "ValidationError" and str(e).endswith("does not exist"):
                     pass
                 else:
                     raise
 
             self.logger.info("Deletion completed for {0}".format(stack.name))
-        except BotoServerError as e:
-            raise CfnStackActionFailedException("Could not delete {0}: {1}".format(stack.name, e.message))
+        except (BotoCoreError, ClientError) as e:
+            raise CfnStackActionFailedException("Could not delete {0}: {1}".format(stack.name, e))
 
     def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
         self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
@@ -256,29 +252,29 @@ class CloudFormation(object):
 
             events = self.get_stack_events(stack_name)
             events.reverse()
-
+            print(events)
             for event in events:
-                if event.event_id not in seen_event_ids:
-                    seen_event_ids.append(event.event_id)
-                    if event.timestamp > valid_from_timestamp:
+                if event["event_id"] not in seen_event_ids:
+                    seen_event_ids.append(event["event_id"])
+                    if event["timestamp"] > valid_from_timestamp:
 
-                        if event.resource_type == "AWS::CloudFormation::Stack":
+                        if event["resource_type"] == "AWS::CloudFormation::Stack":
                             self.logger.debug(event)
 
-                            if event.resource_status == expected_event:
+                            if event["resource_status"] == expected_event:
                                 return event
-                            if event.resource_status.endswith("_FAILED"):
+                            if event["resource_status"].endswith("_FAILED"):
                                 raise CfnStackActionFailedException(
-                                    "Stack is in {0} state".format(event.resource_status))
-                            if event.resource_status.endswith("ROLLBACK_IN_PROGRESS"):
+                                    "Stack is in {0} state".format(event["resource_status"]))
+                            if event["resource_status"].endswith("ROLLBACK_IN_PROGRESS"):
                                 self.logger.error(
-                                    "Failed to create stack (Reason: {0})".format(event.resource_status_reason))
-                            if event.resource_status.endswith("ROLLBACK_COMPLETE"):
+                                    "Failed to create stack (Reason: {0})".format(event["resource_status_reason"]))
+                            if event["resource_status"].endswith("ROLLBACK_COMPLETE"):
                                 raise CfnStackActionFailedException("Rollback occured")
                         else:
-                            if event.resource_status.endswith("_FAILED"):
+                            if event["resource_status"].endswith("_FAILED"):
                                 self.logger.error("Failed to create {0} (Reason: {1})".format(
-                                    event.logical_resource_id, event.resource_status_reason))
+                                    event["logical_resource_id"], event["resource_status_reason"]))
                             else:
                                 self.logger.info(event)
 
@@ -314,14 +310,14 @@ class CloudFormation(object):
 
     def validate_template(self, template):
         """
-
-        :param template_body: CloudFormationTemplate
+        Validate template
+        :param template: CloudFormationTemplate
         :return: boolean (true if valid)
         """
         try:
             self.client.validate_template(template_body=template.get_template_json())
             return True
-        except BotoServerError as e:
+        except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
 

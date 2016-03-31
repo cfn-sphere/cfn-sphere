@@ -45,6 +45,4 @@ class CfnSphereBotoError(CfnSphereException):
         self.boto_exception = e
 
     def __str__(self):
-        return "{0}: {1} (Request ID: {2})".format(self.boto_exception.error_code,
-                                                 self.boto_exception.message,
-                                                 self.boto_exception.request_id)
+        return "{0}: {1}".format(self.boto_exception.error_code, self.boto_exception)

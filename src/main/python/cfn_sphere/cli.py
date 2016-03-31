@@ -1,7 +1,8 @@
 import sys
 import logging
 
-import boto
+import boto3
+from botocore.exceptions import ClientError
 import click
 
 from boto.exception import NoAuthHandlerFound, BotoServerError
@@ -17,24 +18,18 @@ from cfn_sphere.file_loader import FileLoader
 from cfn_sphere import __version__
 
 LOGGER = get_logger(root=True)
-logging.getLogger('boto').setLevel(logging.FATAL)
 
 
-def get_current_account_alias():
+def get_first_account_alias():
     try:
-        return boto.connect_iam().get_account_alias().account_aliases[0]
-    except NoAuthHandlerFound as e:
-        click.echo("Authentication error! Please check credentials: {0}".format(e))
-        sys.exit(1)
-    except BotoServerError as e:
-        if e.code == "ExpiredToken":
-            click.echo(e.message)
-        else:
-            click.echo("AWS API Error: {0}".format(e))
-
+        return boto3.client('iam').list_account_aliases()["AccountAliases"][0]
+    except ClientError as e:
+        LOGGER.error(e)
         sys.exit(1)
     except Exception as e:
-        click.echo("Unknown error occurred loading users account alias: {0}".format(e))
+        LOGGER.error("Unknown error occurred loading users account alias")
+        LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
 
 
@@ -70,7 +65,7 @@ def sync(config, parameter, debug, confirm):
     if not confirm:
         check_update_available()
         click.confirm('This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
-            get_current_account_alias()), abort=True)
+            get_first_account_alias()), abort=True)
 
     try:
 
@@ -102,7 +97,7 @@ def delete(config, debug, confirm):
     if not confirm:
         check_update_available()
         click.confirm('This action will delete all stacks in {0} from account: {1}\nAre you sure?'.format(
-            config, get_current_account_alias()), abort=True)
+            config, get_first_account_alias()), abort=True)
 
     try:
 
