@@ -147,21 +147,45 @@ class CloudFormation(object):
         return tuple(paginator.paginate(StackName=stack_name))[0]["StackEvents"]
 
     def _create_stack(self, stack):
-        self.client.create_stack(stack.name,
-                                 template_body=stack.template.get_template_json(),
-                                 parameters=stack.get_parameters_list(),
-                                 tags=stack.tags,
-                                 capabilities=['CAPABILITY_IAM'])
+        """
+        Create cloudformation stack
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        """
+        self.resource.create_stack(
+            StackName=stack.name,
+            TemplateBody=stack.template.get_template_json(),
+            Parameters=stack.get_parameters_list(),
+            TimeoutInMinutes=123,
+            Capabilities=[
+                'CAPABILITY_IAM'
+            ],
+            OnFailure='DELETE',
+            Tags=stack.tags
+        )
 
     def _update_stack(self, stack):
-        self.client.update_stack(stack.name,
-                                 template_body=stack.template.get_template_json(),
-                                 parameters=stack.get_parameters_list(),
-                                 tags=stack.tags,
-                                 capabilities=['CAPABILITY_IAM'])
+        """
+        Update cloudformation stack
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        """
+        self.client.update_stack(
+            StackName=stack.name,
+            TemplateBody=stack.template.get_template_json(),
+            Parameters=stack.get_parameters_list(),
+            TimeoutInMinutes=123,
+            Capabilities=[
+                'CAPABILITY_IAM'
+            ],
+            OnFailure='DELETE',
+            Tags=stack.tags
+        )
 
     def _delete_stack(self, stack):
-        self.client.delete_stack(stack.name)
+        """
+        Delete cloudformation stack
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        """
+        self.client.delete_stack(StackName=stack.name)
 
     def create_stack(self, stack):
         assert isinstance(stack, CloudFormationStack)
