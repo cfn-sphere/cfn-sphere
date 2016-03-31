@@ -44,37 +44,50 @@ class CloudFormation(object):
         """
         Get all stacks
 
-        :return: List(dict)
+        :return: List(boto3.resources.factory.cloudformation.Stack)
         :raise CfnSphereBotoError:
         """
         try:
-            stacks = []
-            paginator = self.client.get_paginator('describe_stacks')
-            response_iterator = paginator.paginate()
-
-            for page in response_iterator:
-                stacks.extend(page['Stacks'])
-
-            return stacks
+            return list(self.resource.stacks.all())
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
 
     def get_stack_names(self):
+        """
+        Get a list of stack names
+        :return: list(str)
+        """
         return [stack.stack_name for stack in self.get_stacks()]
 
     def get_stacks_dict(self):
+        """
+        Get a dict containing all stacks with their name as key and {parameters, outputs} as value
+        :return: dict
+        """
         stacks_dict = {}
         for stack in self.get_stacks():
             stacks_dict[stack.stack_name] = {"parameters": stack.parameters, "outputs": stack.outputs}
         return stacks_dict
 
     def get_stack(self, stack_name):
+        """
+        Get stack resource representation for a given stack_name
+        :param stack_name: str:
+        :return: boto3.resources.factory.cloudformation.Stack
+        :raise CfnSphereBotoError:
+        """
         try:
-            return self.conn.describe_stacks(stack_name)[0]
+            return self.resource.Stack(stack_name)
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
 
     def validate_stack_is_ready_for_action(self, stack):
+        """
+        Check if a stack is in a state capable for modification actions
+
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        :raise CfnStackActionFailedException: if the stack is in an invalid state
+        """
         try:
             cfn_stack = self.get_stack(stack.name)
         except BotoServerError as e:
@@ -86,32 +99,52 @@ class CloudFormation(object):
             raise CfnStackActionFailedException(
                 "Stack {0} is in '{1}' state.".format(cfn_stack.stack_name, cfn_stack.stack_status))
 
-    @with_boto_retry()
     def get_stack_state(self, stack_name):
+        """
+        Get stack status
+        :param stack_name: str
+        :return: str: stack status
+        :raise CfnSphereBotoError:
+        """
         try:
-            stack = self.conn.describe_stacks(stack_name)
-            return stack.status
+            return self.get_stack(stack_name).stack_status
         except BotoServerError as e:
             raise CfnSphereBotoError(e)
 
     def get_stack_parameters_dict(self, stack_name):
+        """
+        Get a stacks parameters
+        :param stack_name: str
+        :return: dict
+        """
         parameters = {}
         stack = self.get_stack(stack_name)
 
         for parameter in stack.parameters:
-            parameters[parameter.key] = parameter.value
+            parameters[parameter["ParameterKey"]] = parameter["ParameterValue"]
 
         return parameters
 
     @staticmethod
     def is_boto_no_update_required_exception(exception):
+        """
+        Return true if the given exception means that a stack doesn't require an update
+        :param exception: Exception
+        :return: bool
+        """
         if isinstance(exception, BotoServerError) and exception.message == "No updates are to be performed.":
             return True
         else:
             return False
 
     def get_stack_events(self, stack_name):
-        return self.client.describe_stack_events(stack_name)
+        """
+        Get recent stack events for a given stack_name
+        :param stack_name: str
+        :return: list(dict)
+        """
+        paginator = self.client.get_paginator('describe_stack_events')
+        return tuple(paginator.paginate(StackName=stack_name))[0]["StackEvents"]
 
     def _create_stack(self, stack):
         self.client.create_stack(stack.name,
@@ -270,4 +303,4 @@ class CloudFormation(object):
 
 if __name__ == "__main__":
     cfn = CloudFormation()
-    print(cfn.get_stacks())
+    print(cfn.get_stack_events("grafana"))
