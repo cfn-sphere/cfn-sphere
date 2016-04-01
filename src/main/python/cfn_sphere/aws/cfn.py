@@ -249,7 +249,42 @@ class CloudFormation(object):
         except (BotoCoreError, ClientError) as e:
             raise CfnStackActionFailedException("Could not delete {0}: {1}".format(stack.name, e))
 
+    def wait_for_stack_action_to_complete(self, stack_name, action, timeout):
+        allowed_actions = ["create", "update", "delete"]
+        assert action.lower() in allowed_actions, "action argument must be one of {0}".format(allowed_actions)
+
+        time_jitter_window = timedelta(seconds=10)
+        minimum_event_timestamp = get_cfn_api_server_time() - time_jitter_window
+        expected_start_event_state = action.upper() + "_IN_PROGRESS"
+
+        start_event = self.wait_for_stack_events(stack_name,
+                                                 expected_start_event_state,
+                                                 minimum_event_timestamp,
+                                                 timeout=120)
+
+        self.logger.info("Stack {0} started".format(action))
+
+        minimum_event_timestamp = start_event["Timestamp"]
+        expected_complete_event_state = action.upper() + "_COMPLETE"
+
+        end_event = self.wait_for_stack_events(stack_name,
+                                               expected_complete_event_state,
+                                               minimum_event_timestamp,
+                                               timeout)
+
+        elapsed = end_event["Timestamp"] - start_event["Timestamp"]
+        self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
+
     def wait_for_stack_events(self, stack_name, expected_stack_event_status, valid_from_timestamp, timeout):
+        """
+        Wait for a new stack event. Return it if it has the expected status
+        :param stack_name: str
+        :param expected_stack_event_status: str
+        :param valid_from_timestamp: timestamp
+        :param timeout: int
+        :return: boto3 stack event
+        :raise CfnStackActionFailedException:
+        """
         self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_stack_event_status,
                                                                           valid_from_timestamp))
 
@@ -263,7 +298,7 @@ class CloudFormation(object):
             for event in events:
                 if event["EventId"] not in seen_event_ids:
                     seen_event_ids.append(event["EventId"])
-                    event = self.wait_for_stack_event(event, valid_from_timestamp, expected_stack_event_status)
+                    event = self.handle_stack_event(event, valid_from_timestamp, expected_stack_event_status)
 
                     if event:
                         return event
@@ -272,7 +307,15 @@ class CloudFormation(object):
         raise CfnStackActionFailedException(
             "Timeout occurred waiting for '{0}' on stack {1}".format(expected_stack_event_status, stack_name))
 
-    def wait_for_stack_event(self, event, valid_from_timestamp, expected_stack_event_status):
+    def handle_stack_event(self, event, valid_from_timestamp, expected_stack_event_status):
+        """
+        Handle stack event. Return it if it has the expected status
+        :param event:
+        :param valid_from_timestamp:
+        :param expected_stack_event_status:
+        :return: boto3 stack event if it has expected status | None
+        :raise CfnStackActionFailedException:
+        """
         if event["Timestamp"] > valid_from_timestamp:
 
             if event["ResourceType"] == "AWS::CloudFormation::Stack":
@@ -304,32 +347,6 @@ class CloudFormation(object):
 
                     self.logger.info(event_string)
                     return None
-
-    def wait_for_stack_action_to_complete(self, stack_name, action, timeout):
-        allowed_actions = ["create", "update", "delete"]
-        assert action.lower() in allowed_actions, "action argument must be one of {0}".format(allowed_actions)
-
-        time_jitter_window = timedelta(seconds=10)
-        minimum_event_timestamp = get_cfn_api_server_time() - time_jitter_window
-        expected_start_event_state = action.upper() + "_IN_PROGRESS"
-
-        start_event = self.wait_for_stack_events(stack_name,
-                                                 expected_start_event_state,
-                                                 minimum_event_timestamp,
-                                                 timeout=120)
-
-        self.logger.info("Stack {0} started".format(action))
-
-        minimum_event_timestamp = start_event["Timestamp"]
-        expected_complete_event_state = action.upper() + "_COMPLETE"
-
-        end_event = self.wait_for_stack_events(stack_name,
-                                               expected_complete_event_state,
-                                               minimum_event_timestamp,
-                                               timeout)
-
-        elapsed = end_event["Timestamp"] - start_event["Timestamp"]
-        self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
 
     def validate_template(self, template):
         """
