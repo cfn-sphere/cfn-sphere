@@ -131,7 +131,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
         self.assertDictEqual(event, result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -149,7 +149,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 30, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -167,7 +167,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -185,7 +185,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -204,7 +204,7 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
 
         with self.assertRaises(CfnStackActionFailedException):
-            cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+            cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     def test_wait_for_stack_event_returns_none_on_rollback_in_progress_state(self, _):
@@ -222,7 +222,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -241,7 +241,7 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
 
         with self.assertRaises(CfnStackActionFailedException):
-            cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+            cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
