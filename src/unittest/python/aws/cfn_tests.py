@@ -195,6 +195,61 @@ class CloudFormationApiTests(unittest2.TestCase):
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
+    def test_wait_for_stack_event_raises_exception_on_error_event(self, _):
+        event = {
+            'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
+            'StackName': 'my-stack',
+            'LogicalResourceId': 'VPC',
+            'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'ResourceType': 'AWS::CloudFormation::Stack',
+            'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
+            'EventId': 'my-event-id',
+            'ResourceStatus': 'UPDATE_FAILED'
+        }
+        valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
+        cfn = CloudFormation()
+
+        with self.assertRaises(CfnStackActionFailedException):
+            cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    def test_wait_for_stack_event_returns_none_on_rollback_in_progress_state(self, _):
+        event = {
+            'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
+            'StackName': 'my-stack',
+            'LogicalResourceId': 'VPC',
+            'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'ResourceType': 'AWS::CloudFormation::Stack',
+            'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
+            'EventId': 'my-event-id',
+            'ResourceStatus': 'ROLLBACK_IN_PROGRESS',
+            'ResourceStatusReason': 'Foo'
+        }
+        valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
+        cfn = CloudFormation()
+
+        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        self.assertIsNone(result)
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    def test_wait_for_stack_event_raises_exception_on_rollback_complete(self, _):
+        event = {
+            'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
+            'StackName': 'my-stack',
+            'LogicalResourceId': 'VPC',
+            'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'ResourceType': 'AWS::CloudFormation::Stack',
+            'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
+            'EventId': 'my-event-id',
+            'ResourceStatus': 'ROLLBACK_COMPLETE'
+        }
+        valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
+        cfn = CloudFormation()
+
+        with self.assertRaises(CfnStackActionFailedException):
+            cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
     @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
     def test_create_stack_calls_cloudformation_api_properly(self, _, cloudformation_mock):
         stack = Mock(spec=CloudFormationStack)
