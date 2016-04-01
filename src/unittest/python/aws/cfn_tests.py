@@ -1,5 +1,6 @@
 import datetime
 from datetime import timedelta
+from dateutil.tz import tzutc
 
 import unittest2
 from mock import Mock, patch
@@ -25,7 +26,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         self.assertListEqual(stacks_1 + stacks_2, cfn.get_stacks())
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
+    def test_wait_for_stack_events_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
@@ -51,7 +52,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         self.assertEqual(timestamp, event.timestamp)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_returns_on_update_complete(self, cloudformation_mock):
+    def test_wait_for_stack_events_returns_on_update_complete(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
@@ -74,7 +75,7 @@ class CloudFormationApiTests(unittest2.TestCase):
                                   timeout=10)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_raises_exception_on_rollback(self, cloudformation_mock):
+    def test_wait_for_stack_events_raises_exception_on_rollback(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
@@ -98,7 +99,7 @@ class CloudFormationApiTests(unittest2.TestCase):
                                       timeout=10)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_raises_exception_on_update_failure(self, cloudformation_mock):
+    def test_wait_for_stack_events_raises_exception_on_update_failure(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
@@ -120,6 +121,78 @@ class CloudFormationApiTests(unittest2.TestCase):
         with self.assertRaises(Exception):
             cfn.wait_for_stack_events("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
                                       timeout=10)
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    def test_wait_for_stack_event_returns_expected_event(self, _):
+        event = {
+            'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'StackName': 'my-stack',
+            'LogicalResourceId': 'cfn-sphere-test-vpc',
+            'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'ResourceType': 'AWS::CloudFormation::Stack',
+            'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
+            'EventId': 'my-event-id',
+            'ResourceStatus': 'CREATE_COMPLETE'
+        }
+        valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
+        cfn = CloudFormation()
+
+        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        self.assertDictEqual(event, result)
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    def test_wait_for_stack_event_returns_none_if_event_appears_to_early(self, _):
+        event = {
+            'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'StackName': 'my-stack',
+            'LogicalResourceId': 'cfn-sphere-test-vpc',
+            'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'ResourceType': 'AWS::CloudFormation::Stack',
+            'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
+            'EventId': 'my-event-id',
+            'ResourceStatus': 'CREATE_COMPLETE'
+        }
+        valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 30, 548000, tzinfo=tzutc())
+        cfn = CloudFormation()
+
+        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        self.assertIsNone(result)
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    def test_wait_for_stack_event_returns_none_if_event_has_not_expected_state(self, _):
+        event = {
+            'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'StackName': 'my-stack',
+            'LogicalResourceId': 'cfn-sphere-test-vpc',
+            'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'ResourceType': 'AWS::CloudFormation::Stack',
+            'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
+            'EventId': 'my-event-id',
+            'ResourceStatus': 'CREATE_IN_PROGRESS'
+        }
+        valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
+        cfn = CloudFormation()
+
+        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        self.assertIsNone(result)
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    def test_wait_for_stack_event_returns_none_if_event_is_no_stack_event(self, _):
+        event = {
+            'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
+            'StackName': 'my-stack',
+            'LogicalResourceId': 'VPC',
+            'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'ResourceType': 'AWS::SNS::Topic',
+            'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
+            'EventId': 'my-event-id',
+            'ResourceStatus': 'CREATE_COMPLETE'
+        }
+        valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
+        cfn = CloudFormation()
+
+        result = cfn.wait_for_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
