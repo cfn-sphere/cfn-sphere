@@ -1,9 +1,11 @@
 import logging
 import time
+from datetime import timedelta
+
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
-from datetime import timedelta
-from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
+
+from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
 logging.getLogger('boto').setLevel(logging.FATAL)
@@ -155,7 +157,7 @@ class CloudFormation(object):
             StackName=stack.name,
             TemplateBody=stack.template.get_template_json(),
             Parameters=stack.get_parameters_list(),
-            TimeoutInMinutes=123,
+            TimeoutInMinutes=stack.timeout,
             Capabilities=[
                 'CAPABILITY_IAM'
             ],
@@ -172,6 +174,7 @@ class CloudFormation(object):
             StackName=stack.name,
             TemplateBody=stack.template.get_template_json(),
             Parameters=stack.get_parameters_list(),
+            TimeoutInMinutes=stack.timeout,
             Capabilities=[
                 'CAPABILITY_IAM'
             ],

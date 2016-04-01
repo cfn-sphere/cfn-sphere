@@ -7,10 +7,10 @@ except ImportError:
 
 import datetime
 from datetime import timedelta
-from dateutil.tz import tzutc
 
-from boto.cloudformation.stack import StackEvent, Stack
-from boto.exception import BotoServerError
+from botocore.exceptions import ClientError
+from dateutil.tz import tzutc
+from boto.cloudformation.stack import StackEvent
 
 from cfn_sphere.template import CloudFormationTemplate
 from cfn_sphere.aws.cfn import CloudFormationStack
@@ -18,19 +18,7 @@ from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
 
-
 class CloudFormationApiTests(TestCase):
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_get_stacks_correctly_handles_pagination(self, boto_mock):
-        stacks_1 = [Mock(spec=Stack), Mock(spec=Stack)]
-        stacks_2 = [Mock(spec=Stack), Mock(spec=Stack)]
-        boto_mock.return_value.get_paginator.return_value.paginate.return_value = [{'Stacks': stacks_1},
-                                                                                   {'Stacks': stacks_2}]
-
-        cfn = CloudFormation()
-        print(cfn.get_stacks())
-        self.assertListEqual(stacks_1 + stacks_2, cfn.get_stacks())
-
     @patch('cfn_sphere.aws.cfn.boto3.client')
     def test_wait_for_stack_events_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
@@ -261,7 +249,7 @@ class CloudFormationApiTests(TestCase):
         stack = Mock(spec=CloudFormationStack)
         stack.name = "stack-name"
         stack.get_parameters_list.return_value = [('a', 'b')]
-        stack.tags = [('any-tag', 'any-tag-value')]
+        stack.get_tags_list.return_value = [('any-tag', 'any-tag-value')]
         stack.parameters = {}
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
@@ -271,18 +259,22 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
         cfn.create_stack(stack)
 
-        cloudformation_mock.return_value.create_stack.assert_called_once_with('stack-name',
-                                                                              capabilities=['CAPABILITY_IAM'],
-                                                                              parameters=[('a', 'b')],
-                                                                              tags=[('any-tag', 'any-tag-value')],
-                                                                              template_body={'key': 'value'})
+        cloudformation_mock.return_value.create_stack.assert_called_once_with(
+            Capabilities=['CAPABILITY_IAM'],
+            OnFailure='DELETE',
+            Parameters=[('a', 'b')],
+            StackName='stack-name',
+            Tags=[('any-tag', 'any-tag-value')],
+            TemplateBody={'key': 'value'},
+            TimeoutInMinutes=42)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
     def test_update_stack_calls_cloudformation_api_properly(self, _, cloudformation_mock):
         stack = Mock(spec=CloudFormationStack)
         stack.name = "stack-name"
         stack.get_parameters_list.return_value = [('a', 'b')]
-        stack.tags = [('any-tag', 'any-tag-value')]
+        stack.get_tags_list.return_value = [('any-tag', 'any-tag-value')]
         stack.parameters = {}
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
@@ -292,35 +284,20 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
         cfn.update_stack(stack)
 
-        cloudformation_mock.return_value.update_stack.assert_called_once_with('stack-name',
-                                                                              capabilities=['CAPABILITY_IAM'],
-                                                                              parameters=[('a', 'b')],
-                                                                              tags=[('any-tag', 'any-tag-value')],
-                                                                              template_body={'key': 'value'})
+        cloudformation_mock.return_value.update_stack.assert_called_once_with(
+            Capabilities=['CAPABILITY_IAM'],
+            Parameters=[('a', 'b')],
+            StackName='stack-name',
+            Tags=[('any-tag', 'any-tag-value')],
+            TemplateBody={'key': 'value'},
+            TimeoutInMinutes=42)
 
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_validate_stack_is_ready_for_action_raises_exception_on_unknown_stack_state(self, cloudformation_mock):
-        describe_stack_mock = Mock()
-        describe_stack_mock.stack_status = "FOO"
-        describe_stack_mock.stack_name = "my-stack"
-
-        cloudformation_mock.return_value.describe_stacks.return_value = [describe_stack_mock]
-
-        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
-
-        cfn = CloudFormation()
-        with self.assertRaises(CfnStackActionFailedException):
-            cfn.validate_stack_is_ready_for_action(stack)
-
-        cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
-
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_validate_stack_is_ready_for_action_raises_exception_on_bad_stack_state(self, cloudformation_mock):
-        describe_stack_mock = Mock()
-        describe_stack_mock.stack_status = "UPDATE_IN_PROGRESS"
-        describe_stack_mock.stack_name = "my-stack"
-
-        cloudformation_mock.return_value.describe_stacks.return_value = [describe_stack_mock]
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_raises_exception_on_unknown_stack_state(self, get_stack_mock):
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "FOO"
+        get_stack_mock.return_value = stack_mock
 
         stack = CloudFormationStack('', [], 'my-stack', 'my-region')
 
@@ -328,11 +305,53 @@ class CloudFormationApiTests(TestCase):
         with self.assertRaises(CfnStackActionFailedException):
             cfn.validate_stack_is_ready_for_action(stack)
 
-        cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_raises_exception_on_update_in_progress(self, get_stack_mock):
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "UPDATE_IN_PROGRESS"
+        get_stack_mock.return_value = stack_mock
 
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_validate_stack_is_ready_for_action_raises_proper_exception_on_boto_error(self, cloudformation_mock):
-        cloudformation_mock.return_value.describe_stacks.side_effect = BotoServerError('400', 'Bad Request')
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        with self.assertRaises(CfnStackActionFailedException):
+            cfn.validate_stack_is_ready_for_action(stack)
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_raises_exception_on_delete_in_progress(self, get_stack_mock):
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "DELETE_IN_PROGRESS"
+        get_stack_mock.return_value = stack_mock
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        with self.assertRaises(CfnStackActionFailedException):
+            cfn.validate_stack_is_ready_for_action(stack)
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_raises_exception_on_create_in_progress(self, get_stack_mock):
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "CREATE_IN_PROGRESS"
+        get_stack_mock.return_value = stack_mock
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        with self.assertRaises(CfnStackActionFailedException):
+            cfn.validate_stack_is_ready_for_action(stack)
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_raises_proper_exception_on_boto_error(self, get_stack_mock):
+        get_stack_mock.side_effect = CfnSphereBotoError(None)
+
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "UPDATE_COMPLETE"
+        get_stack_mock.return_value = stack_mock
 
         stack = CloudFormationStack('', [], 'my-stack', 'my-region')
 
@@ -340,37 +359,50 @@ class CloudFormationApiTests(TestCase):
         with self.assertRaises(CfnSphereBotoError):
             cfn.validate_stack_is_ready_for_action(stack)
 
-        cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
-
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_validate_stack_is_ready_for_action_passes_if_stack_is_in_good_state(self, cloudformation_mock):
-        describe_stack_mock = Mock()
-        describe_stack_mock.stack_status = "UPDATE_COMPLETE"
-        describe_stack_mock.stack_name = "my-stack"
-
-        cloudformation_mock.return_value.describe_stacks.return_value = [describe_stack_mock]
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_passes_if_stack_is_in_update_complete_state(self, get_stack_mock):
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "UPDATE_COMPLETE"
+        get_stack_mock.return_value = stack_mock
 
         stack = CloudFormationStack('', [], 'my-stack', 'my-region')
 
         cfn = CloudFormation()
         cfn.validate_stack_is_ready_for_action(stack)
 
-        cloudformation_mock.return_value.describe_stacks.assert_called_once_with('my-stack')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_passes_if_stack_is_in_create_complete_state(self, get_stack_mock):
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "CREATE_COMPLETE"
+        get_stack_mock.return_value = stack_mock
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        cfn.validate_stack_is_ready_for_action(stack)
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_passes_if_stack_is_in_rollback_complete_state(self, get_stack_mock):
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "ROLLBACK_COMPLETE"
+        get_stack_mock.return_value = stack_mock
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        cfn.validate_stack_is_ready_for_action(stack)
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     @patch('cfn_sphere.aws.cfn.boto3.client')
     def test_get_stack_parameters_dict_returns_proper_dict(self, _, get_stack_mock):
         cfn = CloudFormation()
 
-        parameter_1 = Mock()
-        parameter_1.key = "myKey1"
-        parameter_1.value = "myValue1"
-        parameter_2 = Mock()
-        parameter_2.key = "myKey2"
-        parameter_2.value = "myValue2"
-
         stack_mock = Mock()
-        stack_mock.parameters = [parameter_1, parameter_2]
+        stack_mock.parameters = [{"ParameterKey": "myKey1", "ParameterValue": "myValue1"},
+                                 {"ParameterKey": "myKey2", "ParameterValue": "myValue2"}]
         get_stack_mock.return_value = stack_mock
 
         result = cfn.get_stack_parameters_dict('foo')
@@ -396,11 +428,11 @@ class CloudFormationApiTests(TestCase):
         self.assertFalse(CloudFormation.is_boto_no_update_required_exception(exception))
 
     def test_is_boto_no_update_required_exception_returns_false_without_message(self):
-        exception = Mock(spec=BotoServerError)
-        exception.message = "Something went wrong."
+        exception = Mock(spec=ClientError)
+        exception.response = {"Error": {"Message": "Something went wrong"}}
         self.assertFalse(CloudFormation.is_boto_no_update_required_exception(exception))
 
     def test_is_boto_no_update_required_exception_returns_true_for_message(self):
-        exception = Mock(spec=BotoServerError)
-        exception.message = "No updates are to be performed."
+        exception = Mock(spec=ClientError)
+        exception.response = {"Error": {"Message": "No updates are to be performed."}}
         self.assertTrue(CloudFormation.is_boto_no_update_required_exception(exception))
