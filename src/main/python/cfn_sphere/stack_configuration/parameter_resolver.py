@@ -38,9 +38,10 @@ class ParameterResolver(object):
         artifacts = {}
         stacks = self.cfn.get_stacks()
         for stack in stacks:
-            for output in stack.outputs:
-                key = stack.stack_name + '.' + output.key
-                artifacts[key] = output.value
+            if stack.outputs:
+                for output in stack.outputs:
+                    key = stack.stack_name + '.' + output["OutputKey"]
+                    artifacts[key] = output["OutputValue"]
         return artifacts
 
     def get_output_value(self, key):

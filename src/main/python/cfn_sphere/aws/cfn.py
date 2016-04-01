@@ -31,6 +31,30 @@ class CloudFormation(object):
         self.client = boto3.client('cloudformation', region_name=region)
         self.resource = boto3.resource('cloudformation', region_name=region)
 
+    def get_stack(self, stack_name):
+        """
+        Get stack resource representation for a given stack_name
+        :param stack_name: str:
+        :return: boto3.resources.factory.cloudformation.Stack
+        :raise CfnSphereBotoError:
+        """
+        try:
+            return self.resource.Stack(stack_name)
+        except (BotoCoreError, ClientError) as e:
+            raise CfnSphereBotoError(e)
+
+    def get_stacks(self):
+        """
+        Get all stacks
+
+        :return: List(boto3.resources.factory.cloudformation.Stack)
+        :raise CfnSphereBotoError:
+        """
+        try:
+            return list(self.resource.stacks.all())
+        except (BotoCoreError, ClientError) as e:
+            raise CfnSphereBotoError(e)
+
     def stack_exists(self, stack_name):
         """
         Check if a stack exists for given stack_name
@@ -42,15 +66,6 @@ class CloudFormation(object):
             return True
         else:
             return False
-
-    def get_stacks(self):
-        """
-        Get all stacks
-
-        :return: List(boto3.resources.factory.cloudformation.Stack)
-        :raise CfnSphereBotoError:
-        """
-        return list(self.resource.stacks.all())
 
     def get_stack_names(self):
         """
@@ -68,18 +83,6 @@ class CloudFormation(object):
         for stack in self.get_stacks():
             stacks_dict[stack.stack_name] = {"parameters": stack.parameters, "outputs": stack.outputs}
         return stacks_dict
-
-    def get_stack(self, stack_name):
-        """
-        Get stack resource representation for a given stack_name
-        :param stack_name: str:
-        :return: boto3.resources.factory.cloudformation.Stack
-        :raise CfnSphereBotoError:
-        """
-        try:
-            return self.resource.Stack(stack_name)
-        except (BotoCoreError, ClientError) as e:
-            raise CfnSphereBotoError(e)
 
     def validate_stack_is_ready_for_action(self, stack):
         """
@@ -104,7 +107,6 @@ class CloudFormation(object):
         :raise CfnSphereBotoError:
         """
         return self.get_stack(stack_name).stack_status
-
 
     def get_stack_parameters_dict(self, stack_name):
         """
@@ -243,8 +245,9 @@ class CloudFormation(object):
         except (BotoCoreError, ClientError) as e:
             raise CfnStackActionFailedException("Could not delete {0}: {1}".format(stack.name, e))
 
-    def wait_for_stack_events(self, stack_name, expected_event, valid_from_timestamp, timeout):
-        self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_event, valid_from_timestamp))
+    def wait_for_stack_events(self, stack_name, expected_stack_event_status, valid_from_timestamp, timeout):
+        self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_stack_event_status,
+                                                                          valid_from_timestamp))
 
         seen_event_ids = []
         start = time.time()
@@ -252,35 +255,49 @@ class CloudFormation(object):
 
             events = self.get_stack_events(stack_name)
             events.reverse()
-            print(events)
+
             for event in events:
-                if event["event_id"] not in seen_event_ids:
-                    seen_event_ids.append(event["event_id"])
-                    if event["timestamp"] > valid_from_timestamp:
+                if event["EventId"] not in seen_event_ids:
+                    seen_event_ids.append(event["EventId"])
+                    event = self.wait_for_stack_event(event, valid_from_timestamp, expected_stack_event_status)
 
-                        if event["resource_type"] == "AWS::CloudFormation::Stack":
-                            self.logger.debug(event)
-
-                            if event["resource_status"] == expected_event:
-                                return event
-                            if event["resource_status"].endswith("_FAILED"):
-                                raise CfnStackActionFailedException(
-                                    "Stack is in {0} state".format(event["resource_status"]))
-                            if event["resource_status"].endswith("ROLLBACK_IN_PROGRESS"):
-                                self.logger.error(
-                                    "Failed to create stack (Reason: {0})".format(event["resource_status_reason"]))
-                            if event["resource_status"].endswith("ROLLBACK_COMPLETE"):
-                                raise CfnStackActionFailedException("Rollback occured")
-                        else:
-                            if event["resource_status"].endswith("_FAILED"):
-                                self.logger.error("Failed to create {0} (Reason: {1})".format(
-                                    event["logical_resource_id"], event["resource_status_reason"]))
-                            else:
-                                self.logger.info(event)
+                    if event:
+                        return event
 
             time.sleep(10)
         raise CfnStackActionFailedException(
-            "Timeout occurred waiting for '{0}' on stack {1}".format(expected_event, stack_name))
+            "Timeout occurred waiting for '{0}' on stack {1}".format(expected_stack_event_status, stack_name))
+
+    def wait_for_stack_event(self, event, valid_from_timestamp, expected_stack_event_status):
+        if event["Timestamp"] > valid_from_timestamp:
+
+            if event["ResourceType"] == "AWS::CloudFormation::Stack":
+                self.logger.debug("Raw event: {0}".format(event))
+
+                if event["ResourceStatus"] == expected_stack_event_status:
+                    return event
+
+                if event["ResourceStatus"].endswith("_FAILED"):
+                    raise CfnStackActionFailedException("Stack is in {0} state".format(event["ResourceStatus"]))
+
+                if event["ResourceStatus"].endswith("ROLLBACK_IN_PROGRESS"):
+                    self.logger.error("Failed to create stack (Reason: {0})".format(event["ResourceStatusReason"]))
+
+                if event["ResourceStatus"].endswith("ROLLBACK_COMPLETE"):
+                    raise CfnStackActionFailedException("Rollback occured")
+            else:
+                if event["ResourceStatus"].endswith("_FAILED"):
+                    self.logger.error("Failed to create {0} (Reason: {1})".format(
+                        event["LogicalResourceId"], event["ResourceStatusReason"]))
+                else:
+                    status_reason = event.get("ResourceStatusReason", None)
+                    status_reason_string = " ({0})".format(status_reason) if status_reason else ""
+                    event_string = "{0}: {1}{2}".format(event["LogicalResourceId"],
+                                                        event["ResourceStatus"],
+                                                        status_reason_string)
+
+                    self.logger.info(event_string)
+                    return None
 
     def wait_for_stack_action_to_complete(self, stack_name, action, timeout):
         allowed_actions = ["create", "update", "delete"]
@@ -288,24 +305,24 @@ class CloudFormation(object):
 
         time_jitter_window = timedelta(seconds=10)
         minimum_event_timestamp = get_cfn_api_server_time() - time_jitter_window
-        expected_start_event = action.upper() + "_IN_PROGRESS"
+        expected_start_event_state = action.upper() + "_IN_PROGRESS"
 
         start_event = self.wait_for_stack_events(stack_name,
-                                                 expected_start_event,
+                                                 expected_start_event_state,
                                                  minimum_event_timestamp,
                                                  timeout=120)
 
         self.logger.info("Stack {0} started".format(action))
 
-        minimum_event_timestamp = start_event.timestamp
-        expected_complete_event = action.upper() + "_COMPLETE"
+        minimum_event_timestamp = start_event["Timestamp"]
+        expected_complete_event_state = action.upper() + "_COMPLETE"
 
         end_event = self.wait_for_stack_events(stack_name,
-                                               expected_complete_event,
+                                               expected_complete_event_state,
                                                minimum_event_timestamp,
                                                timeout)
 
-        elapsed = end_event.timestamp - start_event.timestamp
+        elapsed = end_event["Timestamp"] - start_event["Timestamp"]
         self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
 
     def validate_template(self, template):
