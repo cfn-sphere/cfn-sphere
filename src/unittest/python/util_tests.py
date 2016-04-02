@@ -1,4 +1,4 @@
-try: 
+try:
     from unittest2 import TestCase
     from mock import patch, Mock
 except ImportError:
@@ -7,9 +7,12 @@ except ImportError:
 
 import textwrap
 from datetime import datetime
+
+from dateutil.tz import tzutc
+from boto.exception import BotoServerError
+
 from cfn_sphere import util, CloudFormationStack
 from cfn_sphere.exceptions import CfnSphereException
-from boto.exception import BotoServerError
 from cfn_sphere.template import CloudFormationTemplate
 
 
@@ -44,7 +47,7 @@ class StackConfigTests(TestCase):
     @patch("cfn_sphere.util.urllib2.urlopen")
     def test_get_cfn_api_server_time_returns_gmt_datetime(self, urlopen_mock):
         urlopen_mock.return_value.info.return_value.get.return_value = "Mon, 21 Sep 2015 17:17:26 GMT"
-        expected_timestamp = datetime(year=2015, month=9, day=21, hour=17, minute=17, second=26)
+        expected_timestamp = datetime(year=2015, month=9, day=21, hour=17, minute=17, second=26, tzinfo=tzutc())
         self.assertEqual(expected_timestamp, util.get_cfn_api_server_time())
 
     @patch("cfn_sphere.util.urllib2.urlopen")

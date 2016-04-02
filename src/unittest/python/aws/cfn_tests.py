@@ -20,56 +20,7 @@ from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoEr
 
 class CloudFormationApiTests(TestCase):
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_events_returns_on_start_event_with_valid_timestamp(self, cloudformation_mock):
-        timestamp = datetime.datetime.utcnow()
-
-        template_mock = Mock(spec=CloudFormationTemplate)
-        template_mock.url = "foo.yml"
-        template_mock.get_template_body_dict.return_value = {}
-
-        event = StackEvent()
-        event.resource_type = "AWS::CloudFormation::Stack"
-        event.resource_status = "UPDATE_IN_PROGRESS"
-        event.event_id = "123"
-        event.timestamp = timestamp
-
-        stack_events_mock = Mock()
-        stack_events_mock.describe_stack_events.return_value = [event]
-
-        cloudformation_mock.connect_to_region.return_value = stack_events_mock
-
-        cfn = CloudFormation()
-        event = cfn.wait_for_stack_events("foo", "UPDATE_IN_PROGRESS",
-                                          timestamp - timedelta(seconds=10),
-                                          timeout=10)
-
-        self.assertEqual(timestamp, event.timestamp)
-
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_events_returns_on_update_complete(self, cloudformation_mock):
-        timestamp = datetime.datetime.utcnow()
-
-        template_mock = Mock(spec=CloudFormationTemplate)
-        template_mock.url = "foo.yml"
-        template_mock.get_template_body_dict.return_value = {}
-
-        event = StackEvent()
-        event.resource_type = "AWS::CloudFormation::Stack"
-        event.resource_status = "UPDATE_COMPLETE"
-        event.event_id = "123"
-        event.timestamp = timestamp
-
-        stack_events_mock = Mock()
-        stack_events_mock.describe_stack_events.return_value = [event]
-
-        cloudformation_mock.connect_to_region.return_value = stack_events_mock
-
-        cfn = CloudFormation()
-        cfn.wait_for_stack_events("foo", "UPDATE_COMPLETE", timestamp - timedelta(seconds=10),
-                                  timeout=10)
-
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_events_raises_exception_on_rollback(self, cloudformation_mock):
+    def test_wait_for_stack_event_raises_exception_on_rollback(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
@@ -89,11 +40,11 @@ class CloudFormationApiTests(TestCase):
 
         cfn = CloudFormation()
         with self.assertRaises(Exception):
-            cfn.wait_for_stack_events("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
-                                      timeout=10)
+            cfn.wait_for_stack_event("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
+                                     timeout=10)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_events_raises_exception_on_update_failure(self, cloudformation_mock):
+    def test_wait_for_stack_event_raises_exception_on_update_failure(self, cloudformation_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
@@ -113,11 +64,11 @@ class CloudFormationApiTests(TestCase):
 
         cfn = CloudFormation()
         with self.assertRaises(Exception):
-            cfn.wait_for_stack_events("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
-                                      timeout=10)
+            cfn.wait_for_stack_event("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
+                                     timeout=10)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_returns_expected_event(self, _):
+    def test_handle_stack_event_returns_expected_event(self, _):
         event = {
             'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'StackName': 'my-stack',
@@ -135,7 +86,7 @@ class CloudFormationApiTests(TestCase):
         self.assertDictEqual(event, result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_returns_none_if_event_appears_to_early(self, _):
+    def test_handle_stack_event_returns_none_if_event_appears_to_early(self, _):
         event = {
             'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'StackName': 'my-stack',
@@ -153,7 +104,7 @@ class CloudFormationApiTests(TestCase):
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_returns_none_if_event_has_not_expected_state(self, _):
+    def test_handle_stack_event_returns_none_if_event_has_not_expected_state(self, _):
         event = {
             'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'StackName': 'my-stack',
@@ -171,7 +122,7 @@ class CloudFormationApiTests(TestCase):
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_returns_none_if_event_is_no_stack_event(self, _):
+    def test_handle_stack_event_returns_none_if_event_is_no_stack_event(self, _):
         event = {
             'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
             'StackName': 'my-stack',
@@ -189,7 +140,7 @@ class CloudFormationApiTests(TestCase):
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_raises_exception_on_error_event(self, _):
+    def test_handle_stack_event_raises_exception_on_error_event(self, _):
         event = {
             'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
             'StackName': 'my-stack',
@@ -207,7 +158,7 @@ class CloudFormationApiTests(TestCase):
             cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_returns_none_on_rollback_in_progress_state(self, _):
+    def test_handle_stack_event_returns_none_on_rollback_in_progress_state(self, _):
         event = {
             'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
             'StackName': 'my-stack',
@@ -226,7 +177,7 @@ class CloudFormationApiTests(TestCase):
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_raises_exception_on_rollback_complete(self, _):
+    def test_handle_stack_event_raises_exception_on_rollback_complete(self, _):
         event = {
             'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
             'StackName': 'my-stack',
