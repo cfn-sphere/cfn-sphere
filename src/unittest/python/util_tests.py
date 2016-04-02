@@ -1,4 +1,5 @@
 import textwrap
+from dateutil.tz import tzutc
 import unittest2
 from mock import patch, Mock
 from datetime import datetime
@@ -39,7 +40,7 @@ class StackConfigTests(unittest2.TestCase):
     @patch("cfn_sphere.util.urllib2.urlopen")
     def test_get_cfn_api_server_time_returns_gmt_datetime(self, urlopen_mock):
         urlopen_mock.return_value.info.return_value.get.return_value = "Mon, 21 Sep 2015 17:17:26 GMT"
-        expected_timestamp = datetime(year=2015, month=9, day=21, hour=17, minute=17, second=26)
+        expected_timestamp = datetime(year=2015, month=9, day=21, hour=17, minute=17, second=26, tzinfo=tzutc())
         self.assertEqual(expected_timestamp, util.get_cfn_api_server_time())
 
     @patch("cfn_sphere.util.urllib2.urlopen")

@@ -257,7 +257,7 @@ class CloudFormation(object):
         minimum_event_timestamp = get_cfn_api_server_time() - time_jitter_window
         expected_start_event_state = action.upper() + "_IN_PROGRESS"
 
-        start_event = self.wait_for_stack_events(stack_name,
+        start_event = self.wait_for_stack_event(stack_name,
                                                  expected_start_event_state,
                                                  minimum_event_timestamp,
                                                  timeout=120)
@@ -267,7 +267,7 @@ class CloudFormation(object):
         minimum_event_timestamp = start_event["Timestamp"]
         expected_complete_event_state = action.upper() + "_COMPLETE"
 
-        end_event = self.wait_for_stack_events(stack_name,
+        end_event = self.wait_for_stack_event(stack_name,
                                                expected_complete_event_state,
                                                minimum_event_timestamp,
                                                timeout)
@@ -275,7 +275,7 @@ class CloudFormation(object):
         elapsed = end_event["Timestamp"] - start_event["Timestamp"]
         self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
 
-    def wait_for_stack_events(self, stack_name, expected_stack_event_status, valid_from_timestamp, timeout):
+    def wait_for_stack_event(self, stack_name, expected_stack_event_status, valid_from_timestamp, timeout):
         """
         Wait for a new stack event. Return it if it has the expected status
         :param stack_name: str
