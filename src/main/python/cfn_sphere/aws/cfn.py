@@ -4,7 +4,7 @@ from datetime import timedelta
 from boto import cloudformation
 from boto.exception import BotoServerError
 from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
-from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoErrorException
+from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
 logging.getLogger('boto').setLevel(logging.FATAL)
 
@@ -51,7 +51,7 @@ class CloudFormation(object):
                 result.extend(response)
             return result
         except BotoServerError as e:
-            raise CfnSphereBotoErrorException(e)
+            raise CfnSphereBotoError(e)
 
     def get_stack_names(self):
         return [stack.stack_name for stack in self.get_stacks()]
@@ -67,13 +67,13 @@ class CloudFormation(object):
         try:
             return self.conn.describe_stacks(stack_name)[0]
         except BotoServerError as e:
-            raise CfnSphereBotoErrorException(e)
+            raise CfnSphereBotoError(e)
 
     def validate_stack_is_ready_for_action(self, stack):
         try:
             cfn_stack = self.get_stack(stack.name)
         except BotoServerError as e:
-            raise CfnSphereBotoErrorException(e)
+            raise CfnSphereBotoError(e)
 
         valid_states = ["CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"]
 
@@ -87,7 +87,7 @@ class CloudFormation(object):
             stack = self.conn.describe_stacks(stack_name)
             return stack.status
         except BotoServerError as e:
-            raise CfnSphereBotoErrorException(e)
+            raise CfnSphereBotoError(e)
 
     def get_stack_parameters_dict(self, stack_name):
         parameters = {}
@@ -265,7 +265,7 @@ class CloudFormation(object):
             self.conn.validate_template(template_body=template.get_template_json())
             return True
         except BotoServerError as e:
-            raise CfnSphereBotoErrorException(e)
+            raise CfnSphereBotoError(e)
 
 
 if __name__ == "__main__":
