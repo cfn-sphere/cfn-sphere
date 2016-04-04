@@ -2,7 +2,7 @@ import pprint
 
 from boto import ec2
 from boto.exception import BotoServerError
-from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoErrorException
+from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.util import get_logger, with_boto_retry
 
 
@@ -21,7 +21,7 @@ class Ec2Api(object):
         try:
             response = self.conn.get_all_images(executable_by=["self"], filters=filters)
         except BotoServerError as e:
-            raise CfnSphereBotoErrorException(e)
+            raise CfnSphereBotoError(e)
 
         if not response:
             raise CfnSphereException("Could not find any private and available Taupage AMI")

@@ -6,6 +6,7 @@ class CfnSphereException(Exception):
         self.message = message
         self.str = self.message
         self.boto_exception = boto_exception
+        self.request_id = None
         try:
             self.request_id = boto_exception.request_id
             self.str += " (Request ID: {0})".format(self.request_id)
@@ -43,7 +44,7 @@ class InvalidEncryptedValueException(CfnSphereException):
     pass
 
 
-class CfnSphereBotoErrorException(CfnSphereException):
+class CfnSphereBotoError(CfnSphereException):
     def __init__(self, e):
         self.boto_exception = e
 

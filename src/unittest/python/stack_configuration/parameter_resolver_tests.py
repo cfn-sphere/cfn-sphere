@@ -1,7 +1,7 @@
 from boto.exception import BotoServerError
 import unittest2
 from mock import patch
-from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoErrorException
+from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 
 
@@ -89,7 +89,7 @@ class ParameterResolverTests(unittest2.TestCase):
         self.assertEqual('default-value', result)
 
     def test_get_latest_value_returns_default_value(self):
-        self.cfn_mock.return_value.get_stack_parameters_dict.side_effect = CfnSphereBotoErrorException(BotoServerError("500",
+        self.cfn_mock.return_value.get_stack_parameters_dict.side_effect = CfnSphereBotoError(BotoServerError("500",
                                                                                                               "foo"))
 
         resolver = ParameterResolver()

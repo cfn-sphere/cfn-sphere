@@ -4,7 +4,7 @@ from builtins import bytes
 from boto import kms
 from boto.exception import BotoServerError
 from boto.kms.exceptions import InvalidCiphertextException
-from cfn_sphere.exceptions import CfnSphereBotoErrorException, InvalidEncryptedValueException
+from cfn_sphere.exceptions import CfnSphereBotoError, InvalidEncryptedValueException
 from cfn_sphere.util import with_boto_retry
 import base64
 
@@ -24,7 +24,7 @@ class KMS(object):
         except InvalidCiphertextException as e:
             raise InvalidEncryptedValueException("Could not decrypted value: {0}".format(e))
         except BotoServerError as e:
-            raise CfnSphereBotoErrorException(e)
+            raise CfnSphereBotoError(e)
 
         return response['Plaintext'].decode('utf-8')
 
