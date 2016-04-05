@@ -142,7 +142,7 @@ class CloudFormation(object):
             self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
             self.logger.info("Create completed for {0}".format(stack.name))
         except BotoServerError as e:
-            raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e.message))
+            raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e.message), e)
 
     def update_stack(self, stack):
         try:
@@ -171,7 +171,7 @@ class CloudFormation(object):
             self.logger.info("Update completed for {0}".format(stack.name))
 
         except BotoServerError as e:
-            raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e.message))
+            raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e.message), e)
 
     def delete_stack(self, stack):
         try:
