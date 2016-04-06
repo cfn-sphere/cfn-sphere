@@ -174,7 +174,6 @@ class CloudFormation(object):
             StackName=stack.name,
             TemplateBody=stack.template.get_template_json(),
             Parameters=stack.get_parameters_list(),
-            TimeoutInMinutes=stack.timeout,
             Capabilities=[
                 'CAPABILITY_IAM'
             ],
