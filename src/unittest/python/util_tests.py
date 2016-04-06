@@ -1,4 +1,5 @@
 import textwrap
+from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
 import unittest2
 from mock import patch, Mock
@@ -55,11 +56,11 @@ class StackConfigTests(unittest2.TestCase):
         @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
         def my_retried_method(count_func):
             count_func()
-            exception = BotoServerError("400", "error")
-            exception.code = 'Throttling'
+            exception = ClientError(error_response={"Error": {"Code": "Throttling", "Message": "Rate exceeded"}},
+                                    operation_name="DescribeStacks")
             raise exception
 
-        with self.assertRaises(BotoServerError):
+        with self.assertRaises(ClientError):
             my_retried_method(count_func)
 
         self.assertEqual(2, count_func.call_count)
@@ -77,17 +78,17 @@ class StackConfigTests(unittest2.TestCase):
 
         self.assertEqual(1, count_func.call_count)
 
-    def test_with_boto_retry_does_not_retry_for_another_boto_server_error(self):
+    def test_with_boto_retry_does_not_retry_for_another_boto_client_error(self):
         count_func = Mock()
 
         @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
         def my_retried_method(count_func):
             count_func()
-            exception = BotoServerError("400", "error")
-            exception.code = 'ValidationError'
+            exception = ClientError(error_response={"Error": {"Code": "Another Error", "Message": "Foo"}},
+                                    operation_name="DescribeStacks")
             raise exception
 
-        with self.assertRaises(BotoServerError):
+        with self.assertRaises(ClientError):
             my_retried_method(count_func)
 
         self.assertEqual(1, count_func.call_count)

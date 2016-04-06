@@ -3,6 +3,7 @@ import json
 import logging
 import time
 from functools import wraps
+from botocore.exceptions import ClientError
 
 import yaml
 from prettytable import PrettyTable
@@ -118,13 +119,14 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
             while True:
                 try:
                     return function(*args, **kwds)
-                except BotoServerError as e:
-                    if e.code not in retry_codes or retries >= max_retries:
+                except ClientError as e:
+                    code = e.response.get("Error", {}).get("Code")
+                    if code not in retry_codes or retries >= max_retries:
                         raise e
 
                     sleep_time = pause_time_multiplier * (2 ** retries)
                     logger.warn(
-                        "{0} failed because of {1}. Will retry in {2}s".format(function.__name__, e.code, sleep_time))
+                        "{0} failed because of {1}. Will retry in {2}s".format(function.__name__, code, sleep_time))
                     time.sleep(sleep_time)
                     retries += 1
 
