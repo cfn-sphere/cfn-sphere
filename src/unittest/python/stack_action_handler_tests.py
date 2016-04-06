@@ -1,11 +1,15 @@
-import unittest2
+try: 
+    from unittest2 import TestCase
+    from mock import patch, Mock, call
+except ImportError:
+    from unittest import TestCase
+    from unittest.mock import patch, Mock, call
+
 import six
-from mock import Mock, patch, call
 from cfn_sphere import StackActionHandler
 from cfn_sphere.aws.cfn import CloudFormationStack
 
-
-class StackActionHandlerTests(unittest2.TestCase):
+class StackActionHandlerTests(TestCase):
     @patch('cfn_sphere.stack_configuration.Config')
     @patch('cfn_sphere.CloudFormation')
     @patch('cfn_sphere.ParameterResolver')

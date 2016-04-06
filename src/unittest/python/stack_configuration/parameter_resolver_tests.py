@@ -1,11 +1,16 @@
+try: 
+    from unittest2 import TestCase
+    from mock import patch
+except ImportError:
+    from unittest import TestCase
+    from unittest.mock import patch
+
 from boto.exception import BotoServerError
-import unittest2
-from mock import patch
 from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 
 
-class ParameterResolverTests(unittest2.TestCase):
+class ParameterResolverTests(TestCase):
     def setUp(self):
         self.cloudformation_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
         self.ec2api_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')

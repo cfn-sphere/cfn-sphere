@@ -1,13 +1,19 @@
-import unittest2
+try: 
+    from unittest2 import TestCase
+    from mock import Mock, mock
+except ImportError:
+    from unittest import TestCase
+    from unittest import mock
+    from unittest.mock import Mock
+
 from cfn_sphere.template import CloudFormationTemplate
-from mock import Mock, mock
 import six
 
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.exceptions import TemplateErrorException
 
 
-class CloudFormationTemplateTransformerTests(unittest2.TestCase):
+class CloudFormationTemplateTransformerTests(TestCase):
     def test_scan_dict_keys_executes_key_handler_for_all_matching_keys(self):
         dictionary = {'key': 'value'}
         handler = Mock()

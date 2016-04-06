@@ -1,12 +1,17 @@
-import unittest2
-from mock import patch
+try: 
+    from unittest2 import TestCase
+    from mock import patch
+except ImportError:
+    from unittest import TestCase
+    from unittest.mock import patch
+
 from yaml.scanner import ScannerError
 
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.exceptions import TemplateErrorException
 
 
-class FileLoaderTests(unittest2.TestCase):
+class FileLoaderTests(TestCase):
 
     @patch("cfn_sphere.file_loader.yaml")
     @patch("cfn_sphere.file_loader.open")

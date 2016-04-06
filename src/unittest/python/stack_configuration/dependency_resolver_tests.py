@@ -1,11 +1,14 @@
-import unittest2
+try: 
+    from unittest2 import TestCase
+except ImportError:
+    from unittest import TestCase
 
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.exceptions import CfnSphereException, CyclicDependencyException
 from cfn_sphere.stack_configuration import StackConfig
 
 
-class DependencyResolverTests(unittest2.TestCase):
+class DependencyResolverTests(TestCase):
     def test_is_parameter_reference_returns_true_for_uppercase_ref(self):
         self.assertTrue(DependencyResolver.is_parameter_reference("|Ref|vpc.id"))
 

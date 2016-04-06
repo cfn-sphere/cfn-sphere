@@ -1,10 +1,12 @@
-import unittest2
+try: 
+    from unittest2 import TestCase
+except ImportError:
+    from unittest import TestCase
 
 from cfn_sphere.stack_configuration import Config, StackConfig, NoConfigException
 from cfn_sphere.exceptions import CfnSphereException
 
-
-class ConfigTests(unittest2.TestCase):
+class ConfigTests(TestCase):
     def test_properties_parsing(self):
         config = Config(
                 config_dict={

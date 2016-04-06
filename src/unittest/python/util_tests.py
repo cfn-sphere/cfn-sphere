@@ -1,6 +1,11 @@
+try: 
+    from unittest2 import TestCase
+    from mock import patch, Mock
+except ImportError:
+    from unittest import TestCase
+    from unittest.mock import patch, Mock
+
 import textwrap
-import unittest2
-from mock import patch, Mock
 from datetime import datetime
 from cfn_sphere import util, CloudFormationStack
 from cfn_sphere.exceptions import CfnSphereException
@@ -8,7 +13,7 @@ from boto.exception import BotoServerError
 from cfn_sphere.template import CloudFormationTemplate
 
 
-class StackConfigTests(unittest2.TestCase):
+class StackConfigTests(TestCase):
     def test_convert_yaml_to_json_string_returns_valid_json_string(self):
         data = textwrap.dedent("""
         foo:

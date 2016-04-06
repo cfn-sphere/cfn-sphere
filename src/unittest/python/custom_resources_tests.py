@@ -1,7 +1,11 @@
-from textwrap import dedent
+try: 
+    from unittest2 import TestCase
+    from mock import patch
+except ImportError:
+    from unittest import TestCase
+    from unittest.mock import patch
 
-import unittest2
-from mock import patch
+from textwrap import dedent
 import yaml
 
 from cfn_sphere.custom_resources import CustomResourceHandler
@@ -10,7 +14,7 @@ from cfn_sphere.aws.cfn import CloudFormationStack
 from cfn_sphere.template import CloudFormationTemplate
 
 
-class CustomResourceHandlerTests(unittest2.TestCase):
+class CustomResourceHandlerTests(TestCase):
     @patch('cfn_sphere.custom_resources.CustomResourceHandler.handle_sns_subscription')
     def test_process_post_resources(self, handle_sns_subscriptions_mock):
         custom_resource_yaml = dedent("""

@@ -1,12 +1,17 @@
-import unittest2
+try: 
+    from unittest2 import TestCase
+    from mock import Mock, patch
+except ImportError:
+    from unittest import TestCase
+    from unittest.mock import Mock, patch
+    
 import datetime
-from mock import Mock, patch
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.exceptions import CfnSphereException
 from boto.ec2.image import Image
 
 
-class Ec2ApiTests(unittest2.TestCase):
+class Ec2ApiTests(TestCase):
     @patch('cfn_sphere.aws.ec2.ec2.connect_to_region')
     def test_get_taupage_images_raises_exception_on_empty_response(self, ec2_mock):
         ec2_mock.return_value.get_all_images.return_value = []

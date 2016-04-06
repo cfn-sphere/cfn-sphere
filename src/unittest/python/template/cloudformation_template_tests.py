@@ -1,10 +1,14 @@
+try: 
+    from unittest2 import TestCase
+except ImportError:
+    from unittest import TestCase
+
 import six
-import unittest2
 
 from cfn_sphere.template import CloudFormationTemplate
 
 
-class TestCloudFormationTemplateTests(unittest2.TestCase):
+class TestCloudFormationTemplateTests(TestCase):
     def test_get_template_body_dict(self):
         template_body = {
             'Description': 'some description',
