@@ -240,8 +240,7 @@ class CloudFormationApiTests(TestCase):
             Parameters=[('a', 'b')],
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
-            TemplateBody={'key': 'value'},
-            TimeoutInMinutes=42)
+            TemplateBody={'key': 'value'})
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     def test_validate_stack_is_ready_for_action_raises_exception_on_unknown_stack_state(self, get_stack_mock):
