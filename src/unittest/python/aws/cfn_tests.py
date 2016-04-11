@@ -1,8 +1,13 @@
+try: 
+    from unittest2 import TestCase
+    from mock import Mock, patch
+except ImportError:
+    from unittest import TestCase
+    from unittest.mock import Mock, patch
+
 import datetime
 from datetime import timedelta
 
-import unittest2
-from mock import Mock, patch
 from boto.cloudformation.stack import StackEvent, Stack
 from boto.exception import BotoServerError
 from boto.resultset import ResultSet
@@ -13,7 +18,7 @@ from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 
 
-class CloudFormationApiTests(unittest2.TestCase):
+class CloudFormationApiTests(TestCase):
     @patch('cfn_sphere.aws.cfn.cloudformation')
     def test_get_stacks_correctly_calls_aws_api(self, cloudformation_mock):
         stacks = [Mock(spec=Stack), Mock(spec=Stack)]

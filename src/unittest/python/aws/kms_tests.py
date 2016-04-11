@@ -1,14 +1,19 @@
+try: 
+    from unittest2 import TestCase
+    from mock import patch
+except ImportError:
+    from unittest import TestCase
+    from unittest.mock import patch
+
 import base64
 
-import unittest2
 from boto.kms.exceptions import InvalidCiphertextException
-from mock import patch
 
 from cfn_sphere.aws.kms import KMS
 from cfn_sphere.exceptions import InvalidEncryptedValueException
 
 
-class KMSTests(unittest2.TestCase):
+class KMSTests(TestCase):
     @patch('cfn_sphere.aws.kms.kms.connect_to_region')
     def test_decrypt_value(self, kms_mock):
         kms_mock.return_value.decrypt.return_value = {'Plaintext': b'decryptedValue'}
