@@ -46,6 +46,7 @@ class CloudFormation(object):
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
+    @timed
     def get_stacks(self):
         """
         Get all stacks
@@ -59,6 +60,14 @@ class CloudFormation(object):
             raise CfnSphereBotoError(e)
 
     @timed
+    def get_stack_descriptions(self):
+        """
+        Get all stacks stack descriptions
+        :return List(dict)
+        """
+        paginator = self.client.get_paginator('describe_stacks')
+        return tuple(paginator.paginate())[0]["Stacks"]
+
     def stack_exists(self, stack_name):
         """
         Check if a stack exists for given stack_name
@@ -77,6 +86,7 @@ class CloudFormation(object):
             else:
                 raise
 
+    @timed
     def get_stack_names(self):
         """
         Get a list of stack names
@@ -91,8 +101,10 @@ class CloudFormation(object):
         :return: dict
         """
         stacks_dict = {}
-        for stack in self.get_stacks():
-            stacks_dict[stack.stack_name] = {"parameters": stack.parameters, "outputs": stack.outputs}
+        stack_descriptions = self.get_stack_descriptions()
+        for stack in stack_descriptions:
+            stacks_dict[stack["StackName"]] = {"parameters": stack.get("Parameters", []),
+                                               "outputs": stack.get("Outputs", [])}
         return stacks_dict
 
     def validate_stack_is_ready_for_action(self, stack):

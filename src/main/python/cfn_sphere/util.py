@@ -23,6 +23,7 @@ def timed(function):
         result = function(*args, **kwds)
         elapsed = time.time() - start
         logger.debug("{0} hat {1} Sekunden benoetigt".format(function.__name__, round(elapsed, 2)))
+        print(elapsed)
         return result
 
     return wrapper
