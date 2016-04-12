@@ -7,6 +7,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
+from cfn_sphere.util import timed
 
 logging.getLogger('boto').setLevel(logging.FATAL)
 
@@ -57,6 +58,7 @@ class CloudFormation(object):
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
+    @timed
     def stack_exists(self, stack_name):
         """
         Check if a stack exists for given stack_name
@@ -64,10 +66,16 @@ class CloudFormation(object):
         :param stack_name: str
         :return: bool
         """
-        if stack_name in self.get_stack_names():
-            return True
-        else:
-            return False
+        try:
+            if self.get_stack(stack_name).stack_status:
+                return True
+            else:
+                return False
+        except ClientError as e:
+            if self.is_boto_stack_does_not_exist_exception(e):
+                return False
+            else:
+                raise
 
     def get_stack_names(self):
         """
@@ -76,6 +84,7 @@ class CloudFormation(object):
         """
         return [stack.stack_name for stack in self.get_stacks()]
 
+    @timed
     def get_stacks_dict(self):
         """
         Get a dict containing all stacks with their name as key and {parameters, outputs} as value
@@ -133,6 +142,22 @@ class CloudFormation(object):
         """
         if isinstance(exception, ClientError):
             if exception.response["Error"]["Message"] == "No updates are to be performed.":
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    @staticmethod
+    def is_boto_stack_does_not_exist_exception(exception):
+        """
+        Return true if the given exception means that a stack does not exist
+        :param exception: Exception
+        :return: bool
+        """
+        if isinstance(exception, ClientError):
+            message = exception.response["Error"]["Message"]
+            if message.startswith("Stack with id") and message.endswith("does not exist"):
                 return True
             else:
                 return False
@@ -256,9 +281,9 @@ class CloudFormation(object):
         expected_start_event_state = action.upper() + "_IN_PROGRESS"
 
         start_event = self.wait_for_stack_event(stack_name,
-                                                 expected_start_event_state,
-                                                 minimum_event_timestamp,
-                                                 timeout=120)
+                                                expected_start_event_state,
+                                                minimum_event_timestamp,
+                                                timeout=120)
 
         self.logger.info("Stack {0} started".format(action))
 
@@ -266,9 +291,9 @@ class CloudFormation(object):
         expected_complete_event_state = action.upper() + "_COMPLETE"
 
         end_event = self.wait_for_stack_event(stack_name,
-                                               expected_complete_event_state,
-                                               minimum_event_timestamp,
-                                               timeout)
+                                              expected_complete_event_state,
+                                              minimum_event_timestamp,
+                                              timeout)
 
         elapsed = end_event["Timestamp"] - start_event["Timestamp"]
         self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
@@ -361,4 +386,5 @@ class CloudFormation(object):
 
 if __name__ == "__main__":
     cfn = CloudFormation()
-    print(cfn.get_stack_events("grafana"))
+    cfn.logger.setLevel(logging.DEBUG)
+    print(cfn.get_stacks_dict())
