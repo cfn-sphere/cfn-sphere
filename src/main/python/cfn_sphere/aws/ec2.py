@@ -47,6 +47,7 @@ class Ec2Api(object):
         creation_dates.sort(reverse=True)
         return images[creation_dates[0]]
 
+    @with_boto_retry()
     def get_latest_taupage_image_id(self):
         """
         Return the image id of the most recent private AMI matching the name pattern 'Taupage-AMI-*'
