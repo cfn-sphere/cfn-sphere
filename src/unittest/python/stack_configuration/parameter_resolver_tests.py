@@ -36,18 +36,26 @@ class ParameterResolverTests(unittest2.TestCase):
         convert_list_to_string_mock.assert_called_once_with(['a', 'b'])
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
-    def test_resolve_parameter_values_returns_ref_value(self, get_output_value_mock):
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    def test_resolve_parameter_values_returns_ref_value(self, cfn_mock, get_output_value_mock):
+        cfn_mock.return_value.get_stack_outputs.return_value = None
         get_output_value_mock.return_value = 'bar'
+
         result = ParameterResolver().resolve_parameter_values({'foo': '|Ref|stack.output'}, 'foo')
-        get_output_value_mock.assert_called_once_with('stack.output')
+
+        get_output_value_mock.assert_called_with(None, "stack", "output")
         self.assertEqual({'foo': 'bar'}, result)
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
-    def test_resolve_parameter_values_returns_ref_list_value(self, get_output_value_mock):
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    def test_resolve_parameter_values_returns_ref_list_value(self, cfn_mock, get_output_value_mock):
+        cfn_mock.return_value.get_stack_outputs.return_value = None
         get_output_value_mock.return_value = 'bar'
+
         result = ParameterResolver().resolve_parameter_values(
             {'foo': ['|Ref|stack.output', '|Ref|stack.output']}, 'foo')
-        get_output_value_mock.assert_called_with('stack.output')
+
+        get_output_value_mock.assert_called_with(None, "stack", "output")
         self.assertEqual({'foo': 'bar,bar'}, result)
 
     def test_resolve_parameter_values_raises_exception_on_none_value(self):

@@ -21,7 +21,8 @@ class CloudFormationApiTests(unittest2.TestCase):
 
     @patch('cfn_sphere.aws.cfn.boto3.resource')
     def test_get_stack_raises_cfnsphere_boto_exception_on_client_error(self, boto_mock):
-        boto_mock.return_value.Stack.side_effect = ClientError({"Error": {"Code": "Error"}}, "FooOperation")
+        boto_mock.return_value.Stack.side_effect = ClientError({"Error": {"Code": "Error", "Message": "AnyMessage"}},
+                                                               "FooOperation")
         with self.assertRaises(CfnSphereBotoError):
             CloudFormation().get_stack("Foo")
 
@@ -51,6 +52,21 @@ class CloudFormationApiTests(unittest2.TestCase):
     def test_stack_exists_returns_false_for_non_existing_stack(self, get_stack_mock):
         get_stack_mock.side_effect = ClientError({"Error": {"Message": "Stack with id stack3 does not exist"}}, "Foo")
         self.assertFalse(CloudFormation().stack_exists("stack3"))
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack_descriptions')
+    def test_get_stacks_dict_returns_empty_dict_with_no_stacks(self, get_stack_descriptions_mock):
+        get_stack_descriptions_mock.return_value = {}
+        self.assertEqual({}, CloudFormation().get_stacks_dict())
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack_descriptions')
+    def test_get_stacks_dict_returns_stack_dict(self, get_stack_descriptions_mock):
+        get_stack_descriptions_mock.return_value = [{"StackName": "Foo", "Parameters": [], "Outputs": []}]
+        self.assertEqual({'Foo': {'outputs': [], 'parameters': []}}, CloudFormation().get_stacks_dict())
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack_descriptions')
+    def test_get_stacks_dict_always_returns_empty_list_parameters_and_outputs(self, get_stack_descriptions_mock):
+        get_stack_descriptions_mock.return_value = [{"StackName": "Foo"}]
+        self.assertEqual({'Foo': {'outputs': [], 'parameters': []}}, CloudFormation().get_stacks_dict())
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     def test_wait_for_stack_event_raises_exception_on_rollback(self, boto_mock):

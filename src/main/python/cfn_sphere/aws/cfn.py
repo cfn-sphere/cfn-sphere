@@ -21,8 +21,11 @@ class CloudFormationStack(object):
         self.region = region
         self.timeout = timeout
 
+    def __str__(self):
+        return str(vars(self))
+
     def get_parameters_list(self):
-        return [{"ParameterKey": key, "ParameterValue": value} for key, value in self.parameters.items()]
+        return [{"ParameterKey": str(key), "ParameterValue": str(value)} for key, value in self.parameters.items()]
 
     def get_tags_list(self):
         return [{"Key": key, "Value": value} for key, value in self.tags.items()]
@@ -101,11 +104,33 @@ class CloudFormation(object):
         :return: dict
         """
         stacks_dict = {}
-        stack_descriptions = self.get_stack_descriptions()
-        for stack in stack_descriptions:
+        for stack in self.get_stack_descriptions():
             stacks_dict[stack["StackName"]] = {"parameters": stack.get("Parameters", []),
                                                "outputs": stack.get("Outputs", [])}
         return stacks_dict
+
+    def get_stack_outputs(self):
+        """
+        Get a dict of all available stack outputs
+        :return: dict(dict(output-key, output-value))
+        """
+        stack_outputs = {}
+        stack_descriptions = self.get_stack_descriptions()
+
+        for stack_description in stack_descriptions:
+
+            if stack_description.get("Outputs"):
+                stack_name = stack_description["StackName"]
+                outputs = {}
+
+                for output in stack_description["Outputs"]:
+                    key = output["OutputKey"]
+                    value = output["OutputValue"]
+                    outputs[key] = value
+
+                stack_outputs[stack_name] = outputs
+
+        return stack_outputs
 
     def validate_stack_is_ready_for_action(self, stack):
         """
@@ -225,7 +250,9 @@ class CloudFormation(object):
         self.client.delete_stack(StackName=stack.name)
 
     def create_stack(self, stack):
+        self.logger.debug("Creating stack: {0}".format(stack))
         assert isinstance(stack, CloudFormationStack)
+
         try:
             self.logger.info(
                 "Creating stack {0} from template {1} with parameters:\n{2}".format(stack.name,
@@ -240,6 +267,9 @@ class CloudFormation(object):
             raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e))
 
     def update_stack(self, stack):
+        self.logger.debug("Updating stack: {0}".format(stack))
+        assert isinstance(stack, CloudFormationStack)
+
         try:
 
             try:
@@ -269,6 +299,9 @@ class CloudFormation(object):
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e))
 
     def delete_stack(self, stack):
+        self.logger.debug("Deleting stack: {0}".format(stack))
+        assert isinstance(stack, CloudFormationStack)
+
         try:
             self.logger.info("Deleting stack {0}".format(stack.name))
             self._delete_stack(stack)
@@ -377,9 +410,10 @@ class CloudFormation(object):
                 else:
                     status_reason = event.get("ResourceStatusReason", None)
                     status_reason_string = " ({0})".format(status_reason) if status_reason else ""
-                    event_string = "{0}: {1}{2}".format(event["LogicalResourceId"],
-                                                        event["ResourceStatus"],
-                                                        status_reason_string)
+                    event_string = "{0} {1}: {2}{3}".format(event["StackName"],
+                                                            event["LogicalResourceId"],
+                                                            event["ResourceStatus"],
+                                                            status_reason_string)
 
                     self.logger.info(event_string)
                     return None
@@ -400,4 +434,4 @@ class CloudFormation(object):
 if __name__ == "__main__":
     cfn = CloudFormation()
     cfn.logger.setLevel(logging.DEBUG)
-    print(cfn.get_stacks_dict())
+    print(cfn.get_stack_parameters_dict("cfn-sphere-test-instances"))
