@@ -1,7 +1,7 @@
 import datetime
 from datetime import timedelta
 
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, BotoCoreError
 from dateutil.tz import tzutc
 import unittest2
 from mock import Mock, patch
@@ -14,8 +14,46 @@ from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoEr
 
 
 class CloudFormationApiTests(unittest2.TestCase):
+    @patch('cfn_sphere.aws.cfn.boto3.resource')
+    def test_get_stack_properly_calls_boto(self, boto_mock):
+        CloudFormation().get_stack("Foo")
+        boto_mock.return_value.Stack.assert_called_once_with("Foo")
+
+    @patch('cfn_sphere.aws.cfn.boto3.resource')
+    def test_get_stack_raises_cfnsphere_boto_exception_on_client_error(self, boto_mock):
+        boto_mock.return_value.Stack.side_effect = ClientError({"Error": {"Code": "Error"}}, "FooOperation")
+        with self.assertRaises(CfnSphereBotoError):
+            CloudFormation().get_stack("Foo")
+
+    @patch('cfn_sphere.aws.cfn.boto3.resource')
+    def test_get_stack_raises_cfnsphere_boto_exception_on_botocore_error(self, boto_mock):
+        boto_mock.return_value.Stack.side_effect = BotoCoreError()
+        with self.assertRaises(CfnSphereBotoError):
+            CloudFormation().get_stack("Foo")
+
+    @patch('cfn_sphere.aws.cfn.boto3.resource')
+    def test_get_stack_raises_other_exceptions_as_is(self, boto_mock):
+        boto_mock.return_value.Stack.side_effect = TimeoutError()
+        with self.assertRaises(TimeoutError):
+            CloudFormation().get_stack("Foo")
+
+    @patch('cfn_sphere.aws.cfn.boto3.resource')
+    def test_get_stacks_properly_calls_boto(self, boto_mock):
+        CloudFormation().get_stacks()
+        boto_mock.return_value.stacks.all.assert_called_once_with()
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_stack_exists_returns_true_for_existing_stack(self, get_stack_mock):
+        get_stack_mock.return_value = Mock()
+        self.assertTrue(CloudFormation().stack_exists("stack1"))
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_stack_exists_returns_false_for_non_existing_stack(self, get_stack_mock):
+        get_stack_mock.side_effect = ClientError({"Error": {"Message": "Stack with id stack3 does not exist"}}, "Foo")
+        self.assertFalse(CloudFormation().stack_exists("stack3"))
+
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_raises_exception_on_rollback(self, cloudformation_mock):
+    def test_wait_for_stack_event_raises_exception_on_rollback(self, boto_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
@@ -31,7 +69,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack_events_mock = Mock()
         stack_events_mock.describe_stack_events.return_value = [event]
 
-        cloudformation_mock.connect_to_region.return_value = stack_events_mock
+        boto_mock.connect_to_region.return_value = stack_events_mock
 
         cfn = CloudFormation()
         with self.assertRaises(Exception):
@@ -39,7 +77,7 @@ class CloudFormationApiTests(unittest2.TestCase):
                                      timeout=10)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_raises_exception_on_update_failure(self, cloudformation_mock):
+    def test_wait_for_stack_event_raises_exception_on_update_failure(self, boto_mock):
         timestamp = datetime.datetime.utcnow()
 
         template_mock = Mock(spec=CloudFormationTemplate)
@@ -55,7 +93,7 @@ class CloudFormationApiTests(unittest2.TestCase):
         stack_events_mock = Mock()
         stack_events_mock.describe_stack_events.return_value = [event]
 
-        cloudformation_mock.connect_to_region.return_value = stack_events_mock
+        boto_mock.connect_to_region.return_value = stack_events_mock
 
         cfn = CloudFormation()
         with self.assertRaises(Exception):
