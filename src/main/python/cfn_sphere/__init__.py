@@ -40,6 +40,8 @@ class StackActionHandler(object):
                 cli_parameters=self.cli_parameters,
                 stack_name=stack_name)
 
+            self.logger.debug("Parameters after merging with cli options: {0}".format(merged_parameters))
+
             stack = CloudFormationStack(template=template, parameters=merged_parameters, tags=self.config.tags,
                                         name=stack_name, region=self.config.region, timeout=stack_config.timeout)
 
