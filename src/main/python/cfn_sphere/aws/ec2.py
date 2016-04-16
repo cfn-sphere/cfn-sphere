@@ -1,7 +1,6 @@
 import boto3
-from boto.exception import BotoServerError
 
-from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
+from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.util import with_boto_retry
 
 
@@ -25,10 +24,7 @@ class Ec2Api(object):
             {'Name': 'root-device-type', 'Values': ['ebs']}
         ]
 
-        try:
-            response = self.client.describe_images(ExecutableUsers=["self"], Filters=filters)
-        except BotoServerError as e:
-            raise CfnSphereBotoError(e)
+        response = self.client.describe_images(ExecutableUsers=["self"], Filters=filters)
 
         if not response['Images']:
             raise CfnSphereException("Could not find any private and available Taupage AMI")

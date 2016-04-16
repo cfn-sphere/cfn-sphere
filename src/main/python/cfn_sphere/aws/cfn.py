@@ -5,7 +5,7 @@ from datetime import timedelta
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
-from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string
+from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 from cfn_sphere.util import timed
 
@@ -32,6 +32,7 @@ class CloudFormationStack(object):
 
 
 class CloudFormation(object):
+    @with_boto_retry()
     def __init__(self, region="eu-west-1"):
         self.logger = get_logger()
         self.client = boto3.client('cloudformation', region_name=region)
@@ -40,16 +41,15 @@ class CloudFormation(object):
     def get_stack(self, stack_name):
         """
         Get stack resource representation for a given stack_name
+        This doesn't actually call the AWS API but only creates a stack stub lazy loading it's content
         :param stack_name: str:
         :return: boto3.resources.factory.cloudformation.Stack
         :raise CfnSphereBotoError:
         """
-        try:
-            return self.resource.Stack(stack_name)
-        except (BotoCoreError, ClientError) as e:
-            raise CfnSphereBotoError(e)
+        return self.resource.Stack(stack_name)
 
     @timed
+    @with_boto_retry()
     def get_stacks(self):
         """
         Get all stacks
@@ -63,14 +63,20 @@ class CloudFormation(object):
             raise CfnSphereBotoError(e)
 
     @timed
+    @with_boto_retry()
     def get_stack_descriptions(self):
         """
         Get all stacks stack descriptions
         :return List(dict)
+        :raise CfnSphereBotoError:
         """
-        paginator = self.client.get_paginator('describe_stacks')
-        return tuple(paginator.paginate())[0]["Stacks"]
+        try:
+            paginator = self.client.get_paginator('describe_stacks')
+            return tuple(paginator.paginate())[0]["Stacks"]
+        except (BotoCoreError, ClientError) as e:
+            raise CfnSphereBotoError(e)
 
+    @with_boto_retry()
     def stack_exists(self, stack_name):
         """
         Check if a stack exists for given stack_name
@@ -83,11 +89,23 @@ class CloudFormation(object):
                 return True
             else:
                 return False
-        except ClientError as e:
+        except (BotoCoreError, ClientError) as e:
             if self.is_boto_stack_does_not_exist_exception(e):
                 return False
             else:
-                raise
+                raise CfnSphereBotoError(e)
+
+    def get_stack_events(self, stack_name):
+        """
+        Get recent stack events for a given stack_name
+        :param stack_name: str
+        :return: list(dict)
+        """
+        try:
+            paginator = self.client.get_paginator('describe_stack_events')
+            return tuple(paginator.paginate(StackName=stack_name))[0]["StackEvents"]
+        except (BotoCoreError, ClientError) as e:
+            raise CfnSphereBotoError(e)
 
     @timed
     def get_stack_names(self):
@@ -201,15 +219,7 @@ class CloudFormation(object):
         else:
             return False
 
-    def get_stack_events(self, stack_name):
-        """
-        Get recent stack events for a given stack_name
-        :param stack_name: str
-        :return: list(dict)
-        """
-        paginator = self.client.get_paginator('describe_stack_events')
-        return tuple(paginator.paginate(StackName=stack_name))[0]["StackEvents"]
-
+    @with_boto_retry()
     def _create_stack(self, stack):
         """
         Create cloudformation stack
@@ -227,6 +237,7 @@ class CloudFormation(object):
             Tags=stack.get_tags_list()
         )
 
+    @with_boto_retry()
     def _update_stack(self, stack):
         """
         Update cloudformation stack
@@ -242,6 +253,7 @@ class CloudFormation(object):
             Tags=stack.get_tags_list()
         )
 
+    @with_boto_retry()
     def _delete_stack(self, stack):
         """
         Delete cloudformation stack

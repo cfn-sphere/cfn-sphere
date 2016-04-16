@@ -1,12 +1,13 @@
 import textwrap
+from datetime import datetime
+
 from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
 import unittest2
 from mock import patch, Mock
-from datetime import datetime
+
 from cfn_sphere import util, CloudFormationStack
 from cfn_sphere.exceptions import CfnSphereException
-from boto.exception import BotoServerError
 from cfn_sphere.template import CloudFormationTemplate
 
 

@@ -5,8 +5,6 @@ import boto3
 from botocore.exceptions import ClientError
 import click
 
-from boto.exception import NoAuthHandlerFound, BotoServerError
-
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.kms import KMS
@@ -16,6 +14,7 @@ from cfn_sphere import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere import __version__
+
 
 LOGGER = get_logger(root=True)
 

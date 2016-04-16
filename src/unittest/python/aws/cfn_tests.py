@@ -1,11 +1,9 @@
 import datetime
-from datetime import timedelta
 
 from botocore.exceptions import ClientError, BotoCoreError
 from dateutil.tz import tzutc
 import unittest2
 from mock import Mock, patch
-from boto.cloudformation.stack import StackEvent
 
 from cfn_sphere.template import CloudFormationTemplate
 from cfn_sphere.aws.cfn import CloudFormationStack
@@ -67,54 +65,6 @@ class CloudFormationApiTests(unittest2.TestCase):
     def test_get_stacks_dict_always_returns_empty_list_parameters_and_outputs(self, get_stack_descriptions_mock):
         get_stack_descriptions_mock.return_value = [{"StackName": "Foo"}]
         self.assertEqual({'Foo': {'outputs': [], 'parameters': []}}, CloudFormation().get_stacks_dict())
-
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_raises_exception_on_rollback(self, boto_mock):
-        timestamp = datetime.datetime.utcnow()
-
-        template_mock = Mock(spec=CloudFormationTemplate)
-        template_mock.url = "foo.yml"
-        template_mock.get_template_body_dict.return_value = {}
-
-        event = StackEvent()
-        event.resource_type = "AWS::CloudFormation::Stack"
-        event.resource_status = "ROLLBACK_COMPLETE"
-        event.event_id = "123"
-        event.timestamp = timestamp
-
-        stack_events_mock = Mock()
-        stack_events_mock.describe_stack_events.return_value = [event]
-
-        boto_mock.connect_to_region.return_value = stack_events_mock
-
-        cfn = CloudFormation()
-        with self.assertRaises(Exception):
-            cfn.wait_for_stack_event("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
-                                     timeout=10)
-
-    @patch('cfn_sphere.aws.cfn.boto3.client')
-    def test_wait_for_stack_event_raises_exception_on_update_failure(self, boto_mock):
-        timestamp = datetime.datetime.utcnow()
-
-        template_mock = Mock(spec=CloudFormationTemplate)
-        template_mock.url = "foo.yml"
-        template_mock.get_template_body_dict.return_value = {}
-
-        event = StackEvent()
-        event.resource_type = "AWS::CloudFormation::Stack"
-        event.resource_status = "UPDATE_FAILED"
-        event.event_id = "123"
-        event.timestamp = timestamp
-
-        stack_events_mock = Mock()
-        stack_events_mock.describe_stack_events.return_value = [event]
-
-        boto_mock.connect_to_region.return_value = stack_events_mock
-
-        cfn = CloudFormation()
-        with self.assertRaises(Exception):
-            cfn.wait_for_stack_event("foo", ["UPDATE_COMPLETE"], timestamp - timedelta(seconds=10),
-                                     timeout=10)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     def test_handle_stack_event_returns_expected_event(self, _):
