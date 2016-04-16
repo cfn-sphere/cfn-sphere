@@ -18,25 +18,6 @@ class CloudFormationApiTests(unittest2.TestCase):
         boto_mock.return_value.Stack.assert_called_once_with("Foo")
 
     @patch('cfn_sphere.aws.cfn.boto3.resource')
-    def test_get_stack_raises_cfnsphere_boto_exception_on_client_error(self, boto_mock):
-        boto_mock.return_value.Stack.side_effect = ClientError({"Error": {"Code": "Error", "Message": "AnyMessage"}},
-                                                               "FooOperation")
-        with self.assertRaises(CfnSphereBotoError):
-            CloudFormation().get_stack("Foo")
-
-    @patch('cfn_sphere.aws.cfn.boto3.resource')
-    def test_get_stack_raises_cfnsphere_boto_exception_on_botocore_error(self, boto_mock):
-        boto_mock.return_value.Stack.side_effect = BotoCoreError()
-        with self.assertRaises(CfnSphereBotoError):
-            CloudFormation().get_stack("Foo")
-
-    @patch('cfn_sphere.aws.cfn.boto3.resource')
-    def test_get_stack_raises_other_exceptions_as_is(self, boto_mock):
-        boto_mock.return_value.Stack.side_effect = TimeoutError()
-        with self.assertRaises(TimeoutError):
-            CloudFormation().get_stack("Foo")
-
-    @patch('cfn_sphere.aws.cfn.boto3.resource')
     def test_get_stacks_properly_calls_boto(self, boto_mock):
         CloudFormation().get_stacks()
         boto_mock.return_value.stacks.all.assert_called_once_with()
@@ -385,3 +366,23 @@ class CloudFormationApiTests(unittest2.TestCase):
         exception = Mock(spec=ClientError)
         exception.response = {"Error": {"Message": "No updates are to be performed."}}
         self.assertTrue(CloudFormation.is_boto_no_update_required_exception(exception))
+
+    def test_is_boto_stack_does_not_exist_exception_returns_false_with_other_exception(self):
+        exception = Mock(spec=Exception)
+        exception.message = "No updates are to be performed."
+        self.assertFalse(CloudFormation.is_boto_stack_does_not_exist_exception(exception))
+
+    def test_is_boto_stack_does_not_exist_exception_returns_false_with_other_message(self):
+        exception = Mock(spec=ClientError)
+        exception.response = {"Error": {"Message": "Other error"}}
+        self.assertFalse(CloudFormation.is_boto_stack_does_not_exist_exception(exception))
+
+    def test_is_boto_stack_does_not_exist_exception_returns_true_for_message1(self):
+        exception = Mock(spec=ClientError)
+        exception.response = {"Error": {"Message": "Stack foo does not exist"}}
+        self.assertTrue(CloudFormation.is_boto_stack_does_not_exist_exception(exception))
+
+    def test_is_boto_stack_does_not_exist_exception_returns_true_for_message2(self):
+        exception = Mock(spec=ClientError)
+        exception.response = {"Error": {"Message": "Stack with id foo does not exist"}}
+        self.assertTrue(CloudFormation.is_boto_stack_does_not_exist_exception(exception))

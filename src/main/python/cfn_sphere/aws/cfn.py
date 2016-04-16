@@ -95,6 +95,7 @@ class CloudFormation(object):
             else:
                 raise CfnSphereBotoError(e)
 
+    @with_boto_retry()
     def get_stack_events(self, stack_name):
         """
         Get recent stack events for a given stack_name
@@ -212,7 +213,7 @@ class CloudFormation(object):
         """
         if isinstance(exception, ClientError):
             message = exception.response["Error"]["Message"]
-            if message.startswith("Stack with id") and message.endswith("does not exist"):
+            if message.startswith("Stack") and message.endswith("does not exist"):
                 return True
             else:
                 return False
@@ -320,11 +321,15 @@ class CloudFormation(object):
 
             try:
                 self.wait_for_stack_action_to_complete(stack.name, "delete", 600)
-            except (BotoCoreError, ClientError) as e:
-                if e.error_code == "ValidationError" and str(e).endswith("does not exist"):
+            except CfnSphereBotoError as e:
+                print(e)
+                if self.is_boto_stack_does_not_exist_exception(e.boto_exception):
                     pass
                 else:
                     raise
+            except Exception as e:
+                print(e)
+                print(type(e))
 
             self.logger.info("Deletion completed for {0}".format(stack.name))
         except (BotoCoreError, ClientError) as e:
