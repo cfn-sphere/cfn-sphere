@@ -31,7 +31,6 @@ def set_properties(project):
     project.build_depends_on("moto")
     project.depends_on('six')
     project.depends_on("click")
-    project.depends_on("boto")
     project.depends_on("boto3")
     project.depends_on("future")
     project.depends_on("pyyaml")

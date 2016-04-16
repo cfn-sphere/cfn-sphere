@@ -1,17 +1,15 @@
-import datetime
 import json
 import logging
 import time
 from functools import wraps
-from botocore.exceptions import ClientError
 
+from botocore.exceptions import ClientError
 import yaml
 from prettytable import PrettyTable
-from boto.exception import BotoServerError
+from dateutil import parser
 
 from six.moves.urllib import request as urllib2
 from cfn_sphere.exceptions import CfnSphereException
-from dateutil import parser
 
 
 def timed(function):

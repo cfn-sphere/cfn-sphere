@@ -1,11 +1,9 @@
-
-import pprint
-
 import boto3
 from botocore.exceptions import ClientError, BotoCoreError
 
-from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
-from cfn_sphere.util import get_logger, with_boto_retry
+from cfn_sphere.exceptions import CfnSphereBotoError
+from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.util import with_boto_retry
 
 
 class Ec2Api(object):
