@@ -2,7 +2,7 @@ import sys
 import logging
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, BotoCoreError
 import click
 
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
@@ -22,7 +22,7 @@ LOGGER = get_logger(root=True)
 def get_first_account_alias():
     try:
         return boto3.client('iam').list_account_aliases()["AccountAliases"][0]
-    except ClientError as e:
+    except (BotoCoreError, ClientError) as e:
         LOGGER.error(e)
         sys.exit(1)
     except Exception as e:
