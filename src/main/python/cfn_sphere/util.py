@@ -6,6 +6,7 @@ from functools import wraps
 from botocore.exceptions import ClientError
 import yaml
 from prettytable import PrettyTable
+
 from dateutil import parser
 
 from six.moves.urllib import request as urllib2
@@ -20,7 +21,7 @@ def timed(function):
         start = time.time()
         result = function(*args, **kwds)
         elapsed = time.time() - start
-        logger.debug("{0} hat {1} Sekunden benoetigt".format(function.__name__, round(elapsed, 2)))
+        logger.debug("Execution of {0} required {1}s".format(function.__name__, round(elapsed, 2)))
         return result
 
     return wrapper
@@ -131,6 +132,7 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
         return wrapper
 
     return decorator
+
 
 if __name__ == "__main__":
     print(get_cfn_api_server_time())
