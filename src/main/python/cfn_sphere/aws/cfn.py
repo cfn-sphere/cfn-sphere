@@ -436,7 +436,7 @@ class CloudFormation(object):
         :return: boolean (true if valid)
         """
         try:
-            self.client.validate_template(template_body=template.get_template_json())
+            self.client.validate_template(TemplateBody=template.get_template_json())
             return True
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
