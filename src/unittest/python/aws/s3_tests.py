@@ -28,4 +28,3 @@ class S3Tests(unittest2.TestCase):
 
         result = S3().get_contents_from_url('s3://my-bucket/my/key/file.json')
         self.assertEqual("Foo", result)
-

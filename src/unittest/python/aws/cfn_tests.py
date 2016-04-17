@@ -240,6 +240,7 @@ class CloudFormationApiTests(TestCase):
         with self.assertRaises(CfnStackActionFailedException):
             cfn.validate_stack_is_ready_for_action(stack)
 
+
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     def test_validate_stack_is_ready_for_action_raises_exception_on_update_in_progress(self, get_stack_mock):
         stack_mock = Mock()

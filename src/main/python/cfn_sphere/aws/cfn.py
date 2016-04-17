@@ -9,7 +9,6 @@ from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_para
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 from cfn_sphere.util import timed
 
-
 logging.getLogger('boto').setLevel(logging.FATAL)
 
 
@@ -54,7 +53,6 @@ class CloudFormation(object):
     def get_stacks(self):
         """
         Get all stacks
-
         :return: List(boto3.resources.factory.cloudformation.Stack)
         :raise CfnSphereBotoError:
         """
