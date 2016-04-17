@@ -3,8 +3,8 @@ import logging
 import time
 from functools import wraps
 
-from botocore.exceptions import ClientError
 import yaml
+
 from prettytable import PrettyTable
 
 from dateutil import parser
