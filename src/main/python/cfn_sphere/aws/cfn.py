@@ -9,6 +9,7 @@ from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_para
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
 from cfn_sphere.util import timed
 
+
 logging.getLogger('boto').setLevel(logging.FATAL)
 
 
@@ -276,7 +277,7 @@ class CloudFormation(object):
 
             self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
             self.logger.info("Create completed for {0}".format(stack.name))
-        except (BotoCoreError, ClientError) as e:
+        except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e))
 
     def update_stack(self, stack):
@@ -307,7 +308,7 @@ class CloudFormation(object):
 
             self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
             self.logger.info("Update completed for {0}".format(stack.name))
-        except (BotoCoreError, ClientError) as e:
+        except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e))
 
     def delete_stack(self, stack):
@@ -321,17 +322,13 @@ class CloudFormation(object):
             try:
                 self.wait_for_stack_action_to_complete(stack.name, "delete", 600)
             except CfnSphereBotoError as e:
-                print(e)
                 if self.is_boto_stack_does_not_exist_exception(e.boto_exception):
                     pass
                 else:
                     raise
-            except Exception as e:
-                print(e)
-                print(type(e))
 
             self.logger.info("Deletion completed for {0}".format(stack.name))
-        except (BotoCoreError, ClientError) as e:
+        except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not delete {0}: {1}".format(stack.name, e))
 
     def wait_for_stack_action_to_complete(self, stack_name, action, timeout):
