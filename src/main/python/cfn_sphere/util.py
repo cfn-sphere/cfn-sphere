@@ -1,14 +1,29 @@
-import datetime
 import json
 import logging
 import time
 from functools import wraps
 
+from botocore.exceptions import ClientError
 import yaml
 from prettytable import PrettyTable
+from dateutil import parser
+
 from six.moves.urllib import request as urllib2
 from cfn_sphere.exceptions import CfnSphereException
-from boto.exception import BotoServerError
+
+
+def timed(function):
+    logger = logging.getLogger(__name__)
+
+    @wraps(function)
+    def wrapper(*args, **kwds):
+        start = time.time()
+        result = function(*args, **kwds)
+        elapsed = time.time() - start
+        logger.debug("{0} hat {1} Sekunden benoetigt".format(function.__name__, round(elapsed, 2)))
+        return result
+
+    return wrapper
 
 
 def get_logger(root=False):
@@ -70,7 +85,7 @@ def get_cfn_api_server_time():
 
     try:
         header_date = urllib2.urlopen(url).info().get('Date')
-        return datetime.datetime.strptime(header_date, '%a, %d %b %Y %H:%M:%S GMT')
+        return parser.parse(header_date)
     except Exception as e:
         raise CfnSphereException("Could not get AWS server time from {0}. Error: {1}".format(url, e))
 
@@ -102,16 +117,20 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
             while True:
                 try:
                     return function(*args, **kwds)
-                except BotoServerError as e:
-                    if e.code not in retry_codes or retries >= max_retries:
+                except ClientError as e:
+                    code = e.response.get("Error", {}).get("Code")
+                    if code not in retry_codes or retries >= max_retries:
                         raise e
 
                     sleep_time = pause_time_multiplier * (2 ** retries)
                     logger.warn(
-                        "{0} failed because of {1}. Will retry in {2}s".format(function.__name__, e.code, sleep_time))
+                        "{0} failed because of {1}. Will retry in {2}s".format(function.__name__, code, sleep_time))
                     time.sleep(sleep_time)
                     retries += 1
 
         return wrapper
 
     return decorator
+
+if __name__ == "__main__":
+    print(get_cfn_api_server_time())

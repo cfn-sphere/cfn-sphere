@@ -1,4 +1,4 @@
-try: 
+try:
     from unittest2 import TestCase
     from mock import patch, Mock
 except ImportError:
@@ -7,9 +7,12 @@ except ImportError:
 
 import textwrap
 from datetime import datetime
+
+from botocore.exceptions import ClientError
+from dateutil.tz import tzutc
+
 from cfn_sphere import util, CloudFormationStack
 from cfn_sphere.exceptions import CfnSphereException
-from boto.exception import BotoServerError
 from cfn_sphere.template import CloudFormationTemplate
 
 
@@ -44,7 +47,7 @@ class StackConfigTests(TestCase):
     @patch("cfn_sphere.util.urllib2.urlopen")
     def test_get_cfn_api_server_time_returns_gmt_datetime(self, urlopen_mock):
         urlopen_mock.return_value.info.return_value.get.return_value = "Mon, 21 Sep 2015 17:17:26 GMT"
-        expected_timestamp = datetime(year=2015, month=9, day=21, hour=17, minute=17, second=26)
+        expected_timestamp = datetime(year=2015, month=9, day=21, hour=17, minute=17, second=26, tzinfo=tzutc())
         self.assertEqual(expected_timestamp, util.get_cfn_api_server_time())
 
     @patch("cfn_sphere.util.urllib2.urlopen")
@@ -59,11 +62,11 @@ class StackConfigTests(TestCase):
         @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
         def my_retried_method(count_func):
             count_func()
-            exception = BotoServerError("400", "error")
-            exception.code = 'Throttling'
+            exception = ClientError(error_response={"Error": {"Code": "Throttling", "Message": "Rate exceeded"}},
+                                    operation_name="DescribeStacks")
             raise exception
 
-        with self.assertRaises(BotoServerError):
+        with self.assertRaises(ClientError):
             my_retried_method(count_func)
 
         self.assertEqual(2, count_func.call_count)
@@ -81,17 +84,17 @@ class StackConfigTests(TestCase):
 
         self.assertEqual(1, count_func.call_count)
 
-    def test_with_boto_retry_does_not_retry_for_another_boto_server_error(self):
+    def test_with_boto_retry_does_not_retry_for_another_boto_client_error(self):
         count_func = Mock()
 
         @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
         def my_retried_method(count_func):
             count_func()
-            exception = BotoServerError("400", "error")
-            exception.code = 'ValidationError'
+            exception = ClientError(error_response={"Error": {"Code": "Another Error", "Message": "Foo"}},
+                                    operation_name="DescribeStacks")
             raise exception
 
-        with self.assertRaises(BotoServerError):
+        with self.assertRaises(ClientError):
             my_retried_method(count_func)
 
         self.assertEqual(1, count_func.call_count)

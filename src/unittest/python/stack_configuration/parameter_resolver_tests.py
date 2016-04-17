@@ -1,11 +1,10 @@
-try: 
+try:
     from unittest2 import TestCase
     from mock import patch
 except ImportError:
     from unittest import TestCase
     from unittest.mock import patch
 
-from boto.exception import BotoServerError
 from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 
@@ -41,18 +40,26 @@ class ParameterResolverTests(TestCase):
         convert_list_to_string_mock.assert_called_once_with(['a', 'b'])
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
-    def test_resolve_parameter_values_returns_ref_value(self, get_output_value_mock):
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    def test_resolve_parameter_values_returns_ref_value(self, cfn_mock, get_output_value_mock):
+        cfn_mock.return_value.get_stack_outputs.return_value = None
         get_output_value_mock.return_value = 'bar'
+
         result = ParameterResolver().resolve_parameter_values({'foo': '|Ref|stack.output'}, 'foo')
-        get_output_value_mock.assert_called_once_with('stack.output')
+
+        get_output_value_mock.assert_called_with(None, "stack", "output")
         self.assertEqual({'foo': 'bar'}, result)
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
-    def test_resolve_parameter_values_returns_ref_list_value(self, get_output_value_mock):
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
+    def test_resolve_parameter_values_returns_ref_list_value(self, cfn_mock, get_output_value_mock):
+        cfn_mock.return_value.get_stack_outputs.return_value = None
         get_output_value_mock.return_value = 'bar'
+
         result = ParameterResolver().resolve_parameter_values(
             {'foo': ['|Ref|stack.output', '|Ref|stack.output']}, 'foo')
-        get_output_value_mock.assert_called_with('stack.output')
+
+        get_output_value_mock.assert_called_with(None, "stack", "output")
         self.assertEqual({'foo': 'bar,bar'}, result)
 
     def test_resolve_parameter_values_raises_exception_on_none_value(self):
@@ -93,9 +100,8 @@ class ParameterResolverTests(TestCase):
         self.cfn_mock.return_value.get_stack_parameters_dict.assert_called_once_with('my-stack')
         self.assertEqual('default-value', result)
 
-    def test_get_latest_value_returns_default_value(self):
-        self.cfn_mock.return_value.get_stack_parameters_dict.side_effect = CfnSphereBotoError(BotoServerError("500",
-                                                                                                              "foo"))
+    def test_get_latest_value_raises_exception_on_error(self):
+        self.cfn_mock.return_value.get_stack_parameters_dict.side_effect = CfnSphereBotoError(Exception("foo"))
 
         resolver = ParameterResolver()
         with self.assertRaises(CfnSphereException):

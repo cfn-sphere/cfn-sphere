@@ -1,4 +1,4 @@
-from boto.exception import BotoServerError
+from botocore.exceptions import ClientError
 
 
 class CfnSphereException(Exception):
@@ -20,6 +20,7 @@ class CfnSphereException(Exception):
 class CfnStackActionFailedException(CfnSphereException):
     pass
 
+
 class TemplateErrorException(CfnSphereException):
     pass
 
@@ -40,15 +41,18 @@ class InvalidDependencyGraphException(CfnSphereException):
     pass
 
 
-class InvalidEncryptedValueException(CfnSphereException):
-    pass
-
-
 class CfnSphereBotoError(CfnSphereException):
     def __init__(self, e):
         self.boto_exception = e
+        self.message = str(e)
+
+        if isinstance(e, ClientError):
+            response = e.response
+            error = response["Error"]
+            code = error["Code"]
+            message = error["Message"]
+
+            self.message = "{0}: {1}".format(code, message)
 
     def __str__(self):
-        return "{0}: {1} (Request ID: {2})".format(self.boto_exception.error_code,
-                                                 self.boto_exception.message,
-                                                 self.boto_exception.request_id)
+        return self.message

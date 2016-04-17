@@ -72,13 +72,14 @@ class Config(object):
                 config_dict = yaml.safe_load(f.read())
                 if not isinstance(config_dict, dict):
                     raise NoConfigException(
-                            "Config file {0} has invalid content, top level element must be a dict".format(config_file))
+                        "Config file {0} has invalid content, top level element must be a dict".format(config_file))
 
                 return config_dict
-        except IOError as e:
-            raise NoConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
         except ScannerError as e:
             raise NoConfigException("Could not parse {0}: {1} {2}".format(config_file, e.problem, e.problem_mark))
+        except Exception as e:
+            raise NoConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
+
 
 class StackConfig(object):
     def __init__(self, stack_config_dict, working_dir=None, default_tags={}):

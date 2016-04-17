@@ -1,4 +1,4 @@
-from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
+from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.util import get_logger
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
@@ -6,6 +6,7 @@ from cfn_sphere.aws.kms import KMS
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 
 import pprint
+
 
 class ParameterResolver(object):
     """
@@ -30,33 +31,20 @@ class ParameterResolver(object):
             value_string += str(item)
         return value_string
 
-    def get_stack_outputs(self):
-        """
-        Get a list of all available stack outputs in format <stack-name>.<output>.
-        :return: dict
-        """
-        artifacts = {}
-        stacks = self.cfn.get_stacks()
-        for stack in stacks:
-            for output in stack.outputs:
-                key = stack.stack_name + '.' + output.key
-                artifacts[key] = output.value
-        return artifacts
-
-    def get_output_value(self, key):
+    def get_output_value(self, stack_outputs, stack, output_key):
         """
         Get value for a specific output key in format <stack-name>.<output>.
-        :param key: str <stack-name>.<output>
+        :param output_key: str <stack-name>.<output>
         :return: str
         """
-        artifacts = self.get_stack_outputs()
-        self.logger.debug("Looking up key: {0}".format(key))
-        self.logger.debug("Found artifacts:\n{0}".format(pprint.pformat(artifacts)))
+        self.logger.debug("Looking up key: {0}".format(output_key))
+        self.logger.debug("Found artifacts: {0}".format(pprint.pformat(stack_outputs)))
+
         try:
-            artifact = artifacts[key]
+            artifact = stack_outputs[stack][output_key]
             return artifact
         except KeyError:
-            raise CfnSphereException("Could not get a valid value for {0}.".format(key))
+            raise CfnSphereException("Could not get a valid value for {0}.".format(output_key))
 
     @staticmethod
     def is_keep_value(value):
@@ -86,21 +74,21 @@ class ParameterResolver(object):
                     return self.get_default_from_keep_value(value)
             else:
                 return self.get_default_from_keep_value(value)
-        except CfnSphereBotoError as e:
+        except Exception as e:
             raise CfnSphereException("Could not get latest value for {0}: {1}".format(key, e))
 
     def resolve_parameter_values(self, parameters_dict, stack_name):
         parameters = {}
+        stack_outputs = self.cfn.get_stack_outputs()
 
         for key, value in parameters_dict.items():
 
             if isinstance(value, list):
-
                 self.logger.debug("List parameter found for {0}".format(key))
                 for i, item in enumerate(value):
                     if DependencyResolver.is_parameter_reference(item):
                         referenced_stack, output_name = DependencyResolver.parse_stack_reference_value(item)
-                        value[i] = str(self.get_output_value(referenced_stack + '.' + output_name))
+                        value[i] = str(self.get_output_value(stack_outputs, referenced_stack, output_name))
 
                 value_string = self.convert_list_to_string(value)
                 parameters[key] = value_string
@@ -109,7 +97,7 @@ class ParameterResolver(object):
 
                 if DependencyResolver.is_parameter_reference(value):
                     referenced_stack, output_name = DependencyResolver.parse_stack_reference_value(value)
-                    parameters[key] = str(self.get_output_value(referenced_stack + '.' + output_name))
+                    parameters[key] = str(self.get_output_value(stack_outputs, referenced_stack, output_name))
 
                 elif self.is_keep_value(value):
                     parameters[key] = str(self.get_latest_value(key, value, stack_name))
