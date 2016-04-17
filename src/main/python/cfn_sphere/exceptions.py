@@ -3,8 +3,8 @@ from botocore.exceptions import ClientError
 
 class CfnSphereException(Exception):
     def __init__(self, message="", boto_exception=None):
-        self.message = message
-        self.str = self.message
+        self.pretty_string = message
+        self.str = self.pretty_string
         self.boto_exception = boto_exception
         self.request_id = None
         try:
@@ -44,15 +44,22 @@ class InvalidDependencyGraphException(CfnSphereException):
 class CfnSphereBotoError(CfnSphereException):
     def __init__(self, e):
         self.boto_exception = e
-        self.message = str(e)
+        self.pretty_string = str(e)
+        self.is_throttling_exception = False
 
         if isinstance(e, ClientError):
-            response = e.response
-            error = response["Error"]
-            code = error["Code"]
-            message = error["Message"]
+            self.parse_boto_client_error(e)
 
-            self.message = "{0}: {1}".format(code, message)
+    def parse_boto_client_error(self, e):
+        response = e.response
+        error = response["Error"]
+        code = error["Code"]
+        message = error["Message"]
+
+        self.pretty_string = "{0}: {1}".format(code, message)
+
+        if code == "Throttling":
+            self.is_throttling_exception = True
 
     def __str__(self):
-        return self.message
+        return self.pretty_string

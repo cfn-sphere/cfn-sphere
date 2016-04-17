@@ -10,7 +10,7 @@ from prettytable import PrettyTable
 from dateutil import parser
 
 from six.moves.urllib import request as urllib2
-from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 
 
 def timed(function):
@@ -108,7 +108,6 @@ def get_pypi_package_description():
 
 def with_boto_retry(max_retries=3, pause_time_multiplier=5):
     logger = get_logger()
-    retry_codes = ["Throttling"]
 
     def decorator(function):
         @wraps(function)
@@ -118,14 +117,13 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
             while True:
                 try:
                     return function(*args, **kwds)
-                except ClientError as e:
-                    code = e.response.get("Error", {}).get("Code")
-                    if code not in retry_codes or retries >= max_retries:
+                except CfnSphereBotoError as e:
+                    if not e.is_throttling_exception or retries >= max_retries:
                         raise e
 
                     sleep_time = pause_time_multiplier * (2 ** retries)
                     logger.warn(
-                        "{0} failed because of {1}. Will retry in {2}s".format(function.__name__, code, sleep_time))
+                        "{0} failed with: {1}. Will retry in {2}s".format(function.__name__, e, sleep_time))
                     time.sleep(sleep_time)
                     retries += 1
 
