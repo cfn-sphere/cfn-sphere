@@ -107,6 +107,13 @@ def get_pypi_package_description():
 
 
 def with_boto_retry(max_retries=3, pause_time_multiplier=5):
+    """
+    Annotation retrying a wrapped function call if it raises a CfnSphereBotoError
+    with is_throttling_exception=True
+    :param max_retries:
+    :param pause_time_multiplier:
+    :return: :raise e:
+    """
     logger = get_logger()
 
     def decorator(function):
@@ -123,7 +130,7 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
 
                     sleep_time = pause_time_multiplier * (2 ** retries)
                     logger.warn(
-                        "{0} failed with: {1}. Will retry in {2}s".format(function.__name__, e, sleep_time))
+                        "{0} call failed with: '{1}' (Will retry in {2}s)".format(function.__name__, e, sleep_time))
                     time.sleep(sleep_time)
                     retries += 1
 

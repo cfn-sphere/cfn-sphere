@@ -12,7 +12,7 @@ from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
 
 from cfn_sphere import util, CloudFormationStack
-from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.template import CloudFormationTemplate
 
 
@@ -62,11 +62,12 @@ class StackConfigTests(TestCase):
         @util.with_boto_retry(max_retries=1, pause_time_multiplier=1)
         def my_retried_method(count_func):
             count_func()
-            exception = ClientError(error_response={"Error": {"Code": "Throttling", "Message": "Rate exceeded"}},
-                                    operation_name="DescribeStacks")
+            exception = CfnSphereBotoError(
+                ClientError(error_response={"Error": {"Code": "Throttling", "Message": "Rate exceeded"}},
+                            operation_name="DescribeStacks"))
             raise exception
 
-        with self.assertRaises(ClientError):
+        with self.assertRaises(CfnSphereBotoError):
             my_retried_method(count_func)
 
         self.assertEqual(2, count_func.call_count)
