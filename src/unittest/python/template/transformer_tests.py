@@ -370,6 +370,16 @@ class CloudFormationTemplateTransformerTests(TestCase):
         }
         six.assertCountEqual(self, expected, result.resources)
 
+    def test_transform_template_transforms_references_in_conditions_section(self):
+        template_dict = {
+            'Conditions': {'key1': ["|ref|foo", "a", "b"], "key2": "|Ref|baa"}
+        }
+
+        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+        expected = {'key1': [{'Ref': 'foo'}, 'a', 'b'], 'key2': {'Ref': 'baa'}}
+
+        self.assertEqual(expected, result.conditions)
+
     def test_transform_template_transforms_list_values(self):
         template_dict = {
             'Resources': {'key1': ["|ref|foo", "a", "b"]}

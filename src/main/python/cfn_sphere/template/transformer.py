@@ -5,8 +5,17 @@ from six import string_types
 class CloudFormationTemplateTransformer(object):
     @classmethod
     def transform_template(cls, template):
+        conditions = template.conditions
         resources = template.resources
         outputs = template.outputs
+
+        conditions = cls.scan_dict_values(conditions, cls.transform_reference_string)
+        conditions = cls.scan_dict_values(conditions, cls.transform_getattr_string)
+        conditions = cls.scan_dict_keys(conditions, cls.transform_join_key)
+        conditions = cls.scan_dict_keys(conditions, cls.transform_taupage_user_data_key)
+        conditions = cls.scan_dict_keys(conditions, cls.transform_yaml_user_data_key)
+        conditions = cls.scan_dict_values(conditions, cls.check_for_leftover_reference_values)
+        conditions = cls.scan_dict_keys(conditions, cls.check_for_leftover_reference_keys)
 
         resources = cls.scan_dict_values(resources, cls.transform_reference_string)
         resources = cls.scan_dict_values(resources, cls.transform_getattr_string)
@@ -24,6 +33,7 @@ class CloudFormationTemplateTransformer(object):
         outputs = cls.scan_dict_values(outputs, cls.check_for_leftover_reference_values)
         outputs = cls.scan_dict_keys(outputs, cls.check_for_leftover_reference_keys)
 
+        template.conditions = conditions
         template.resources = resources
         template.outputs = outputs
 
