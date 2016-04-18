@@ -1,4 +1,4 @@
-try: 
+try:
     from unittest2 import TestCase
 except ImportError:
     from unittest import TestCase
@@ -6,33 +6,35 @@ except ImportError:
 from cfn_sphere.stack_configuration import Config, StackConfig, NoConfigException
 from cfn_sphere.exceptions import CfnSphereException
 
+
 class ConfigTests(TestCase):
     def test_properties_parsing(self):
         config = Config(
-                config_dict={
-                    'region': 'eu-west-1',
-                    'tags':   {
-                        'global-tag': 'global-tag-value'
-                    },
-                    'stacks': {
-                        'any-stack': {
-                            'timeout': 99,
-                            'template-url': 'foo.json',
-                            'tags':         {
-                                'any-tag': 'any-tag-value'
-                            },
-                            'parameters':   {
-                                'any-parameter': 'any-value'
-                            }
+            config_dict={
+                'region': 'eu-west-1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
                         }
                     }
                 }
+            }
         )
         self.assertEqual('eu-west-1', config.region)
         self.assertEqual(1, len(config.stacks.keys()))
         self.assertTrue(isinstance(config.stacks['any-stack'], StackConfig))
         self.assertEqual('foo.json', config.stacks['any-stack'].template_url)
-        self.assertDictContainsSubset({'any-tag': 'any-tag-value', 'global-tag': 'global-tag-value'}, config.stacks['any-stack'].tags)
+        self.assertDictContainsSubset({'any-tag': 'any-tag-value', 'global-tag': 'global-tag-value'},
+                                      config.stacks['any-stack'].tags)
         self.assertDictContainsSubset({'global-tag': 'global-tag-value'}, config.tags)
         self.assertDictContainsSubset({'any-parameter': 'any-value'}, config.stacks['any-stack'].parameters)
         self.assertEqual(99, config.stacks['any-stack'].timeout)
