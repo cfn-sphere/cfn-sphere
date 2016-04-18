@@ -4,6 +4,7 @@ from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.aws.kms import KMS
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
+from cfn_sphere.resolver.file import FileResolver
 
 import pprint
 
@@ -18,6 +19,7 @@ class ParameterResolver(object):
         self.cfn = CloudFormation(region)
         self.ec2 = Ec2Api(region)
         self.kms = KMS(region)
+        self.file_access = FileResolver()
 
     @staticmethod
     def convert_list_to_string(value):
@@ -61,6 +63,10 @@ class ParameterResolver(object):
     @staticmethod
     def get_default_from_keep_value(value):
         return value.split('|', 2)[2]
+
+    @staticmethod
+    def is_file(value):
+        return value.lower().startswith('|file|')
 
     def get_latest_value(self, key, value, stack_name):
         try:
@@ -107,6 +113,9 @@ class ParameterResolver(object):
 
                 elif self.is_kms(value):
                     parameters[key] = str(self.kms.decrypt(value.split('|', 2)[2]))
+
+                elif self.is_file(value):
+                    parameters[key] = self.file_access.read(value.split('|', 2)[2])
 
                 else:
                     parameters[key] = value

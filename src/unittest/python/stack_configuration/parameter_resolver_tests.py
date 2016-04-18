@@ -14,9 +14,11 @@ class ParameterResolverTests(TestCase):
         self.cloudformation_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
         self.ec2api_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
         self.kms_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
+        self.file_resolver_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.FileResolver')
         self.cfn_mock = self.cloudformation_patcher.start()
         self.ec2api_mock = self.ec2api_patcher.start()
         self.kms_mock = self.kms_patcher.start()
+        self.file_resolver_mock = self.file_resolver_patcher.start()
 
     def tearDown(self):
         self.cloudformation_patcher.stop()
@@ -163,3 +165,9 @@ class ParameterResolverTests(TestCase):
         result = ParameterResolver().update_parameters_with_cli_parameters(
             parameters={'foo': "foo"}, cli_parameters={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
         self.assertEqual({'foo': 'foo'}, result)
+
+    def test_resolve_value_from_file(self):
+        self.file_resolver_mock.return_value.read.return_value = "line1\nline2"
+
+        result = ParameterResolver().resolve_parameter_values({'foo': "|file|abc.txt"}, 'foo')
+        self.assertEqual({'foo': 'line1\nline2'}, result)
