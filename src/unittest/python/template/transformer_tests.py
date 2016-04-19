@@ -1,4 +1,4 @@
-try: 
+try:
     from unittest2 import TestCase
     from mock import Mock, mock
 except ImportError:
@@ -109,59 +109,22 @@ class CloudFormationTemplateTransformerTests(TestCase):
                 "QUEUE_URL": {"ref": "myQueueUrl"}
             }
         }
-        expected = {
-            "Fn::Base64": {
-                "Fn::Join": [
-                    "\n",
-                    [
-                        "#taupage-ami-config",
-                        {
-                            "Fn::Join": [
-                                ": ",
-                                [
-                                    "application_id",
-                                    "stackName"
-                                ]
-                            ]
-                        },
-                        {
-                            "Fn::Join": [
-                                ": ",
-                                [
-                                    "application_version",
-                                    "imageVersion"
-                                ]
-                            ]
-                        },
-                        "environment:",
-                        {
-                            "Fn::Join": [
-                                ": ",
-                                [
-                                    "  SSO_KEY",
-                                    "mySsoKey"
-                                ]
-                            ]
-                        },
-                        {
-                            "Fn::Join": [
-                                ": ",
-                                [
-                                    "  QUEUE_URL",
-                                    {
-                                        "ref": "myQueueUrl"
-                                    }
-                                ]
-                            ]
-                        }
-                    ]
-                ]
+        expected = {'Fn::Base64':
+            {
+                'Fn::Join':
+                    ['\n', ['#taupage-ami-config',
+                            {'Fn::Join': [': ', ['application_id', 'stackName']]},
+                            {'Fn::Join': [': ', ['application_version', 'imageVersion']]},
+                            'environment:',
+                            {'Fn::Join': [': ', ['  QUEUE_URL', {'ref': 'myQueueUrl'}]]},
+                            {'Fn::Join': [': ', ['  SSO_KEY', 'mySsoKey']]}]
+                     ]
             }
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
         self.assertEqual("UserData", key)
-        six.assertCountEqual(self, expected, value)
+        self.assertEqual(expected, value)
 
     def test_transform_yaml_user_data_key(self):
         input = {
@@ -281,6 +244,21 @@ class CloudFormationTemplateTransformerTests(TestCase):
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
         six.assertCountEqual(self, expected, result)
+
+    def test_transform_dict_to_yaml_lines_list_returns_stable_order(self):
+        input = {'d': 'd', 'a': 'a', 'e': 'e', 'b': {'f': 'f', 'c': 'c', 'a': 'a'}, "#": "3"}
+
+        expected = [{'Fn::Join': [': ', ['#', '3']]},
+                    {'Fn::Join': [': ', ['a', 'a']]},
+                    'b:',
+                    {'Fn::Join': [': ', ['  a', 'a']]},
+                    {'Fn::Join': [': ', ['  c', 'c']]},
+                    {'Fn::Join': [': ', ['  f', 'f']]},
+                    {'Fn::Join': [': ', ['d', 'd']]},
+                    {'Fn::Join': [': ', ['e', 'e']]}]
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        self.assertEqual(expected, result)
 
     def test_transform_kv_to_cfn_join_accepts_int_key_value(self):
         result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join(8080, 9000)

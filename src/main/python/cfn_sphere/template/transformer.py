@@ -170,7 +170,7 @@ class CloudFormationTemplateTransformer(object):
     def transform_dict_to_yaml_lines_list(cls, userdata_dict, indentation_level=0):
         lines = []
 
-        for key, value in userdata_dict.items():
+        for key, value in sorted(userdata_dict.items()):
 
             # key indentation with two spaces
             if indentation_level > 0:
