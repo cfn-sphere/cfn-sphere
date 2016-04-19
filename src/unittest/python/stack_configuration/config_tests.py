@@ -3,8 +3,8 @@ try:
 except ImportError:
     from unittest import TestCase
 
-from cfn_sphere.stack_configuration import Config, StackConfig, NoConfigException
 from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.stack_configuration import Config, StackConfig, NoConfigException
 
 
 class ConfigTests(TestCase):

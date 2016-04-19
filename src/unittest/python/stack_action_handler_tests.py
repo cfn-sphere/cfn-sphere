@@ -1,13 +1,15 @@
-try: 
+try:
     from unittest2 import TestCase
     from mock import patch, Mock, call
 except ImportError:
     from unittest import TestCase
-    from unittest.mock import patch, Mock, call
+    from mock import patch, Mock, call
 
 import six
+
 from cfn_sphere import StackActionHandler
 from cfn_sphere.aws.cfn import CloudFormationStack
+
 
 class StackActionHandlerTests(TestCase):
     @patch('cfn_sphere.stack_configuration.Config')
@@ -93,12 +95,12 @@ class StackActionHandlerTests(TestCase):
     @patch('cfn_sphere.CloudFormationStack')
     @patch('cfn_sphere.CustomResourceHandler')
     def test_delete_stacks_uses_the_correct_order(self,
-                           custom_resource_mock,
-                           stack_mock,
-                           template_loader_mock,
-                           dependency_resolver_mock,
-                           parameter_resolver_mock,
-                           cfn_mock):
+                                                  custom_resource_mock,
+                                                  stack_mock,
+                                                  template_loader_mock,
+                                                  dependency_resolver_mock,
+                                                  parameter_resolver_mock,
+                                                  cfn_mock):
 
         dependency_resolver_mock.return_value.get_stack_order.return_value = ['a', 'c']
         cfn_mock.return_value.get_stack_names.return_value = ['a', 'c']

@@ -1,5 +1,5 @@
-from builtins import bytes
 import base64
+from builtins import bytes
 
 import boto3
 from boto3.exceptions import Boto3Error

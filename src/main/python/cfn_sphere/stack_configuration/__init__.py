@@ -1,9 +1,10 @@
-from collections import defaultdict
 import os
+from collections import defaultdict
+
 import yaml
+from yaml.scanner import ScannerError
 
 from cfn_sphere.exceptions import NoConfigException, CfnSphereException
-from yaml.scanner import ScannerError
 
 
 class Config(object):

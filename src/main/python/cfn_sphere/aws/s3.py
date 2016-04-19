@@ -2,6 +2,7 @@ import boto3
 from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 from six.moves.urllib.parse import urlparse
+
 from cfn_sphere.util import with_boto_retry
 
 

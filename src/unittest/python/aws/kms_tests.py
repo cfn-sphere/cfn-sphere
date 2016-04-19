@@ -3,7 +3,7 @@ try:
     from mock import patch
 except ImportError:
     from unittest import TestCase
-    from unittest.mock import patch
+    from mock import patch
 
 import base64
 

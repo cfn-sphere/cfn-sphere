@@ -1,18 +1,17 @@
-try: 
+try:
     from unittest2 import TestCase
     from mock import patch
 except ImportError:
     from unittest import TestCase
-    from unittest.mock import patch
+    from mock import patch
 
 from yaml.scanner import ScannerError
 
-from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.exceptions import TemplateErrorException
+from cfn_sphere.file_loader import FileLoader
 
 
 class FileLoaderTests(TestCase):
-
     @patch("cfn_sphere.file_loader.yaml")
     @patch("cfn_sphere.file_loader.open")
     def test_fs_get_file_raises_exception_on_yaml_error(self, _, yaml_mock):

@@ -1,4 +1,5 @@
 import codecs
+
 from cfn_sphere.exceptions import CfnSphereException
 
 

@@ -1,20 +1,19 @@
-import sys
 import logging
+import sys
 
 import boto3
-from botocore.exceptions import ClientError, BotoCoreError
 import click
+from botocore.exceptions import ClientError, BotoCoreError
 
-from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
+from cfn_sphere import StackActionHandler
+from cfn_sphere import __version__
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.kms import KMS
-from cfn_sphere.util import convert_file, get_logger, get_latest_version
-from cfn_sphere.stack_configuration import Config
-from cfn_sphere import StackActionHandler
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.file_loader import FileLoader
-from cfn_sphere import __version__
-
+from cfn_sphere.stack_configuration import Config
+from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
+from cfn_sphere.util import convert_file, get_logger, get_latest_version
 
 LOGGER = get_logger(root=True)
 

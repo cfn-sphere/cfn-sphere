@@ -5,7 +5,7 @@ try:
     from mock import Mock, MagicMock, patch
 except ImportError:
     from unittest import TestCase
-    from unittest.mock import Mock, MagicMock, patch
+    from mock import Mock, MagicMock, patch
 
 from cfn_sphere.resolver.file import FileResolver
 

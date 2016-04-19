@@ -1,16 +1,15 @@
 try:
     from unittest2 import TestCase
-    from mock import Mock, mock
+    from mock import Mock
 except ImportError:
     from unittest import TestCase
-    from unittest import mock
-    from unittest.mock import Mock
+    from mock import Mock
 
-from cfn_sphere.template import CloudFormationTemplate
 import six
 
-from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.exceptions import TemplateErrorException
+from cfn_sphere.template import CloudFormationTemplate
+from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 
 
 class CloudFormationTemplateTransformerTests(TestCase):

@@ -7,7 +7,7 @@ try:
     from mock import Mock, patch
 except ImportError:
     from unittest import TestCase
-    from unittest.mock import Mock, patch
+    from mock import Mock, patch
 
 from cfn_sphere.aws.s3 import S3
 

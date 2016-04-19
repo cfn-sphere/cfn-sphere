@@ -3,7 +3,7 @@ try:
     from mock import patch, Mock
 except ImportError:
     from unittest import TestCase
-    from unittest.mock import patch, Mock
+    from mock import patch, Mock
 
 import textwrap
 from datetime import datetime

@@ -4,12 +4,10 @@ import time
 from functools import wraps
 
 import yaml
-
-from prettytable import PrettyTable
-
 from dateutil import parser
-
+from prettytable import PrettyTable
 from six.moves.urllib import request as urllib2
+
 from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 
 

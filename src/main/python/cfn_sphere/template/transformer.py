@@ -1,5 +1,6 @@
-from cfn_sphere.exceptions import TemplateErrorException
 from six import string_types
+
+from cfn_sphere.exceptions import TemplateErrorException
 
 
 class CloudFormationTemplateTransformer(object):

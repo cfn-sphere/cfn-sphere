@@ -1,12 +1,12 @@
-from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.util import get_logger
+import pprint
+
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.aws.kms import KMS
-from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
+from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.resolver.file import FileResolver
-
-import pprint
+from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
+from cfn_sphere.util import get_logger
 
 
 class ParameterResolver(object):

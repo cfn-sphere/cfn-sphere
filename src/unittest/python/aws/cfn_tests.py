@@ -3,17 +3,17 @@ try:
     from mock import Mock, patch
 except ImportError:
     from unittest import TestCase
-    from unittest.mock import Mock, patch
+    from mock import Mock, patch
 
 import datetime
 
-from botocore.exceptions import ClientError, BotoCoreError
+from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
 
-from cfn_sphere.template import CloudFormationTemplate
-from cfn_sphere.aws.cfn import CloudFormationStack
 from cfn_sphere.aws.cfn import CloudFormation
+from cfn_sphere.aws.cfn import CloudFormationStack
 from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
+from cfn_sphere.template import CloudFormationTemplate
 
 
 class CloudFormationApiTests(TestCase):
