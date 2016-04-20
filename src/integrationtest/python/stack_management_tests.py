@@ -1,10 +1,9 @@
+import base64
 import os
 import logging
 import yaml
-
-from boto import cloudformation, kms
-from boto.ec2 import autoscale
-from boto.exception import BotoServerError
+import boto3
+from botocore.exceptions import ClientError
 
 from cfn_sphere import StackActionHandler
 from cfn_sphere.stack_configuration import Config
@@ -17,8 +16,8 @@ class CfnSphereIntegrationTest(object):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
         self.test_resources_dir = self._get_resources_dir()
-        self.cfn_conn = cloudformation.connect_to_region("eu-west-1")
-        self.kms_conn = kms.connect_to_region("eu-west-1")
+        self.cfn_conn = boto3.client('cloudformation', region_name='eu-west-1')
+        self.kms_conn = boto3.client('kms', region_name='eu-west-1')
         self.config = Config(config_file=os.path.join(self.test_resources_dir, "stacks.yml"))
 
     @staticmethod
@@ -28,25 +27,29 @@ class CfnSphereIntegrationTest(object):
     @staticmethod
     def get_output_dict_from_stack(stack):
         result = {}
-        for output in stack.outputs:
-            result[output.key] = output.value
+        for output in stack["Outputs"]:
+            result[output["OutputKey"]] = output["OutputValue"]
+
         return result
 
     @staticmethod
     def get_parameter_dict_from_stack(stack):
         result = {}
-        for parameter in stack.parameters:
-            result[parameter.key] = parameter.value
+        for parameter in stack["Parameters"]:
+            result[parameter["ParameterKey"]] = parameter["ParameterValue"]
+
         return result
 
     def verify_stacks_are_gone(self):
         for stack_name in self.config.stacks.keys():
             try:
-                stack = self.cfn_conn.describe_stacks(stack_name)[0]
-                if stack.stack_status != "DELETE_COMPLETE":
+                stack = self.cfn_conn.describe_stacks(StackName=stack_name)["Stacks"][0]
+                if stack["StackStatus"] != "DELETE_COMPLETE":
                     raise Exception("Stack {0} seems to exist but should not".format(stack_name))
-            except BotoServerError:
-                pass
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "ValidationError" and e.response["Error"]["Message"].endswith(
+                        "does not exist"):
+                    pass
 
     def sync_stacks(self):
         stack_handler = StackActionHandler(self.config)
@@ -67,15 +70,15 @@ class CfnSphereIntegrationTest(object):
         self.logger.info("Verifying stacks are in CREATE_COMPLETE state")
 
         for stack_name in self.config.stacks.keys():
-            stack = self.cfn_conn.describe_stacks(stack_name)[0]
-            self.assert_equal("CREATE_COMPLETE", stack.stack_status)
+            stack = self.cfn_conn.describe_stacks(StackName=stack_name)["Stacks"][0]
+            self.assert_equal("CREATE_COMPLETE", stack["StackStatus"])
 
     def test_stacks_are_in_update_complete_state(self):
         self.logger.info("Verifying stacks are in CREATE_COMPLETE state")
 
         for stack_name in self.config.stacks.keys():
-            stack = self.cfn_conn.describe_stacks(stack_name)[0]
-            self.assert_equal("UPDATE_COMPLETE", stack.stack_status)
+            stack = self.cfn_conn.describe_stacks(StackName=stack_name)["Stacks"][0]
+            self.assert_equal("UPDATE_COMPLETE", stack["StackStatus"])
 
     @staticmethod
     def assert_equal(a, b):
@@ -91,8 +94,8 @@ class CfnSphereIntegrationTest(object):
 class StackManagementTests(CfnSphereIntegrationTest):
     def test_stacks_use_updated_parameters(self):
         self.logger.info("Verifying stacks use parameters given by cli")
-        vpc_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-vpc")[0]
-        instance_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-instances")[0]
+        vpc_stack = self.cfn_conn.describe_stacks(StackName="cfn-sphere-test-vpc")["Stacks"][0]
+        instance_stack = self.cfn_conn.describe_stacks(StackName="cfn-sphere-test-instances")["Stacks"][0]
 
         instance_stack_parameters = self.get_parameter_dict_from_stack(instance_stack)
         vpc_stack_parameters = self.get_parameter_dict_from_stack(vpc_stack)
@@ -103,8 +106,8 @@ class StackManagementTests(CfnSphereIntegrationTest):
     def test_instance_stack_uses_vpc_outputs(self):
         self.logger.info("Verifying cfn-sphere-test-instances uses referenced values from cfn-sphere-test-vpc stack")
 
-        vpc_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-vpc")[0]
-        instance_stack = self.cfn_conn.describe_stacks("cfn-sphere-test-instances")[0]
+        vpc_stack = self.cfn_conn.describe_stacks(StackName="cfn-sphere-test-vpc")["Stacks"][0]
+        instance_stack = self.cfn_conn.describe_stacks(StackName="cfn-sphere-test-instances")["Stacks"][0]
 
         vpc_stack_outputs = self.get_output_dict_from_stack(vpc_stack)
         instance_stack_parameters = self.get_parameter_dict_from_stack(instance_stack)
@@ -115,19 +118,19 @@ class StackManagementTests(CfnSphereIntegrationTest):
         self.assert_equal(vpc_stack_parameters["testtag"], "unchanged")
 
     def test_userdata(self):
-        self.logger.info("Verifying user-data from instance in cfn-sphere-test-instances")
+        self.logger.info("Verifying user-data of instance in cfn-sphere-test-instances")
 
-        autoscale_conn = autoscale.connect_to_region("eu-west-1")
-        instance_stack_resources = self.cfn_conn.describe_stack_resource("cfn-sphere-test-instances", "lc")
+        autoscale_conn = boto3.client('autoscaling', region_name='eu-west-1')
+        instance_stack_resources = self.cfn_conn.describe_stack_resource(StackName="cfn-sphere-test-instances",
+                                                                         LogicalResourceId="lc")
         lc_name = \
-            instance_stack_resources["DescribeStackResourceResponse"]["DescribeStackResourceResult"][
-                "StackResourceDetail"][
-                "PhysicalResourceId"]
-        lc = autoscale_conn.get_all_launch_configurations(names=[lc_name])[0]
+            instance_stack_resources["StackResourceDetail"]["PhysicalResourceId"]
+        lc = autoscale_conn.describe_launch_configurations(LaunchConfigurationNames=[lc_name])["LaunchConfigurations"][
+            0]
+        print()
+        user_data = yaml.load(base64.b64decode(lc["UserData"]))
 
-        user_data = yaml.load(lc.user_data)
-
-        #raise Exception(user_data)
+        # raise Exception(user_data)
 
         # self.assert_equal("#taupage-ami-config", user_data_lines[0])
 
@@ -159,7 +162,7 @@ class StackManagementTests(CfnSphereIntegrationTest):
         self.assert_equal("cfn-sphere-test-instances", environment_config["DYNAMO_DB_PREFIX"])
 
         # uncomment this to test kms decryption
-        #self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
+        # self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
 
     def run(self, setup=True, cleanup=True):
         try:
