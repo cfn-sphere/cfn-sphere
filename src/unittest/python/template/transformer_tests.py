@@ -1,9 +1,9 @@
 try:
     from unittest2 import TestCase
-    from mock import Mock
+    from mock import Mock, mock
 except ImportError:
     from unittest import TestCase
-    from mock import Mock
+    from mock import Mock, mock
 
 import six
 
