@@ -134,58 +134,20 @@ class CloudFormationTemplateTransformerTests(TestCase):
                 "QUEUE_URL": {"ref": "myQueueUrl"}
             }
         }
-        expected = {
-            "Fn::Base64": {
-                "Fn::Join": [
-                    "\n",
-                    [
-                        {
-                            "Fn::Join": [
-                                ": ",
-                                [
-                                    "application_id",
-                                    "stackName"
-                                ]
-                            ]
-                        },
-                        {
-                            "Fn::Join": [
-                                ": ",
-                                [
-                                    "application_version",
-                                    "imageVersion"
-                                ]
-                            ]
-                        },
-                        "environment:",
-                        {
-                            "Fn::Join": [
-                                ": ",
-                                [
-                                    "  SSO_KEY",
-                                    "mySsoKey"
-                                ]
-                            ]
-                        },
-                        {
-                            "Fn::Join": [
-                                ": ",
-                                [
-                                    "  QUEUE_URL",
-                                    {
-                                        "ref": "myQueueUrl"
-                                    }
-                                ]
-                            ]
-                        }
-                    ]
-                ]
-            }
-        }
+        expected = {'Fn::Base64':
+                        {'Fn::Join': ['\n', [
+                            {'Fn::Join': [': ', ['application_id', 'stackName']]},
+                            {'Fn::Join': [': ', ['application_version', 'imageVersion']]},
+                            'environment:',
+                            {'Fn::Join': [': ', ['  QUEUE_URL', {'ref': 'myQueueUrl'}]]},
+                            {'Fn::Join': [': ', ['  SSO_KEY', 'mySsoKey']]}]]
+                         }
+                    }
 
         key, value = CloudFormationTemplateTransformer.transform_yaml_user_data_key('@YamlUserData@', input)
+
         self.assertEqual("UserData", key)
-        six.assertCountEqual(self, expected, value)
+        self.assertEqual(expected, value)
 
     def test_transform_dict_to_yaml_lines_list_accepts_multiple_sub_dicts(self):
         input = {
