@@ -7,18 +7,18 @@ except ImportError:
 
 from yaml.scanner import ScannerError
 
-from cfn_sphere.exceptions import TemplateErrorException
+from cfn_sphere.exceptions import TemplateErrorException, CfnSphereException
 from cfn_sphere.file_loader import FileLoader
 
 
 class FileLoaderTests(TestCase):
     @patch("cfn_sphere.file_loader.yaml")
-    @patch("cfn_sphere.file_loader.open")
-    def test_fs_get_file_raises_exception_on_yaml_error(self, _, yaml_mock):
+    @patch("cfn_sphere.file_loader.FileLoader.get_file")
+    def test_get_yaml_or_json_file_raises_exception_on_yaml_error(self, _, yaml_mock):
         yaml_mock.load.side_effect = ScannerError()
 
-        with self.assertRaises(TemplateErrorException):
-            FileLoader._fs_get_file('foo.yml', 'baa')
+        with self.assertRaises(CfnSphereException):
+            FileLoader.get_yaml_or_json_file('foo.yml', 'baa')
 
     @patch("cfn_sphere.file_loader.yaml")
     @patch("cfn_sphere.file_loader.open")
@@ -94,5 +94,5 @@ class FileLoaderTests(TestCase):
     def test_s3_get_file__raises_exception_for_unknown_suffix(self, s3_mock, json_mock, yaml_mock):
         s3_mock.return_value.get_contents_from_url.return_value = "{}"
 
-        with self.assertRaises(TemplateErrorException):
-            FileLoader._s3_get_file('s3://foo/baa.foo')
+        with self.assertRaises(CfnSphereException):
+            FileLoader.get_yaml_or_json_file('foo.json', 'baa')

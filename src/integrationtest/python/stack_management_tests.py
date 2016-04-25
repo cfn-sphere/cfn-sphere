@@ -117,7 +117,7 @@ class StackManagementTests(CfnSphereIntegrationTest):
         self.assert_equal(vpc_stack_outputs["subnetA"], instance_stack_parameters["subnetID"])
         self.assert_equal(vpc_stack_parameters["testtag"], "unchanged")
 
-    def test_userdata(self):
+    def test_instance_stack_userdata(self):
         self.logger.info("Verifying user-data of instance in cfn-sphere-test-instances")
 
         autoscale_conn = boto3.client('autoscaling', region_name='eu-west-1')
@@ -164,6 +164,11 @@ class StackManagementTests(CfnSphereIntegrationTest):
         # uncomment this to test kms decryption
         # self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
 
+    def test_instance_stack_uses_file_parameter(self):
+        instance_stack = self.cfn_conn.describe_stacks(StackName="cfn-sphere-test-instances")["Stacks"][0]
+        instance_stack_parameters = self.get_parameter_dict_from_stack(instance_stack)
+        self.assert_equal("my-text-file-parameter", instance_stack_parameters["textFileParameter"])
+
     def run(self, setup=True, cleanup=True):
         try:
             if setup:
@@ -172,16 +177,15 @@ class StackManagementTests(CfnSphereIntegrationTest):
                 self.verify_stacks_are_gone()
                 self.sync_stacks()
 
-            self.logger.info("### Executing tests ###")
+            self.logger.info("### Executing instances stack tests ###")
             self.test_stacks_are_in_create_complete_state()
-            self.test_userdata()
+            self.test_instance_stack_userdata()
             self.test_instance_stack_uses_vpc_outputs()
+            self.test_instance_stack_uses_file_parameter()
 
-            self.logger.info("### Updating stacks ###")
+            self.logger.info("### Executing cli parameter update tests ###")
             self.sync_stacks_with_parameters_overwrite(
                 ("cfn-sphere-test-vpc.testtag=changed", "cfn-sphere-test-instances.appVersion=2"))
-
-            self.logger.info("### Executing tests ###")
             self.test_stacks_are_in_update_complete_state()
             self.test_stacks_use_updated_parameters()
         finally:
@@ -192,4 +196,4 @@ class StackManagementTests(CfnSphereIntegrationTest):
 
 
 if __name__ == "__main__":
-    StackManagementTests().run()
+    StackManagementTests().run(cleanup=False)
