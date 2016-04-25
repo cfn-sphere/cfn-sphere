@@ -142,7 +142,7 @@ def render_template(template_file, confirm):
         check_update_available()
 
     loader = FileLoader()
-    template = loader.get_file_from_url(template_file, None)
+    template = loader.get_cloudformation_template(template_file, None)
     template = CloudFormationTemplateTransformer.transform_template(template)
     click.echo(template.get_pretty_template_json())
 
@@ -157,7 +157,7 @@ def validate_template(template_file, confirm):
 
     try:
         loader = FileLoader()
-        template = loader.get_file_from_url(template_file, None)
+        template = loader.get_cloudformation_template(template_file, None)
         template = CloudFormationTemplateTransformer.transform_template(template)
         CloudFormation().validate_template(template)
         click.echo("Template is valid")
