@@ -54,7 +54,10 @@ def cli():
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def sync(config, parameter, debug, confirm):
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def sync(config, parameter, debug, confirm, yes):
+    confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
     else:
@@ -86,7 +89,10 @@ def sync(config, parameter, debug, confirm):
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def delete(config, debug, confirm):
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def delete(config, debug, confirm, yes):
+    confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
     else:
@@ -118,7 +124,10 @@ def delete(config, debug, confirm):
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def convert(template_file, debug, confirm):
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def convert(template_file, debug, confirm, yes):
+    confirm = confirm or yes
     if not confirm:
         check_update_available()
 
@@ -137,7 +146,10 @@ def convert(template_file, debug, confirm):
 @click.argument('template_file', type=click.Path(exists=True))
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def render_template(template_file, confirm):
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def render_template(template_file, confirm, yes):
+    confirm = confirm or yes
     if not confirm:
         check_update_available()
 
@@ -151,7 +163,10 @@ def render_template(template_file, confirm):
 @click.argument('template_file', type=click.Path(exists=True))
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def validate_template(template_file, confirm):
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def validate_template(template_file, confirm, yes):
+    confirm = confirm or yes
     if not confirm:
         check_update_available()
 
@@ -177,7 +192,10 @@ def validate_template(template_file, confirm):
 @click.argument('cleartext', type=str)
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def encrypt(region, keyid, cleartext, confirm):
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def encrypt(region, keyid, cleartext, confirm, yes):
+    confirm = confirm or yes
     if not confirm:
         check_update_available()
 
@@ -199,7 +217,10 @@ def encrypt(region, keyid, cleartext, confirm):
 @click.argument('ciphertext', type=str)
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
-def decrypt(region, ciphertext, confirm):
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def decrypt(region, ciphertext, confirm, yes):
+    confirm = confirm or yes
     if not confirm:
         check_update_available()
 
