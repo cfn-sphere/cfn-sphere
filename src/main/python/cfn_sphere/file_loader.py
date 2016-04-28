@@ -36,9 +36,9 @@ class FileLoader(object):
 
         try:
             if url.lower().endswith(".json"):
-                return json.loads(file_content.read())
+                return json.loads(file_content)
             elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
-                return yaml.load(file_content.read())
+                return yaml.load(file_content)
             else:
                 raise CfnSphereException("{0} has an invalid suffix, use [json|yml|yaml]")
         except Exception as e:
