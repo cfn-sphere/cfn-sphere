@@ -42,7 +42,7 @@ class FileLoaderTests(TestCase):
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
     def test_get_yaml_or_json_file_parses_json_on_json_suffix(self, get_file_mock, json_mock):
         get_file_return_value = Mock()
-        get_file_mock.return_value.read.return_value = get_file_return_value
+        get_file_mock.return_value = get_file_return_value
 
         FileLoader.get_yaml_or_json_file('foo.json', 'baa')
         json_mock.loads.assert_called_once_with(get_file_return_value)
@@ -51,7 +51,7 @@ class FileLoaderTests(TestCase):
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
     def test_get_yaml_or_json_file_parses_yaml_on_yaml_suffix(self, get_file_mock, yaml_mock):
         get_file_return_value = Mock()
-        get_file_mock.return_value.read.return_value = get_file_return_value
+        get_file_mock.return_value = get_file_return_value
 
         FileLoader.get_yaml_or_json_file('foo.yaml', 'baa')
         yaml_mock.load.assert_called_once_with(get_file_return_value)
@@ -60,7 +60,7 @@ class FileLoaderTests(TestCase):
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
     def test_get_yaml_or_json_file_parses_yaml_on_yml_suffix(self, get_file_mock, yaml_mock):
         get_file_return_value = Mock()
-        get_file_mock.return_value.read.return_value = get_file_return_value
+        get_file_mock.return_value = get_file_return_value
 
         FileLoader.get_yaml_or_json_file('foo.yml', 'baa')
         yaml_mock.load.assert_called_once_with(get_file_return_value)
