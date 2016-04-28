@@ -28,6 +28,10 @@ class FileLoaderTests(TestCase):
         with self.assertRaises(TemplateErrorException):
             FileLoader._fs_get_file('foo.json', 'baa')
 
+    def test_fs_get_file_raises_exception_on_unknown_filetype(self):
+        with self.assertRaises(TemplateErrorException):
+            FileLoader._fs_get_file('bla.blub', 'baa')
+
     @patch("cfn_sphere.file_loader.FileLoader._fs_get_file")
     def test_load_template_calls_fs_get_file_for_fs_url(self, mock):
         url = "/tmp/template.json"
