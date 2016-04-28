@@ -38,7 +38,7 @@ class FileLoader(object):
         except Exception as e:
             raise TemplateErrorException("Could not load file from {0}: {1}".format(url, e))
 
-        raise TemplateErrorException("Template file must have either .yaml or .json extension")
+        raise TemplateErrorException("Template file must have either .yml, .yaml or .json extension")
 
     @staticmethod
     def _s3_get_file(url):
