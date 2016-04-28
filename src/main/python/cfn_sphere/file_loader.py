@@ -37,8 +37,10 @@ class FileLoader(object):
         try:
             if url.lower().endswith(".json"):
                 return json.loads(file_content.read())
-            if url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
+            elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                 return yaml.load(file_content.read())
+            else:
+                raise CfnSphereException("{0} has an invalid suffix, use [json|yml|yaml]")
         except Exception as e:
             raise CfnSphereException(e)
 
@@ -79,8 +81,7 @@ class FileLoader(object):
         :param url: str
         :return: str(utf-8)
         """
-        s3 = S3()
         try:
-            return s3.get_contents_from_url(url)
+            return S3().get_contents_from_url(url)
         except Exception as e:
             raise CfnSphereException("Could not load file from {0}: {1}".format(url, e))
