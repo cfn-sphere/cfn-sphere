@@ -35,7 +35,7 @@ class StackActionHandler(object):
 
             transformed_template = CloudFormationTemplateTransformer.transform_template(template)
 
-            parameters = self.parameter_resolver.resolve_parameter_values(stack_config.parameters, stack_name)
+            parameters = self.parameter_resolver.resolve_parameter_values(stack_name, stack_config)
             merged_parameters = self.parameter_resolver.update_parameters_with_cli_parameters(
                 parameters=parameters,
                 cli_parameters=self.cli_parameters,

@@ -1,9 +1,9 @@
 try:
     from unittest2 import TestCase
-    from mock import patch
+    from mock import patch, Mock
 except ImportError:
     from unittest import TestCase
-    from mock import patch
+    from mock import patch, Mock
 
 from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
@@ -14,11 +14,9 @@ class ParameterResolverTests(TestCase):
         self.cloudformation_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
         self.ec2api_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.Ec2Api')
         self.kms_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.KMS')
-        self.file_resolver_patcher = patch('cfn_sphere.stack_configuration.parameter_resolver.FileResolver')
         self.cfn_mock = self.cloudformation_patcher.start()
         self.ec2api_mock = self.ec2api_patcher.start()
         self.kms_mock = self.kms_patcher.start()
-        self.file_resolver_mock = self.file_resolver_patcher.start()
 
     def tearDown(self):
         self.cloudformation_patcher.stop()
@@ -38,7 +36,10 @@ class ParameterResolverTests(TestCase):
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.convert_list_to_string')
     def test_resolve_parameter_values_calls_convert_list_to_string_on_list_value(self, convert_list_to_string_mock):
-        ParameterResolver().resolve_parameter_values({'foo': ['a', 'b']}, 'foo')
+        stack_config = Mock()
+        stack_config.parameters = {'foo': ['a', 'b']}
+
+        ParameterResolver().resolve_parameter_values('foo', stack_config)
         convert_list_to_string_mock.assert_called_once_with(['a', 'b'])
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
@@ -47,7 +48,10 @@ class ParameterResolverTests(TestCase):
         cfn_mock.return_value.get_stack_outputs.return_value = None
         get_output_value_mock.return_value = 'bar'
 
-        result = ParameterResolver().resolve_parameter_values({'foo': '|Ref|stack.output'}, 'foo')
+        stack_config = Mock()
+        stack_config.parameters = {'foo': '|Ref|stack.output'}
+
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
 
         get_output_value_mock.assert_called_with(None, "stack", "output")
         self.assertEqual({'foo': 'bar'}, result)
@@ -58,30 +62,45 @@ class ParameterResolverTests(TestCase):
         cfn_mock.return_value.get_stack_outputs.return_value = None
         get_output_value_mock.return_value = 'bar'
 
-        result = ParameterResolver().resolve_parameter_values(
-            {'foo': ['|Ref|stack.output', '|Ref|stack.output']}, 'foo')
+        stack_config = Mock()
+        stack_config.parameters = {'foo': ['|Ref|stack.output', '|Ref|stack.output']}
+
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
 
         get_output_value_mock.assert_called_with(None, "stack", "output")
         self.assertEqual({'foo': 'bar,bar'}, result)
 
     def test_resolve_parameter_values_raises_exception_on_none_value(self):
+        stack_config = Mock()
+        stack_config.parameters = {'foo': None}
+
         with self.assertRaises(NotImplementedError):
-            ParameterResolver().resolve_parameter_values({'foo': None}, 'foo')
+            ParameterResolver().resolve_parameter_values('foo', stack_config)
 
     def test_resolve_parameter_values_returns_list_with_string_value(self):
-        result = ParameterResolver().resolve_parameter_values({'foo': "baa"}, 'foo')
+        stack_config = Mock()
+        stack_config.parameters = {'foo': "baa"}
+
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
         self.assertEqual({'foo': 'baa'}, result)
 
     def test_resolve_parameter_values_returns_str_representation_of_false(self):
-        result = ParameterResolver().resolve_parameter_values({'foo': False}, 'foo')
+        stack_config = Mock()
+        stack_config.parameters = {'foo': False}
+
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
         self.assertEqual({'foo': 'false'}, result)
 
     def test_resolve_parameter_values_returns_str_representation_of_int(self):
-        result = ParameterResolver().resolve_parameter_values({'foo': 5}, 'foo')
+        stack_config = Mock()
+        stack_config.parameters = {'foo': 5}
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
         self.assertEqual({'foo': '5'}, result)
 
     def test_resolve_parameter_values_returns_str_representation_of_float(self):
-        result = ParameterResolver().resolve_parameter_values({'foo': 5.555}, 'foo')
+        stack_config = Mock()
+        stack_config.parameters = {'foo': 5.555}
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
         self.assertEqual({'foo': '5.555'}, result)
 
     def test_get_latest_value_returns_stacks_actual_value(self):
@@ -140,8 +159,11 @@ class ParameterResolverTests(TestCase):
     def test_resolve_parameter_values_returns_decrypted_value(self):
         self.kms_mock.return_value.decrypt.return_value = "decryptedValue"
 
-        result = ParameterResolver().resolve_parameter_values({'foo': "|kms|encryptedValue"}, 'foo')
-        self.assertEqual({'foo': 'decryptedValue'}, result)
+        stack_config = Mock()
+        stack_config.parameters = {'foo': '|kms|encryptedValue'}
+
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
+        self.assertEqual(result, {'foo': 'decryptedValue'})
 
     def test_update_parameters_with_cli_parameters_with_string_param_value(self):
         result = ParameterResolver().update_parameters_with_cli_parameters(
@@ -166,8 +188,12 @@ class ParameterResolverTests(TestCase):
             parameters={'foo': "foo"}, cli_parameters={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
         self.assertEqual({'foo': 'foo'}, result)
 
-    def test_resolve_value_from_file(self):
-        self.file_resolver_mock.return_value.read.return_value = "line1\nline2"
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.FileLoader.get_file')
+    def test_resolve_value_from_file(self, get_file_mock):
+        get_file_mock.return_value = "line1\nline2"
 
-        result = ParameterResolver().resolve_parameter_values({'foo': "|file|abc.txt"}, 'foo')
+        stack_config = Mock()
+        stack_config.parameters = {'foo': "|file|abc.txt"}
+
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
         self.assertEqual({'foo': 'line1\nline2'}, result)

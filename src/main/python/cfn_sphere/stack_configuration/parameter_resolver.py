@@ -1,10 +1,10 @@
 import pprint
 
+from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.aws.kms import KMS
 from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.resolver.file import FileResolver
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.util import get_logger
 
@@ -19,7 +19,6 @@ class ParameterResolver(object):
         self.cfn = CloudFormation(region)
         self.ec2 = Ec2Api(region)
         self.kms = KMS(region)
-        self.file_access = FileResolver()
 
     @staticmethod
     def convert_list_to_string(value):
@@ -83,11 +82,11 @@ class ParameterResolver(object):
         except Exception as e:
             raise CfnSphereException("Could not get latest value for {0}: {1}".format(key, e))
 
-    def resolve_parameter_values(self, parameters_dict, stack_name):
-        parameters = {}
+    def resolve_parameter_values(self, stack_name, stack_config):
+        resolved_parameters = {}
         stack_outputs = self.cfn.get_stack_outputs()
 
-        for key, value in parameters_dict.items():
+        for key, value in stack_config.parameters.items():
 
             if isinstance(value, list):
                 self.logger.debug("List parameter found for {0}".format(key))
@@ -97,37 +96,38 @@ class ParameterResolver(object):
                         value[i] = str(self.get_output_value(stack_outputs, referenced_stack, output_name))
 
                 value_string = self.convert_list_to_string(value)
-                parameters[key] = value_string
+                resolved_parameters[key] = value_string
 
             elif isinstance(value, str):
 
                 if DependencyResolver.is_parameter_reference(value):
                     referenced_stack, output_name = DependencyResolver.parse_stack_reference_value(value)
-                    parameters[key] = str(self.get_output_value(stack_outputs, referenced_stack, output_name))
+                    resolved_parameters[key] = str(self.get_output_value(stack_outputs, referenced_stack, output_name))
 
                 elif self.is_keep_value(value):
-                    parameters[key] = str(self.get_latest_value(key, value, stack_name))
+                    resolved_parameters[key] = str(self.get_latest_value(key, value, stack_name))
 
                 elif self.is_taupage_ami_reference(value):
-                    parameters[key] = str(self.ec2.get_latest_taupage_image_id())
+                    resolved_parameters[key] = str(self.ec2.get_latest_taupage_image_id())
 
                 elif self.is_kms(value):
-                    parameters[key] = str(self.kms.decrypt(value.split('|', 2)[2]))
+                    resolved_parameters[key] = str(self.kms.decrypt(value.split('|', 2)[2]))
 
                 elif self.is_file(value):
-                    parameters[key] = self.file_access.read(value.split('|', 2)[2])
+                    url = value.split('|', 2)[2]
+                    resolved_parameters[key] = FileLoader.get_file(url, stack_config.working_dir)
 
                 else:
-                    parameters[key] = value
+                    resolved_parameters[key] = value
 
             elif isinstance(value, bool):
-                parameters[key] = str(value).lower()
+                resolved_parameters[key] = str(value).lower()
             elif isinstance(value, (int, float)):
-                parameters[key] = str(value)
+                resolved_parameters[key] = str(value)
             else:
                 raise NotImplementedError("Cannot handle {0} type for key: {1}".format(type(value), key))
 
-        return parameters
+        return resolved_parameters
 
     @staticmethod
     def update_parameters_with_cli_parameters(parameters, cli_parameters, stack_name):
