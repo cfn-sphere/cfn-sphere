@@ -49,11 +49,16 @@ class ConfigTests(TestCase):
 
     def test_properties_parsing_cli_params(self):
         config = Config(cli_params=("stack1.p1=v1", "stack1.p2=v2"),
-                        config_dict={'region': 'eu-west-1', 'stacks': {'foo': {'template-url': 'foo.json'}}})
+                        config_dict={'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}})
         self.assertTrue('p1' in config.cli_params['stack1'])
         self.assertTrue('p2' in config.cli_params['stack1'])
         self.assertTrue('v1' in config.cli_params['stack1'].values())
         self.assertTrue('v2' in config.cli_params['stack1'].values())
+
+    def test_raises_exception_for_cli_param_on_non_configured_stack(self):
+        with self.assertRaises(NoConfigException):
+            Config(cli_params=("stack1.p1=v1",),
+                        config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
 
     def test_config_raises_exception_if_only_cli_params_given(self):
         with self.assertRaises(NoConfigException):
