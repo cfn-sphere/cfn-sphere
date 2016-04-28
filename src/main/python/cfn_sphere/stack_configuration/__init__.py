@@ -33,7 +33,7 @@ class Config(object):
             for cli_stack in self.cli_params.keys():
                 assert cli_stack in self.stacks.keys(), 'Stack "{0}" does not exist in config'.format(cli_stack)
         except AssertionError as e:
-            raise NoConfigException(e.message)
+            raise NoConfigException(e)
 
     def _parse_stack_configs(self, config_dict):
         """
