@@ -61,7 +61,6 @@ class FileLoader(object):
     def _fs_get_file(url, working_dir):
         """
         Load file from filesystem
-
         :param url: str template path
         :return: str(utf-8)
         """
@@ -73,8 +72,6 @@ class FileLoader(object):
                 return f.read()
         except Exception as e:
             raise CfnSphereException("Could not load file from {0}: {1}".format(url, e))
-
-        raise TemplateErrorException("Template file must have either .yml, .yaml or .json extension")
 
     @staticmethod
     def _s3_get_file(url):
