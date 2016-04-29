@@ -30,6 +30,8 @@ class Config(object):
             assert self.region, "Please specify region in config file"
             assert isinstance(self.region, str), "Region must be of type str, not {0}".format(type(self.region))
             assert self.stacks, "Please specify stacks in config file"
+            for cli_stack in self.cli_params.keys():
+                assert cli_stack in self.stacks.keys(), 'Stack "{0}" does not exist in config'.format(cli_stack)
         except AssertionError as e:
             raise NoConfigException(e)
 

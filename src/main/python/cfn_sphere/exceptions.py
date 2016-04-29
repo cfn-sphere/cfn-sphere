@@ -3,7 +3,7 @@ from botocore.exceptions import ClientError
 
 class CfnSphereException(Exception):
     def __init__(self, message="", boto_exception=None):
-        self.pretty_string = message
+        self.pretty_string = str(message)
         self.str = self.pretty_string
         self.boto_exception = boto_exception
         self.request_id = None
