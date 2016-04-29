@@ -14,3 +14,4 @@ stacks:
       - "|Ref|cfn-sphere-test-vpc.subnetB"
       appVersion: "|keepOrUse|1"
       kmsEncryptedValue: "Place |kms|<ciphertext> value here to test decryption"
+      textFileParameter: "|File|my-text-file-parameter.txt"

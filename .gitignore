@@ -1,3 +1,4 @@
+.tox
 .idea
 .coverage
 target
