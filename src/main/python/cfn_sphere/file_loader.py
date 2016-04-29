@@ -84,4 +84,7 @@ class FileLoader(object):
             return S3().get_contents_from_url(url)
         except Exception as e:
             raise CfnSphereException("Could not load file from {0}: {1}".format(url, e))
+<<<<<<< HEAD
 
+=======
+>>>>>>> 84124a952c8f81553b6791c2c9aae97269fb0c5a
