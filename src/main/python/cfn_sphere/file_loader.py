@@ -40,7 +40,7 @@ class FileLoader(object):
             elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                 return yaml.load(file_content)
             else:
-                raise CfnSphereException("{0} has an invalid suffix, use [json|yml|yaml]")
+                raise CfnSphereException("Invalid suffix, use [json|yml|yaml]")
         except Exception as e:
             raise CfnSphereException(e)
 
