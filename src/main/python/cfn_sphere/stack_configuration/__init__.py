@@ -36,7 +36,7 @@ class Config(object):
         except InvalidGitRepositoryError as e:
             self.logger.info("Stack config not located in a git repository")
             self.logger.debug(e, exc_info=True)
-            return {}
+            return tags
 
         tags['config-git-repository'] = repo.remotes.origin.url
         self.logger.info('Stack config located in git repository, adding tag "config-git-repository": "{0}"'

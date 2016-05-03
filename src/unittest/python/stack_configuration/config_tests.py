@@ -95,9 +95,12 @@ class ConfigTests(TestCase):
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_without_repo(self, repo_mock):
+        tags = { 'bla': 'blub' }
         repo_mock.side_effect = InvalidGitRepositoryError
-        config = Config(config_dict={'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}})
-        self.assertTrue(config.tags == {})
+        config = Config(config_dict={'region': 'eu-west-1',
+                                     'tags': tags,
+                                     'stacks': {'stack1': {'template-url': 'foo.json'}}})
+        self.assertDictEqual(config.tags, tags)
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_with_repo(self, repo_mock):
