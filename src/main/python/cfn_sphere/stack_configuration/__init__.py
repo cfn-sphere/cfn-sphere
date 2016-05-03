@@ -39,8 +39,8 @@ class Config(object):
             return tags
 
         tags['config-git-repository'] = repo.remotes.origin.url
-        self.logger.info('Stack config located in git repository, adding tag "config-git-repository": "{0}"'
-                         .format(repo.remotes.origin.url))
+        self.logger.info('Stack config located in git repository, adding tag "config-git-repository": "%s"'
+                         % repo.remotes.origin.url)
         return tags
 
     def _validate(self):
