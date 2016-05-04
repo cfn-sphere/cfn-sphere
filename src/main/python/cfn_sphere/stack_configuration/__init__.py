@@ -85,7 +85,9 @@ class Config(object):
 
 
 class StackConfig(object):
-    def __init__(self, stack_config_dict, working_dir=None, default_tags={}):
+    def __init__(self, stack_config_dict, working_dir=None, default_tags=None):
+        if default_tags is None:
+            default_tags = {}
         self.parameters = stack_config_dict.get('parameters', {})
         self.tags = {}
         self.tags.update(default_tags)
