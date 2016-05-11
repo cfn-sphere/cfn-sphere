@@ -83,6 +83,21 @@ class Config(object):
         except Exception as e:
             raise NoConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
 
+    def __eq__(self, other):
+        try:
+            stacks_equal = cmp(self.stacks, other.stacks) == 0
+
+            if (self.cli_params == other.cli_params
+                    and self.region == other.region
+                    and self.tags == other.tags
+                    and stacks_equal):
+                return True
+        except Exception:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
+
 
 class StackConfig(object):
     def __init__(self, stack_config_dict, working_dir=None, default_tags={}):
@@ -97,3 +112,18 @@ class StackConfig(object):
             self.template_url = stack_config_dict['template-url']
         except KeyError as e:
             raise NoConfigException("Stack config needs a {0} key".format(e))
+
+    def __eq__(self, other):
+        try:
+            if (self.parameters == other.parameters
+                    and self.tags == other.tags
+                    and self.timeout == other.timeout
+                    and self.working_dir == other.working_dir):
+                return True
+        except Exception:
+            return False
+
+        return False
+
+    def __ne__(self, other):
+        return not self == other
