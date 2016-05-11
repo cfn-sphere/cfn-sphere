@@ -85,14 +85,14 @@ class Config(object):
 
     def __eq__(self, other):
         try:
-            stacks_equal = cmp(self.stacks, other.stacks) == 0
+            stacks_equal = self.stacks == other.stacks
 
             if (self.cli_params == other.cli_params
                     and self.region == other.region
                     and self.tags == other.tags
                     and stacks_equal):
                 return True
-        except Exception:
+        except AttributeError:
             return False
 
     def __ne__(self, other):
@@ -120,7 +120,7 @@ class StackConfig(object):
                     and self.timeout == other.timeout
                     and self.working_dir == other.working_dir):
                 return True
-        except Exception:
+        except AttributeError:
             return False
 
         return False
