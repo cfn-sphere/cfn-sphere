@@ -128,24 +128,28 @@ class ConfigTests(TestCase):
         self.assertEquals(config_a_I, config_a_II)
 
     def test_equals_Config_region(self):
+        config_a_I = self.create_config_object()
         config_b_region = self.create_config_object()
         config_b_region.region = 'region b'
 
         self.assertNotEquals(config_a_I, config_b_region)
 
     def test_equals_Config_tags(self):
+        config_a_I = self.create_config_object()
         config_b_tags = self.create_config_object()
         config_b_tags.tags = {}
 
         self.assertNotEquals(config_a_I, config_b_tags)
 
     def test_equals_Config_cli_params(self):
+        config_a_I = self.create_config_object()
         config_b_cli_params = self.create_config_object()
         config_b_cli_params.cli_params = {}
 
         self.assertNotEquals(config_a_I, config_b_cli_params)
 
     def test_equals_Config_stacks(self):
+        config_a_I = self.create_config_object()
         config_b_cli_stacks = self.create_config_object()
         config_b_cli_stacks.stacks = {}
 
