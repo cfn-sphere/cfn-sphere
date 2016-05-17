@@ -3,6 +3,9 @@ try:
 except ImportError:
     from unittest import TestCase
 
+from mock import patch, Mock
+from git.exc import InvalidGitRepositoryError
+
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.stack_configuration import Config, StackConfig, NoConfigException
 
@@ -85,7 +88,7 @@ class ConfigTests(TestCase):
     def test_raises_exception_for_cli_param_on_non_configured_stack(self):
         with self.assertRaises(NoConfigException):
             Config(cli_params=("stack1.p1=v1",),
-                        config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
+                   config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
 
     def test_config_raises_exception_if_only_cli_params_given(self):
         with self.assertRaises(NoConfigException):
@@ -180,3 +183,19 @@ class ConfigTests(TestCase):
     def test_equals_StackConfig_working_dir(self):
         self.stack_config_b.working_dir = ''
         self.assertEquals(self.stack_config_a == self.stack_config_b, False)
+
+    @patch("cfn_sphere.stack_configuration.Repo")
+    def test_add_git_remote_url_tag_without_repo(self, repo_mock):
+        tags = { 'bla': 'blub' }
+        repo_mock.side_effect = InvalidGitRepositoryError
+        config = Config(config_dict={'region': 'eu-west-1',
+                                     'tags': tags,
+                                     'stacks': {'stack1': {'template-url': 'foo.json'}}})
+        self.assertDictEqual(config.tags, tags)
+
+    @patch("cfn_sphere.stack_configuration.Repo")
+    def test_add_git_remote_url_tag_with_repo(self, repo_mock):
+        url = "http://config.repo.git"
+        repo_mock.return_value.remotes.origin.url = url
+        config = Config(config_dict={'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}})
+        self.assertDictEqual(config.tags, {'config-git-repository': url})
