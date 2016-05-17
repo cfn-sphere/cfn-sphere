@@ -18,7 +18,7 @@ authors = [Author('Marco Hoyer', 'marco_hoyer@gmx.de')]
 description = "cfn-sphere - A CLI tool intended to simplify AWS CloudFormation handling."
 license = 'APACHE LICENSE, VERSION 2.0'
 summary = 'cfn-sphere AWS CloudFormation management cli'
-url = 'https://github.com/marco-hoyer/cfn-sphere'
+url = 'https://github.com/cfn-sphere/cfn-sphere'
 version = '0.1.29'
 
 default_task = ['clean', 'analyze', 'package']
