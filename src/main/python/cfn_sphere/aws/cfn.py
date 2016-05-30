@@ -70,8 +70,10 @@ class CloudFormation(object):
         :raise CfnSphereBotoError:
         """
         try:
-            paginator = self.client.get_paginator('describe_stacks')
-            return tuple(paginator.paginate())[0]["Stacks"]
+            stacks = []
+            for page in self.client.get_paginator('describe_stacks').paginate():
+                stacks += page["Stacks"]
+            return stacks
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
