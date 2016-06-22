@@ -105,7 +105,8 @@ class CloudFormation(object):
         """
         try:
             paginator = self.client.get_paginator('describe_stack_events')
-            return tuple(paginator.paginate(StackName=stack_name))[0]["StackEvents"]
+            return tuple(paginator.paginate(StackName=stack_name,
+                                            PaginationConfig={'MaxItems': 100}))[0]["StackEvents"]
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
@@ -376,6 +377,8 @@ class CloudFormation(object):
 
             events = self.get_stack_events(stack_name)
             events.reverse()
+
+            self.logger.debug("Got {0} events".format(len(events)))
 
             for event in events:
                 if event["EventId"] not in seen_event_ids:
