@@ -70,8 +70,10 @@ class CloudFormation(object):
         :raise CfnSphereBotoError:
         """
         try:
-            paginator = self.client.get_paginator('describe_stacks')
-            return tuple(paginator.paginate())[0]["Stacks"]
+            stacks = []
+            for page in self.client.get_paginator('describe_stacks').paginate():
+                stacks += page["Stacks"]
+            return stacks
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
@@ -103,7 +105,8 @@ class CloudFormation(object):
         """
         try:
             paginator = self.client.get_paginator('describe_stack_events')
-            return tuple(paginator.paginate(StackName=stack_name))[0]["StackEvents"]
+            pages = paginator.paginate(StackName=stack_name, PaginationConfig={'MaxItems': 100})
+            return iter(pages).next()["StackEvents"]
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
@@ -374,6 +377,8 @@ class CloudFormation(object):
 
             events = self.get_stack_events(stack_name)
             events.reverse()
+
+            self.logger.debug("Got {0} events".format(len(events)))
 
             for event in events:
                 if event["EventId"] not in seen_event_ids:

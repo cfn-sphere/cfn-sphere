@@ -2,6 +2,9 @@ import os
 from collections import defaultdict
 
 import yaml
+from cfn_sphere.util import get_logger
+from git.exc import InvalidGitRepositoryError
+from git.repo.base import Repo
 from yaml.scanner import ScannerError
 
 from cfn_sphere.exceptions import NoConfigException, CfnSphereException
@@ -9,6 +12,7 @@ from cfn_sphere.exceptions import NoConfigException, CfnSphereException
 
 class Config(object):
     def __init__(self, config_file=None, config_dict=None, cli_params=None):
+        self.logger = get_logger()
 
         if isinstance(config_dict, dict):
             self.working_dir = None
@@ -21,9 +25,23 @@ class Config(object):
         self.cli_params = self._parse_cli_parameters(cli_params)
         self.region = config_dict.get('region')
         self.tags = config_dict.get('tags', {})
+        self.tags = self._add_git_remote_url_tag(self.tags, self.working_dir)
         self.stacks = self._parse_stack_configs(config_dict)
 
         self._validate()
+
+    def _add_git_remote_url_tag(self, tags, working_dir):
+        try:
+            repo = Repo(working_dir)
+        except InvalidGitRepositoryError as e:
+            self.logger.info("Stack config not located in a git repository")
+            self.logger.debug(e, exc_info=True)
+            return tags
+
+        tags['config-git-repository'] = repo.remotes.origin.url
+        self.logger.info('Stack config located in git repository, adding tag "config-git-repository": "%s"'
+                         % repo.remotes.origin.url)
+        return tags
 
     def _validate(self):
         try:
@@ -83,9 +101,26 @@ class Config(object):
         except Exception as e:
             raise NoConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
 
+    def __eq__(self, other):
+        try:
+            stacks_equal = self.stacks == other.stacks
+
+            if (self.cli_params == other.cli_params
+                    and self.region == other.region
+                    and self.tags == other.tags
+                    and stacks_equal):
+                return True
+        except AttributeError:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
+
 
 class StackConfig(object):
-    def __init__(self, stack_config_dict, working_dir=None, default_tags={}):
+    def __init__(self, stack_config_dict, working_dir=None, default_tags=None):
+        if default_tags is None:
+            default_tags = {}
         self.parameters = stack_config_dict.get('parameters', {})
         self.tags = {}
         self.tags.update(default_tags)
@@ -97,3 +132,18 @@ class StackConfig(object):
             self.template_url = stack_config_dict['template-url']
         except KeyError as e:
             raise NoConfigException("Stack config needs a {0} key".format(e))
+
+    def __eq__(self, other):
+        try:
+            if (self.parameters == other.parameters
+                    and self.tags == other.tags
+                    and self.timeout == other.timeout
+                    and self.working_dir == other.working_dir):
+                return True
+        except AttributeError:
+            return False
+
+        return False
+
+    def __ne__(self, other):
+        return not self == other
