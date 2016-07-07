@@ -32,7 +32,6 @@ def set_properties(project):
     project.depends_on('six')
     project.depends_on("click")
     project.depends_on("boto3")
-    project.depends_on("future")
     project.depends_on("pyyaml")
     project.depends_on("networkx")
     project.depends_on('prettytable')
