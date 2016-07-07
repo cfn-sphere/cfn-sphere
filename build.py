@@ -35,7 +35,6 @@ def set_properties(project):
     project.depends_on("future")
     project.depends_on("pyyaml")
     project.depends_on("networkx")
-    project.depends_on('ordereddict')
     project.depends_on('prettytable')
     project.depends_on('gitpython')
     project.set_property('integrationtest_inherit_environment', True)
