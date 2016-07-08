@@ -1,5 +1,4 @@
 import base64
-from six import binary_type
 
 import boto3
 from boto3.exceptions import Boto3Error
@@ -22,7 +21,7 @@ class KMS(object):
 
     def encrypt(self, key_id, cleartext_string):
         try:
-            response = self.client.encrypt(KeyId=key_id, Plaintext=binary_type(cleartext_string, 'utf-8'))
+            response = self.client.encrypt(KeyId=key_id, Plaintext=cleartext_string)
             return base64.b64encode(response['CiphertextBlob']).decode('utf-8')
         except (Boto3Error, ClientError) as e:
             raise CfnSphereBotoError(e)
