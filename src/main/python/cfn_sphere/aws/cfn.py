@@ -106,7 +106,7 @@ class CloudFormation(object):
         try:
             paginator = self.client.get_paginator('describe_stack_events')
             pages = paginator.paginate(StackName=stack_name, PaginationConfig={'MaxItems': 100})
-            return iter(pages).next()["StackEvents"]
+            return next(iter(pages))["StackEvents"]
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
