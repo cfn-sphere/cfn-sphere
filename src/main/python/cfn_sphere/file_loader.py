@@ -37,10 +37,12 @@ class FileLoader(object):
         try:
             if url.lower().endswith(".json"):
                 return json.loads(file_content)
+            elif url.lower().endswith(".template"):
+                return json.loads(file_content)
             elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                 return yaml.load(file_content)
             else:
-                raise CfnSphereException("Invalid suffix, use [json|yml|yaml]")
+                raise CfnSphereException("Invalid suffix, use [json|template|yml|yaml]")
         except Exception as e:
             raise CfnSphereException(e)
 
