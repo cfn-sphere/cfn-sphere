@@ -158,3 +158,41 @@ class StackConfigTests(TestCase):
 +--------------+-----------------+"""
 
         self.assertEqual(expected_string, util.get_pretty_parameters_string(stack))
+
+    def test_get_pretty_stack_outputs_returns_proper_table(self):
+        outputs = [
+            {
+                'OutputKey': 'key1',
+                'OutputValue': 'value1',
+                'Description': 'desc1'
+            }, {
+                'OutputKey': 'key2',
+                'OutputValue': 'value2',
+                'Description': 'desc2'
+            }, {
+                'OutputKey': 'key3',
+                'OutputValue': 'value3',
+                'Description': 'desc3'
+            }
+        ]
+
+        expected = """+--------+--------+
+| Output | Value  |
++--------+--------+
+|  key1  | value1 |
+|  key2  | value2 |
+|  key3  | value3 |
++--------+--------+"""
+
+        result = util.get_pretty_stack_outputs(outputs)
+        self.assertEqual(expected, result)
+
+    def test_strip_string_strips_string(self):
+        s = "sfsdklgashgslkadghkafhgaknkbndkjfbnwurtqwhgsdnkshGLSAKGKLDJFHGSKDLGFLDFGKSDFLGKHAsdjdghskjdhsdcxbvwerA323"
+        result = util.strip_string(s)
+        self.assertTrue(len(result) == 100)
+
+    def test_strip_string_doesnt_string_short_strings(self):
+        s = "my-short-string"
+        result = util.strip_string(s)
+        self.assertEqual("my-short-string", result)

@@ -1,13 +1,10 @@
-import logging
-import time
 from datetime import timedelta
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
-from cfn_sphere.exceptions import CfnStackActionFailedException, CfnSphereBotoError
-from cfn_sphere.util import get_logger, get_cfn_api_server_time, get_pretty_parameters_string, with_boto_retry
-from cfn_sphere.util import timed
+from cfn_sphere.exceptions import CfnStackActionFailedException
+from cfn_sphere.util import *
 
 logging.getLogger('boto').setLevel(logging.FATAL)
 
@@ -58,6 +55,20 @@ class CloudFormation(object):
         """
         try:
             return list(self.resource.stacks.all())
+        except (BotoCoreError, ClientError) as e:
+            raise CfnSphereBotoError(e)
+
+    @timed
+    @with_boto_retry()
+    def get_stack_description(self, stack_name):
+        """
+        Get a stacks descriptions
+        :param stack_name: string
+        :return dict
+        :raise CfnSphereBotoError:
+        """
+        try:
+            return self.client.describe_stacks(StackName=stack_name)["Stacks"][0]
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
@@ -130,7 +141,16 @@ class CloudFormation(object):
                                                "outputs": stack.get("Outputs", [])}
         return stacks_dict
 
-    def get_stack_outputs(self):
+    def get_stack_outputs(self, stack):
+        """
+        Get outputs for a specific stack
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        :return: list(dict)
+        """
+        self.logger.error(self.get_stack_description(stack.name))
+        return self.get_stack_description(stack.name).get("Outputs", [])
+
+    def get_stacks_outputs(self):
         """
         Get a dict of all available stack outputs
         :return: dict(dict(output-key, output-value))
@@ -269,15 +289,18 @@ class CloudFormation(object):
         assert isinstance(stack, CloudFormationStack)
 
         try:
+            stack_parameters_string = get_pretty_parameters_string(stack)
+
             self.logger.info(
                 "Creating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
                                                                         stack.template.name,
-                                                                        get_pretty_parameters_string(
-                                                                            stack)))
+                                                                        stack_parameters_string))
             self._create_stack(stack)
 
             self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
-            self.logger.info("Create completed for {0}".format(stack.name))
+
+            stack_outputs_string = get_pretty_stack_outputs(self.get_stack_outputs(stack))
+            self.logger.info("Create completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs_string))
         except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e))
 
@@ -286,6 +309,7 @@ class CloudFormation(object):
         assert isinstance(stack, CloudFormationStack)
 
         try:
+            stack_parameters_string = get_pretty_parameters_string(stack)
 
             try:
                 self._update_stack(stack)
@@ -298,17 +322,18 @@ class CloudFormation(object):
                     self.logger.info(
                         "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
                                                                                 stack.template.name,
-                                                                                get_pretty_parameters_string(
-                                                                                    stack)))
+                                                                                stack_parameters_string))
                     raise
 
             self.logger.info(
                 "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
                                                                         stack.template.name,
-                                                                        get_pretty_parameters_string(stack)))
+                                                                        stack_parameters_string))
 
             self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
-            self.logger.info("Update completed for {0}".format(stack.name))
+
+            stack_outputs_string = get_pretty_stack_outputs(self.get_stack_outputs(stack))
+            self.logger.info("Update completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs_string))
         except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e))
 
@@ -377,8 +402,6 @@ class CloudFormation(object):
 
             events = self.get_stack_events(stack_name)
             events.reverse()
-
-            self.logger.debug("Got {0} events".format(len(events)))
 
             for event in events:
                 if event["EventId"] not in seen_event_ids:
@@ -450,4 +473,5 @@ class CloudFormation(object):
 if __name__ == "__main__":
     cfn = CloudFormation()
     cfn.logger.setLevel(logging.DEBUG)
-    print(cfn.get_stack_parameters_dict("cfn-sphere-test-instances"))
+    stack = CloudFormationStack(None, {}, "pulse-report", "eu-west-1")
+    print(cfn.get_stack_outputs(stack))
