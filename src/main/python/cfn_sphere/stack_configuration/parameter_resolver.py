@@ -38,8 +38,7 @@ class ParameterResolver(object):
         :param output_key: str <stack-name>.<output>
         :return: str
         """
-        self.logger.debug("Looking up key: {0}".format(output_key))
-        self.logger.debug("Found artifacts: {0}".format(pprint.pformat(stack_outputs)))
+        self.logger.debug("Looking up output {0} from stack {1}".format(output_key, stack))
 
         try:
             artifact = stack_outputs[stack][output_key]
@@ -84,7 +83,7 @@ class ParameterResolver(object):
 
     def resolve_parameter_values(self, stack_name, stack_config):
         resolved_parameters = {}
-        stack_outputs = self.cfn.get_stack_outputs()
+        stack_outputs = self.cfn.get_stacks_outputs()
 
         for key, value in stack_config.parameters.items():
 

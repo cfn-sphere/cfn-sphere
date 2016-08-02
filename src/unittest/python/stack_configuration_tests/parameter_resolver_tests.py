@@ -45,7 +45,7 @@ class ParameterResolverTests(TestCase):
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     def test_resolve_parameter_values_returns_ref_value(self, cfn_mock, get_output_value_mock):
-        cfn_mock.return_value.get_stack_outputs.return_value = None
+        cfn_mock.return_value.get_stacks_outputs.return_value = None
         get_output_value_mock.return_value = 'bar'
 
         stack_config = Mock()
@@ -59,7 +59,7 @@ class ParameterResolverTests(TestCase):
     @patch('cfn_sphere.stack_configuration.parameter_resolver.ParameterResolver.get_output_value')
     @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
     def test_resolve_parameter_values_returns_ref_list_value(self, cfn_mock, get_output_value_mock):
-        cfn_mock.return_value.get_stack_outputs.return_value = None
+        cfn_mock.return_value.get_stacks_outputs.return_value = None
         get_output_value_mock.return_value = 'bar'
 
         stack_config = Mock()

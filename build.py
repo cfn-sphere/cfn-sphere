@@ -18,8 +18,8 @@ authors = [Author('Marco Hoyer', 'marco_hoyer@gmx.de')]
 description = "cfn-sphere - A CLI tool intended to simplify AWS CloudFormation handling."
 license = 'APACHE LICENSE, VERSION 2.0'
 summary = 'cfn-sphere AWS CloudFormation management cli'
-url = 'https://github.com/marco-hoyer/cfn-sphere'
-version = '0.1.31'
+url = 'https://github.com/cfn-sphere/cfn-sphere'
+version = '0.1.32'
 
 default_task = ['clean', 'analyze', 'package']
 
@@ -32,10 +32,8 @@ def set_properties(project):
     project.depends_on('six')
     project.depends_on("click")
     project.depends_on("boto3")
-    project.depends_on("future")
     project.depends_on("pyyaml")
     project.depends_on("networkx")
-    project.depends_on('ordereddict')
     project.depends_on('prettytable')
     project.depends_on('gitpython')
     project.set_property('integrationtest_inherit_environment', True)
