@@ -10,8 +10,7 @@ python:
 before_install:
   - git fetch --unshallow
 install:
-  - pip install pybuilder
-  - pip install coveralls
+  - pip install pip pybuilder coveralls --upgrade
   - pyb install_dependencies
 script: 
   - pyb -X run_unit_tests
