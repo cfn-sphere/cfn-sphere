@@ -50,7 +50,7 @@ def cli():
 @cli.command(help="Sync AWS resources with definition file")
 @click.argument('config', type=click.Path(exists=True))
 @click.option('--parameter', '-p', default=None, envvar='CFN_SPHERE_PARAMETERS', type=click.STRING, multiple=True,
-              help="Stack parameter to overwrite, eg: --parameter stack1:p1=v1")
+              help="Stack parameter to overwrite, eg: --parameter stack1.p1=v1")
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
