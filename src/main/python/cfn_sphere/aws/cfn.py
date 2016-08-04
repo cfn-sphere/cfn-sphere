@@ -257,7 +257,7 @@ class CloudFormation(object):
                 'CAPABILITY_IAM',
                 'CAPABILITY_NAMED_IAM'
             ],
-            OnFailure='DELETE',
+            OnFailure='ROLLBACK',
             Tags=stack.get_tags_list()
         )
 

@@ -197,7 +197,7 @@ class CloudFormationApiTests(TestCase):
 
         cloudformation_mock.return_value.create_stack.assert_called_once_with(
             Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-            OnFailure='DELETE',
+            OnFailure='ROLLBACK',
             Parameters=[('a', 'b')],
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
