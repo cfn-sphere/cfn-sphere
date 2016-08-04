@@ -254,7 +254,8 @@ class CloudFormation(object):
             Parameters=stack.get_parameters_list(),
             TimeoutInMinutes=stack.timeout,
             Capabilities=[
-                'CAPABILITY_IAM'
+                'CAPABILITY_IAM',
+                'CAPABILITY_NAMED_IAM'
             ],
             OnFailure='DELETE',
             Tags=stack.get_tags_list()
@@ -271,7 +272,8 @@ class CloudFormation(object):
             TemplateBody=stack.template.get_template_json(),
             Parameters=stack.get_parameters_list(),
             Capabilities=[
-                'CAPABILITY_IAM'
+                'CAPABILITY_IAM',
+                'CAPABILITY_NAMED_IAM'
             ],
             Tags=stack.get_tags_list()
         )
