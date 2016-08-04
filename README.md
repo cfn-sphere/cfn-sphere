@@ -25,26 +25,28 @@ A CLI tool intended to simplify AWS CloudFormation handling.
 
     pip install cfn-sphere
 
-## Build
+## Usage
 
-Requirements:
+    $ cf --help
+    Usage: cf [OPTIONS] COMMAND [ARGS]...
+    
+      This tool manages AWS CloudFormation templates and stacks by providing an
+      application scope and useful tooling.
+    
+    Options:
+      --version  Show the version and exit.
+      --help     Show this message and exit.
+    
+    Commands:
+      convert            Convert JSON to YAML or vice versa
+      decrypt            Decrypt a given ciphertext with AWS Key
+      delete             Delete all stacks in a stack configuration
+      encrypt            Encrypt a given string with AWS Key
+      render_template    Render template as it would be used to create or update a stack
+      sync               Sync AWS resources with stack configuration file
+      validate_template  Validate template with CloudFormation API
 
-* python >= 2.6
-* virtualenv
-* pybuilder
-
-Execute:
-
-    git clone https://github.com/cfn-sphere/cfn-sphere.git
-    cd cfn-sphere
-    virtualenv .venv --python=python2.7
-    source .venv/bin/activate
-    pip install pybuilder
-    pyb install_dependencies
-    pyb
-
-
-## Getting Started Guide
+## Getting Started
 
 ### 1. Create Stacks Config
 Create a YAML file containing a region and some stacks in a stacks.yml file f.e.:
@@ -71,6 +73,24 @@ To update parameters of a stack without having to modify the templates, simply u
 
     cf sync --parameter "test-stack.vpcID=vpc-123" --parameter "test-stack.subnetID=subnet-234" myapp-test.yml
 
+## Build
+
+Requirements:
+
+* python >= 2.6
+* virtualenv
+* pybuilder
+
+Execute:
+
+    git clone https://github.com/cfn-sphere/cfn-sphere.git
+    cd cfn-sphere
+    virtualenv .venv --python=python2.7
+    source .venv/bin/activate
+    pip install pybuilder
+    pyb install_dependencies
+    pyb
+
 ## Contribution
 
 * Create an issue to discuss the problem and track changes for future releases
@@ -90,4 +110,3 @@ Unless required by applicable law or agreed to in writing, software distributed
 under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
-
