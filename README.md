@@ -71,6 +71,11 @@ To update parameters of a stack without having to modify the templates, simply u
 
     cf sync --parameter "test-stack.vpcID=vpc-123" --parameter "test-stack.subnetID=subnet-234" myapp-test.yml
 
+## Contribution
+
+* Create an issue to discuss the problem and track changes for future releases
+* Create a pull request with your changes (as small as possible to ease code reviews)
+
 ## License
 
 Copyright 2015,2016 Marco Hoyer
