@@ -147,7 +147,6 @@ class CloudFormation(object):
         :param stack: cfn_sphere.aws.cfn.CloudFormationStack
         :return: list(dict)
         """
-        self.logger.error(self.get_stack_description(stack.name))
         return self.get_stack_description(stack.name).get("Outputs", [])
 
     def get_stacks_outputs(self):
