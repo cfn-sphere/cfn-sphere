@@ -1,3 +1,8 @@
+import os
+import tempfile
+
+import yaml
+
 try:
     from unittest2 import TestCase
 except ImportError:
@@ -185,7 +190,7 @@ class ConfigTests(TestCase):
         self.assertEquals(self.stack_config_a == self.stack_config_b, False)
 
     @patch("cfn_sphere.stack_configuration.Repo")
-    def test_add_git_remote_url_tag_without_repo(self, repo_mock):
+    def test_add_git_remote_url_tag_without_file_based_config(self, repo_mock):
         tags = { 'bla': 'blub' }
         repo_mock.side_effect = InvalidGitRepositoryError
         config = Config(config_dict={'region': 'eu-west-1',
@@ -197,5 +202,38 @@ class ConfigTests(TestCase):
     def test_add_git_remote_url_tag_with_repo(self, repo_mock):
         url = "http://config.repo.git"
         repo_mock.return_value.remotes.origin.url = url
-        config = Config(config_dict={'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}})
+
+        (_, config_file) = tempfile.mkstemp()
+        with open(config_file, 'w') as out:
+            yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}}, out)
+
+        config = Config(config_file=config_file)
         self.assertDictEqual(config.tags, {'config-git-repository': url})
+
+    @patch("cfn_sphere.stack_configuration.Repo")
+    def test_add_git_remote_url_tag_with_config_in_subdir_of_repo(self, repo_mock):
+        url = "http://config.repo.git"
+        repo_object_mock = Mock()
+        repo_mock.side_effect = [InvalidGitRepositoryError, repo_object_mock]
+        repo_object_mock.remotes.origin.url = url
+
+        config_dir = tempfile.mkdtemp() + "/config"
+        os.mkdir(config_dir)
+        config_file = config_dir + "/config.yaml"
+        with open(config_file, 'w') as out:
+            yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}}, out)
+
+        config = Config(config_file=config_file)
+        self.assertDictEqual(config.tags, {'config-git-repository': url})
+
+    @patch("cfn_sphere.stack_configuration.Repo")
+    def test_add_git_remote_url_tag_without_repo(self, repo_mock):
+        tags = { 'bla': 'blub' }
+        repo_mock.side_effect = InvalidGitRepositoryError
+
+        (_, config_file) = tempfile.mkstemp()
+        with open(config_file, 'w') as out:
+            yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}, 'tags': tags}, out)
+
+        config = Config(config_file=config_file)
+        self.assertDictEqual(config.tags, tags)
