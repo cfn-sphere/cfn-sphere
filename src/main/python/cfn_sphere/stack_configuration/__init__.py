@@ -31,17 +31,25 @@ class Config(object):
         self._validate()
 
     def _add_git_remote_url_tag(self, tags, working_dir):
+        if not working_dir:
+            return tags
+        return self._find_git_repo_root(tags, working_dir)
+
+    def _find_git_repo_root(self, tags, working_dir):
         try:
             repo = Repo(working_dir)
-        except InvalidGitRepositoryError as e:
-            self.logger.info("Stack config not located in a git repository")
-            self.logger.debug(e, exc_info=True)
+            tags['config-git-repository'] = repo.remotes.origin.url
+            self.logger.info('Stack config located in git repository, adding tag "config-git-repository": "%s"'
+                             % repo.remotes.origin.url)
             return tags
-
-        tags['config-git-repository'] = repo.remotes.origin.url
-        self.logger.info('Stack config located in git repository, adding tag "config-git-repository": "%s"'
-                         % repo.remotes.origin.url)
-        return tags
+        except InvalidGitRepositoryError as e:
+            self.logger.debug(e, exc_info=True)
+            (head, tail) = os.path.split(working_dir)
+            if tail:
+                return self._find_git_repo_root(tags, head)
+            else:
+                self.logger.info("Stack config not located in a git repository")
+                return tags
 
     def _validate(self):
         try:
