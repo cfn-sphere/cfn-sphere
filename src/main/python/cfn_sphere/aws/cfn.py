@@ -122,6 +122,7 @@ class CloudFormation(object):
             raise CfnSphereBotoError(e)
 
     @timed
+    @with_boto_retry()
     def get_stack_names(self):
         """
         Get a list of stack names
@@ -172,6 +173,7 @@ class CloudFormation(object):
 
         return stack_outputs
 
+    @with_boto_retry()
     def validate_stack_is_ready_for_action(self, stack):
         """
         Check if a stack is in a state capable for modification actions
@@ -187,6 +189,7 @@ class CloudFormation(object):
             raise CfnStackActionFailedException(
                 "Stack {0} is in '{1}' state.".format(cfn_stack.stack_name, cfn_stack.stack_status))
 
+    @with_boto_retry()
     def get_stack_state(self, stack_name):
         """
         Get stack status
@@ -196,6 +199,7 @@ class CloudFormation(object):
         """
         return self.get_stack(stack_name).stack_status
 
+    @with_boto_retry()
     def get_stack_parameters_dict(self, stack_name):
         """
         Get a stacks parameters
