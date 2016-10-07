@@ -60,6 +60,8 @@ def sync(config, parameter, debug, confirm, yes):
     confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
+        boto3.set_stream_logger(name='boto3', level=logging.DEBUG)
+        boto3.set_stream_logger(name='botocore', level=logging.DEBUG)
     else:
         LOGGER.setLevel(logging.INFO)
 
