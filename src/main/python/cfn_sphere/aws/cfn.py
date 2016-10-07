@@ -304,7 +304,14 @@ class CloudFormation(object):
         Delete cloudformation stack
         :param stack: cfn_sphere.aws.cfn.CloudFormationStack
         """
-        self.client.delete_stack(StackName=stack.name, RoleARN=stack.service_role)
+        kwargs = {
+            "StackName": stack.name
+        }
+
+        if stack.service_role:
+            kwargs["RoleARN"] = stack.service_role
+
+        self.client.delete_stack(**kwargs)
 
     def create_stack(self, stack):
         self.logger.debug("Creating stack: {0}".format(stack))
