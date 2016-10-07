@@ -190,9 +190,11 @@ class StackConfigTests(TestCase):
     def test_strip_string_strips_string(self):
         s = "sfsdklgashgslkadghkafhgaknkbndkjfbnwurtqwhgsdnkshGLSAKGKLDJFHGSKDLGFLDFGKSDFLGKHAsdjdghskjdhsdcxbvwerA323"
         result = util.strip_string(s)
-        self.assertTrue(len(result) == 100)
+        self.assertEqual(
+            "sfsdklgashgslkadghkafhgaknkbndkjfbnwurtqwhgsdnkshGLSAKGKLDJFHGSKDLGFLDFGKSDFLGKHAsdjdghskjdhsdcxbvwe...",
+            result)
 
-    def test_strip_string_doesnt_string_short_strings(self):
+    def test_strip_string_doesnt_strip_short_strings(self):
         s = "my-short-string"
         result = util.strip_string(s)
-        self.assertEqual("my-short-string", result)
+        self.assertEqual("my-short-string...", result)
