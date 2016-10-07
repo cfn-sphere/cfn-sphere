@@ -73,6 +73,14 @@ To update parameters of a stack without having to modify the templates, simply u
 
     cf sync --parameter "test-stack.vpcID=vpc-123" --parameter "test-stack.subnetID=subnet-234" myapp-test.yml
 
+## Config Reference
+
+See the wiki to see what you can do in a stack configuration: [StackConfig Reference](https://github.com/cfn-sphere/cfn-sphere/wiki/StackConfig-Reference)
+
+## Template Reference
+
+Cfn-Sphere supports native cloudformation templates written in JSON or YAML, located in local filesystem or s3. There are some improvements like simplified intrinsic functions one can use. See the reference for details: [Template Reference](https://github.com/cfn-sphere/cfn-sphere/wiki/Template-Reference)
+
 ## Build
 
 Requirements:
