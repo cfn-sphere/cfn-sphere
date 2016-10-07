@@ -190,6 +190,8 @@ class CloudFormationApiTests(TestCase):
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
         stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = None
+        stack.stack_policy = None
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -202,7 +204,10 @@ class CloudFormationApiTests(TestCase):
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
             TemplateBody={'key': 'value'},
-            TimeoutInMinutes=42)
+            TimeoutInMinutes=42,
+            StackPolicyBody=None,
+            RoleARN=None
+        )
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
@@ -215,6 +220,8 @@ class CloudFormationApiTests(TestCase):
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
         stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = None
+        stack.stack_policy = None
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -225,7 +232,10 @@ class CloudFormationApiTests(TestCase):
             Parameters=[('a', 'b')],
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
-            TemplateBody={'key': 'value'})
+            TemplateBody={'key': 'value'},
+            StackPolicyBody=None,
+            RoleARN=None
+        )
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     def test_validate_stack_is_ready_for_action_raises_exception_on_unknown_stack_state(self, get_stack_mock):
@@ -239,7 +249,6 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
         with self.assertRaises(CfnStackActionFailedException):
             cfn.validate_stack_is_ready_for_action(stack)
-
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     def test_validate_stack_is_ready_for_action_raises_exception_on_update_in_progress(self, get_stack_mock):

@@ -12,7 +12,7 @@ from mock import patch, Mock
 from git.exc import InvalidGitRepositoryError
 
 from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.stack_configuration import Config, StackConfig, NoConfigException
+from cfn_sphere.stack_configuration import Config, StackConfig, InvalidConfigException
 
 
 class ConfigTests(TestCase):
@@ -75,11 +75,11 @@ class ConfigTests(TestCase):
         self.assertEqual(99, config.stacks['any-stack'].timeout)
 
     def test_raises_exception_if_no_region_key(self):
-        with self.assertRaises(NoConfigException):
+        with self.assertRaises(InvalidConfigException):
             Config(config_dict={'foo': '', 'stacks': {'any-stack': {'template': 'foo.json'}}})
 
     def test_raises_exception_if_no_stacks_key(self):
-        with self.assertRaises(NoConfigException):
+        with self.assertRaises(InvalidConfigException):
             Config(config_dict={'region': 'eu-west-1'})
 
     def test_properties_parsing_cli_params(self):
@@ -91,12 +91,12 @@ class ConfigTests(TestCase):
         self.assertTrue('v2' in config.cli_params['stack1'].values())
 
     def test_raises_exception_for_cli_param_on_non_configured_stack(self):
-        with self.assertRaises(NoConfigException):
+        with self.assertRaises(InvalidConfigException):
             Config(cli_params=("stack1.p1=v1",),
                    config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
 
     def test_config_raises_exception_if_only_cli_params_given(self):
-        with self.assertRaises(NoConfigException):
+        with self.assertRaises(InvalidConfigException):
             Config(cli_params="foo")
 
     def test_parse_cli_parameters_throws_exception_on_invalid_syntax(self):

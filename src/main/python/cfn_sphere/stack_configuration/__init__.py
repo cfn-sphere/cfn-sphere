@@ -2,12 +2,12 @@ import os
 from collections import defaultdict
 
 import yaml
-from cfn_sphere.util import get_logger
 from git.exc import InvalidGitRepositoryError
 from git.repo.base import Repo
 from yaml.scanner import ScannerError
 
-from cfn_sphere.exceptions import NoConfigException, CfnSphereException
+from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
+from cfn_sphere.util import get_logger
 
 
 class Config(object):
@@ -20,10 +20,12 @@ class Config(object):
             config_dict = self._read_config_file(config_file)
             self.working_dir = os.path.dirname(os.path.realpath(config_file))
         else:
-            raise NoConfigException("No config_file or valid config_dict provided")
+            raise InvalidConfigException("No config_file or valid config_dict provided")
 
         self.cli_params = self._parse_cli_parameters(cli_params)
         self.region = config_dict.get('region')
+        self.default_service_role = config_dict.get('service-role')
+        self.default_stack_policy_url = config_dict.get('stack-policy-url')
         self.tags = config_dict.get('tags', {})
         self.tags = self._add_git_remote_url_tag(self.tags, self.working_dir)
         self.stacks = self._parse_stack_configs(config_dict)
@@ -59,7 +61,7 @@ class Config(object):
             for cli_stack in self.cli_params.keys():
                 assert cli_stack in self.stacks.keys(), 'Stack "{0}" does not exist in config'.format(cli_stack)
         except AssertionError as e:
-            raise NoConfigException(e)
+            raise InvalidConfigException(e)
 
     def _parse_stack_configs(self, config_dict):
         """
@@ -69,7 +71,11 @@ class Config(object):
         """
         stacks_dict = {}
         for key, value in config_dict.get('stacks', {}).items():
-            stacks_dict[key] = StackConfig(value, working_dir=self.working_dir, default_tags=self.tags)
+            stacks_dict[key] = StackConfig(value,
+                                           working_dir=self.working_dir,
+                                           default_tags=self.tags,
+                                           default_service_role=self.default_service_role,
+                                           default_stack_policy_url=self.default_stack_policy_url)
         return stacks_dict
 
     @staticmethod
@@ -100,23 +106,23 @@ class Config(object):
             with open(config_file, 'r') as f:
                 config_dict = yaml.safe_load(f.read())
                 if not isinstance(config_dict, dict):
-                    raise NoConfigException(
+                    raise InvalidConfigException(
                         "Config file {0} has invalid content, top level element must be a dict".format(config_file))
 
                 return config_dict
         except ScannerError as e:
-            raise NoConfigException("Could not parse {0}: {1} {2}".format(config_file, e.problem, e.problem_mark))
+            raise InvalidConfigException("Could not parse {0}: {1} {2}".format(config_file, e.problem, e.problem_mark))
         except Exception as e:
-            raise NoConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
+            raise InvalidConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
 
     def __eq__(self, other):
         try:
             stacks_equal = self.stacks == other.stacks
 
             if (self.cli_params == other.cli_params
-                    and self.region == other.region
-                    and self.tags == other.tags
-                    and stacks_equal):
+                and self.region == other.region
+                and self.tags == other.tags
+                and stacks_equal):
                 return True
         except AttributeError:
             return False
@@ -126,27 +132,41 @@ class Config(object):
 
 
 class StackConfig(object):
-    def __init__(self, stack_config_dict, working_dir=None, default_tags=None):
+    def __init__(self, stack_config_dict, working_dir=None, default_tags=None, default_service_role=None,
+                 default_stack_policy_url=None):
         if default_tags is None:
             default_tags = {}
         self.parameters = stack_config_dict.get('parameters', {})
         self.tags = {}
         self.tags.update(default_tags)
         self.tags.update(stack_config_dict.get('tags', {}))
+        self.service_role = stack_config_dict.get('service-role', default_service_role)
+        self.stack_policy_url = stack_config_dict.get('stack-policy-url', default_stack_policy_url)
         self.timeout = stack_config_dict.get('timeout', 600)
         self.working_dir = working_dir
+        self.template_url = stack_config_dict.get('template-url')
 
+        self.validate()
+
+    def validate(self):
         try:
-            self.template_url = stack_config_dict['template-url']
-        except KeyError as e:
-            raise NoConfigException("Stack config needs a {0} key".format(e))
+            assert self.template_url, "Stack config needs a template-url key"
+            if self.service_role:
+                assert isinstance(self.service_role, basestring)
+                assert str(self.service_role).lower().startswith("arn:aws:iam:"), \
+                    "service-role must start with 'arn:aws:iam:'"
+        except AssertionError as e:
+            raise InvalidConfigException(e)
 
     def __eq__(self, other):
         try:
             if (self.parameters == other.parameters
-                    and self.tags == other.tags
-                    and self.timeout == other.timeout
-                    and self.working_dir == other.working_dir):
+                and self.tags == other.tags
+                and self.timeout == other.timeout
+                and self.working_dir == other.working_dir
+                and self.service_role == other.service_role
+                and self.stack_policy_url == other.stack_policy_url
+                and self.template_url == other.template_url):
                 return True
         except AttributeError:
             return False
