@@ -17,8 +17,6 @@ from cfn_sphere.stack_configuration import Config, StackConfig, InvalidConfigExc
 
 class ConfigTests(TestCase):
     def setUp(self):
-        self.config_a = self.create_config_object()
-        self.config_b = self.create_config_object()
         self.stack_config_a = self.create_stack_config()
         self.stack_config_b = self.create_stack_config()
 
@@ -43,26 +41,26 @@ class ConfigTests(TestCase):
                             },
                            'any dir', {'any tag': 'any value'})
 
-    def test_properties_parsing(self):
+    def test_config_properties_parsing(self):
         config = Config(
-                config_dict={
-                    'region': 'eu-west-1',
-                    'tags': {
-                        'global-tag': 'global-tag-value'
-                    },
-                    'stacks': {
-                        'any-stack': {
-                            'timeout': 99,
-                            'template-url': 'foo.json',
-                            'tags': {
-                                'any-tag': 'any-tag-value'
-                            },
-                            'parameters': {
-                                'any-parameter': 'any-value'
-                            }
+            config_dict={
+                'region': 'eu-west-1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
                         }
                     }
                 }
+            }
         )
         self.assertEqual('eu-west-1', config.region)
         self.assertEqual(1, len(config.stacks.keys()))
@@ -70,9 +68,117 @@ class ConfigTests(TestCase):
         self.assertEqual('foo.json', config.stacks['any-stack'].template_url)
         self.assertDictContainsSubset({'any-tag': 'any-tag-value', 'global-tag': 'global-tag-value'},
                                       config.stacks['any-stack'].tags)
-        self.assertDictContainsSubset({'global-tag': 'global-tag-value'}, config.tags)
+        self.assertDictContainsSubset({'global-tag': 'global-tag-value'}, config.default_tags)
         self.assertDictContainsSubset({'any-parameter': 'any-value'}, config.stacks['any-stack'].parameters)
         self.assertEqual(99, config.stacks['any-stack'].timeout)
+
+    def test_default_service_role_is_used_if_not_overwritten_by_stack_config(self):
+        config = Config(
+            config_dict={
+                'region': 'eu-west-1',
+                'service-role': 'arn:aws:iam::123456789:role/my-role1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
+                        }
+                    }
+                }
+            }
+        )
+
+        self.assertEqual('arn:aws:iam::123456789:role/my-role1', config.stacks["any-stack"].service_role)
+
+    def test_default_service_role_is_overwritten_by_stack_config(self):
+        config = Config(
+            config_dict={
+                'region': 'eu-west-1',
+                'service-role': 'arn:aws:iam::123456789:role/my-role1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'service-role': 'arn:aws:iam::123456789:role/my-role2',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
+                        }
+                    }
+                }
+            }
+        )
+
+        self.assertEqual('arn:aws:iam::123456789:role/my-role2', config.stacks["any-stack"].service_role)
+
+    def test_a_stacks_service_role_is_none_if_not_configured(self):
+        config = Config(
+            config_dict={
+                'region': 'eu-west-1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
+                        }
+                    }
+                }
+            }
+        )
+        self.assertIsNone(config.stacks["any-stack"].service_role)
+
+    def test_a_stacks_timeout_is_set_if_not_configured(self):
+        config = Config(
+            config_dict={
+                'region': 'eu-west-1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
+                        }
+                    }
+                }
+            }
+        )
+        self.assertTrue(isinstance(config.stacks["any-stack"].timeout, int))
+
+    def test_validate_raises_exception_on_invalid_service_role_value(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'region': 'eu-west-q',
+                                'service-role': 'arn:aws:iam::123456789:role/my-role',
+                                'stacks': {'any-stack': {'template': 'foo.json'}}})
+
+    def test_validate_passes_on_valid_service_role_value(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'region': 'eu-west-q',
+                                'service-role': 'some-role',
+                                'stacks': {'any-stack': {'template': 'foo.json'}}})
 
     def test_raises_exception_if_no_region_key(self):
         with self.assertRaises(InvalidConfigException):
@@ -145,7 +251,7 @@ class ConfigTests(TestCase):
     def test_equals_Config_tags(self):
         config_a_I = self.create_config_object()
         config_b_tags = self.create_config_object()
-        config_b_tags.tags = {}
+        config_b_tags.default_tags = {}
 
         self.assertNotEquals(config_a_I, config_b_tags)
 
@@ -191,12 +297,12 @@ class ConfigTests(TestCase):
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_without_file_based_config(self, repo_mock):
-        tags = { 'bla': 'blub' }
+        tags = {'bla': 'blub'}
         repo_mock.side_effect = InvalidGitRepositoryError
         config = Config(config_dict={'region': 'eu-west-1',
                                      'tags': tags,
                                      'stacks': {'stack1': {'template-url': 'foo.json'}}})
-        self.assertDictEqual(config.tags, tags)
+        self.assertDictEqual(config.default_tags, tags)
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_with_repo(self, repo_mock):
@@ -208,7 +314,7 @@ class ConfigTests(TestCase):
             yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}}, out)
 
         config = Config(config_file=config_file)
-        self.assertDictEqual(config.tags, {'config-git-repository': url})
+        self.assertDictEqual(config.default_tags, {'config-git-repository': url})
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_with_config_in_subdir_of_repo(self, repo_mock):
@@ -224,11 +330,11 @@ class ConfigTests(TestCase):
             yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}}, out)
 
         config = Config(config_file=config_file)
-        self.assertDictEqual(config.tags, {'config-git-repository': url})
+        self.assertDictEqual(config.default_tags, {'config-git-repository': url})
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_without_repo(self, repo_mock):
-        tags = { 'bla': 'blub' }
+        tags = {'bla': 'blub'}
         repo_mock.side_effect = InvalidGitRepositoryError
 
         (_, config_file) = tempfile.mkstemp()
@@ -236,4 +342,4 @@ class ConfigTests(TestCase):
             yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}, 'tags': tags}, out)
 
         config = Config(config_file=config_file)
-        self.assertDictEqual(config.tags, tags)
+        self.assertDictEqual(config.default_tags, tags)

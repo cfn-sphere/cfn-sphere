@@ -24,13 +24,48 @@ class Config(object):
 
         self.cli_params = self._parse_cli_parameters(cli_params)
         self.region = config_dict.get('region')
+
         self.default_service_role = config_dict.get('service-role')
         self.default_stack_policy_url = config_dict.get('stack-policy-url')
-        self.tags = config_dict.get('tags', {})
-        self.tags = self._add_git_remote_url_tag(self.tags, self.working_dir)
-        self.stacks = self._parse_stack_configs(config_dict)
+        self.default_timeout = config_dict.get('timeout', 600)
+        self.default_tags = config_dict.get('tags', {})
+        self.default_tags = self._add_git_remote_url_tag(self.default_tags, self.working_dir)
 
+        self.stacks = self._parse_stack_configs(config_dict)
         self._validate()
+
+    def _validate(self):
+        try:
+            assert self.region, "Please specify region in config file"
+            assert isinstance(self.region, str), "Region must be of type str, not {0}".format(type(self.region))
+
+            assert self.stacks, "Please specify stacks in config file"
+            assert isinstance(self.stacks, dict), "stacks must be of type dict, not {0}".format(type(self.stacks))
+
+            for cli_stack in self.cli_params.keys():
+                assert cli_stack in self.stacks.keys(), 'Stack "{0}" does not exist in config'.format(cli_stack)
+
+        except AssertionError as e:
+            raise InvalidConfigException(e)
+
+    def __eq__(self, other):
+        try:
+            stacks_equal = self.stacks == other.stacks
+
+            if (self.cli_params == other.cli_params
+                and self.region == other.region
+                and self.default_tags == other.default_tags
+                and self.default_service_role == other.default_service_role
+                and self.default_stack_policy_url == other.default_stack_policy_url
+                and self.default_timeout == other.default_timeout
+                and self.default_tags == other.default_tags
+                and stacks_equal):
+                return True
+        except AttributeError:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
 
     def _add_git_remote_url_tag(self, tags, working_dir):
         if not working_dir:
@@ -53,16 +88,6 @@ class Config(object):
                 self.logger.info("Stack config not located in a git repository")
                 return tags
 
-    def _validate(self):
-        try:
-            assert self.region, "Please specify region in config file"
-            assert isinstance(self.region, str), "Region must be of type str, not {0}".format(type(self.region))
-            assert self.stacks, "Please specify stacks in config file"
-            for cli_stack in self.cli_params.keys():
-                assert cli_stack in self.stacks.keys(), 'Stack "{0}" does not exist in config'.format(cli_stack)
-        except AssertionError as e:
-            raise InvalidConfigException(e)
-
     def _parse_stack_configs(self, config_dict):
         """
         Create a StackConfig Object for each stack defined in config
@@ -71,11 +96,17 @@ class Config(object):
         """
         stacks_dict = {}
         for key, value in config_dict.get('stacks', {}).items():
-            stacks_dict[key] = StackConfig(value,
-                                           working_dir=self.working_dir,
-                                           default_tags=self.tags,
-                                           default_service_role=self.default_service_role,
-                                           default_stack_policy_url=self.default_stack_policy_url)
+            try:
+                stacks_dict[key] = StackConfig(value,
+                                               working_dir=self.working_dir,
+                                               default_tags=self.default_tags,
+                                               default_timeout=self.default_timeout,
+                                               default_service_role=self.default_service_role,
+                                               default_stack_policy_url=self.default_stack_policy_url)
+
+            except InvalidConfigException as e:
+                raise InvalidConfigException("Invalid config for stack {0}: {1}".format(key, e))
+
         return stacks_dict
 
     @staticmethod
@@ -115,25 +146,11 @@ class Config(object):
         except Exception as e:
             raise InvalidConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
 
-    def __eq__(self, other):
-        try:
-            stacks_equal = self.stacks == other.stacks
-
-            if (self.cli_params == other.cli_params
-                and self.region == other.region
-                and self.tags == other.tags
-                and stacks_equal):
-                return True
-        except AttributeError:
-            return False
-
-    def __ne__(self, other):
-        return not self == other
-
 
 class StackConfig(object):
-    def __init__(self, stack_config_dict, working_dir=None, default_tags=None, default_service_role=None,
-                 default_stack_policy_url=None):
+    def __init__(self, stack_config_dict, working_dir=None, default_tags=None, default_timeout=600,
+                 default_service_role=None, default_stack_policy_url=None):
+
         if default_tags is None:
             default_tags = {}
         self.parameters = stack_config_dict.get('parameters', {})
@@ -142,19 +159,30 @@ class StackConfig(object):
         self.tags.update(stack_config_dict.get('tags', {}))
         self.service_role = stack_config_dict.get('service-role', default_service_role)
         self.stack_policy_url = stack_config_dict.get('stack-policy-url', default_stack_policy_url)
-        self.timeout = stack_config_dict.get('timeout', 600)
+        self.timeout = stack_config_dict.get('timeout', default_timeout)
         self.working_dir = working_dir
         self.template_url = stack_config_dict.get('template-url')
 
-        self.validate()
+        self._validate()
 
-    def validate(self):
+    def _validate(self):
         try:
             assert self.template_url, "Stack config needs a template-url key"
+            assert isinstance(self.template_url, str), \
+                "template-url must be of type str, not {0}".format(type(self.template_url))
+
+            assert isinstance(self.timeout, int), "timeout must be of type dict, not {0}".format(type(self.timeout))
+
             if self.service_role:
-                assert isinstance(self.service_role, basestring)
+                assert isinstance(self.service_role, str), \
+                    "service-role must be of type str, not {0}".format(type(self.template_url))
                 assert str(self.service_role).lower().startswith("arn:aws:iam:"), \
                     "service-role must start with 'arn:aws:iam:'"
+
+            if self.stack_policy_url:
+                assert isinstance(self.stack_policy_url, str), \
+                    "stack-policy-url must be of type str, not {0}".format(type(self.stack_policy_url))
+
         except AssertionError as e:
             raise InvalidConfigException(e)
 
