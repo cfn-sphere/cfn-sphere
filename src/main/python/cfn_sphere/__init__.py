@@ -33,7 +33,10 @@ class StackActionHandler(object):
             template = FileLoader.get_cloudformation_template(stack_config.template_url,stack_config.working_dir)
             transformed_template = CloudFormationTemplateTransformer.transform_template(template)
 
-            stack_policy = FileLoader.get_yaml_or_json_file(stack_config.stack_policy_url, stack_config.working_dir)
+            if stack_config.stack_policy_url:
+                stack_policy = FileLoader.get_yaml_or_json_file(stack_config.stack_policy_url, stack_config.working_dir)
+            else:
+                stack_policy = None
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_name, stack_config)
             merged_parameters = self.parameter_resolver.update_parameters_with_cli_parameters(
@@ -45,7 +48,7 @@ class StackActionHandler(object):
 
             stack = CloudFormationStack(template=transformed_template,
                                         parameters=merged_parameters,
-                                        tags=self.config.tags,
+                                        tags=stack_config.tags,
                                         name=stack_name,
                                         region=self.config.region,
                                         timeout=stack_config.timeout,
