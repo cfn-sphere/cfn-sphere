@@ -270,7 +270,7 @@ class CloudFormation(object):
         if stack.service_role:
             kwargs["RoleARN"] = stack.service_role
         if stack.stack_policy:
-            kwargs["StackPolicyBody"] = stack.stack_policy
+            kwargs["StackPolicyBody"] = json.dumps(stack.stack_policy)
 
         self.client.create_stack(**kwargs)
 
@@ -294,7 +294,7 @@ class CloudFormation(object):
         if stack.service_role:
             kwargs["RoleARN"] = stack.service_role
         if stack.stack_policy:
-            kwargs["StackPolicyBody"] = stack.stack_policy
+            kwargs["StackPolicyBody"] = json.dumps(stack.stack_policy)
 
         self.client.update_stack(**kwargs)
 

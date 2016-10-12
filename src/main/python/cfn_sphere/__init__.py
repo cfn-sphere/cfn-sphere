@@ -34,6 +34,7 @@ class StackActionHandler(object):
             transformed_template = CloudFormationTemplateTransformer.transform_template(template)
 
             if stack_config.stack_policy_url:
+                self.logger.info("Using stack policy from {0}".format(stack_config.stack_policy_url))
                 stack_policy = FileLoader.get_yaml_or_json_file(stack_config.stack_policy_url, stack_config.working_dir)
             else:
                 stack_policy = None

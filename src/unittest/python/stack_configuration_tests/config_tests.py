@@ -180,30 +180,45 @@ class ConfigTests(TestCase):
                                 'service-role': 'some-role',
                                 'stacks': {'any-stack': {'template': 'foo.json'}}})
 
-    def test_raises_exception_if_no_region_key(self):
+    def test_validate_raises_exception_if_no_region_key(self):
         with self.assertRaises(InvalidConfigException):
             Config(config_dict={'foo': '', 'stacks': {'any-stack': {'template': 'foo.json'}}})
 
-    def test_raises_exception_if_no_stacks_key(self):
+    def test_validate_raises_exception_if_no_stacks_key(self):
         with self.assertRaises(InvalidConfigException):
             Config(config_dict={'region': 'eu-west-1'})
 
-    def test_properties_parsing_cli_params(self):
+    def test_validate_raises_exception_for_cli_param_on_non_configured_stack(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(cli_params=("stack1.p1=v1",),
+                   config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
+
+    def test_validate_raises_exception_for_invalid_config_key(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                'stacks': {'stack2': {'template-url': 'foo.json'}}})
+
+    def test_validate_raises_exception_for_invalid_stack_config_key(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                'stacks': {'stack2': {'invalid-key': 'some-value'}}})
+
+    def test_validate_raises_exception_for_empty_stack_config(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                'stacks': {'stack2': None}})
+
+    def test_validate_raises_exception_if_only_cli_params_given(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(cli_params="foo")
+
+    def test_parse_cli_parameters(self):
         config = Config(cli_params=("stack1.p1=v1", "stack1.p2=v2"),
                         config_dict={'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}})
         self.assertTrue('p1' in config.cli_params['stack1'])
         self.assertTrue('p2' in config.cli_params['stack1'])
         self.assertTrue('v1' in config.cli_params['stack1'].values())
         self.assertTrue('v2' in config.cli_params['stack1'].values())
-
-    def test_raises_exception_for_cli_param_on_non_configured_stack(self):
-        with self.assertRaises(InvalidConfigException):
-            Config(cli_params=("stack1.p1=v1",),
-                   config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
-
-    def test_config_raises_exception_if_only_cli_params_given(self):
-        with self.assertRaises(InvalidConfigException):
-            Config(cli_params="foo")
 
     def test_parse_cli_parameters_throws_exception_on_invalid_syntax(self):
         with self.assertRaises(CfnSphereException):
