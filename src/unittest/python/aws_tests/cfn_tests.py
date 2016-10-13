@@ -203,8 +203,7 @@ class CloudFormationApiTests(TestCase):
             Parameters=[('a', 'b')],
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
-            TemplateBody={'key': 'value'},
-            TimeoutInMinutes=42,
+            TemplateBody={'key': 'value'}
         )
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -232,7 +231,6 @@ class CloudFormationApiTests(TestCase):
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
             TemplateBody={'key': 'value'},
-            TimeoutInMinutes=42,
             RoleARN="arn:aws:iam::1234567890:role/my-role"
         )
 
@@ -261,7 +259,6 @@ class CloudFormationApiTests(TestCase):
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
             TemplateBody={'key': 'value'},
-            TimeoutInMinutes=42,
             StackPolicyBody='"{foo:baa}"'
         )
 
