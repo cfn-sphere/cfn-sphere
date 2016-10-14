@@ -7,6 +7,36 @@ from cfn_sphere.exceptions import CfnSphereException, CyclicDependencyException
 from cfn_sphere.stack_configuration import StackConfig
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 
+VPC_SG_APP1_APP2 = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id'}}),
+                   'app1': StackConfig(
+                       {'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                   'app2': StackConfig({'template-url': 'horst.yml',
+                                        'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id',
+                                                       'c': '|Ref|app1.id'}}), 'vpc': StackConfig(
+                            {'template-url': 'horst.yml'})}
+
+INDEPENDENT_APPS_INDEPENDENT_VPC_AND_SG = {'default-sg': StackConfig({'template-url': 'horst.yml'}),
+                    'app1': StackConfig(
+                        {'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                    'app2': StackConfig(
+                        {'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                    'vpc': StackConfig({'template-url': 'horst.yml'})}
+
+INDEPENDENT_APPS = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id'}}),
+                   'app1': StackConfig(
+                       {'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                   'app2': StackConfig({'template-url': 'horst.yml',
+                                        'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                    'vpc': StackConfig({'template-url': 'horst.yml'})}
+
+THIRD_APP = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id'}}),
+                   'app1': StackConfig(
+                       {'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                   'app2': StackConfig({'template-url': 'horst.yml',
+                                        'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
+                   'vpc': StackConfig({'template-url': 'horst.yml'}),
+                   'app3': StackConfig({'template-url': 'horst.yml',
+                                        'parameters': {'a': '|Ref|app1.url', 'b': '|Ref|app2.url'}})}
 
 class DependencyResolverTests(TestCase):
     def test_is_parameter_reference_returns_true_for_uppercase_ref(self):
@@ -31,52 +61,12 @@ class DependencyResolverTests(TestCase):
         self.assertTrue(DependencyResolver.is_parameter_reference('|ref|'))
 
     def test_get_stack_order_returns_a_valid_order(self):
-        stacks = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id'}}),
-                  'app1': StackConfig(
-                      {'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
-                  'app2': StackConfig({'template-url': 'horst.yml',
-                                       'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id',
-                                                      'c': '|Ref|app1.id'}}),
-                  'vpc': StackConfig({'template-url': 'horst.yml',
-                                      'parameters': {'logBucketName': 'is24-cloudtrail-logs',
-                                                     'includeGlobalServices': False}})
-                  }
-
         expected = ['vpc', 'default-sg', 'app1', 'app2']
 
-        self.assertEqual(expected, DependencyResolver.get_stack_order(stacks))
-
-    def test_get_stack_order_returns_a_valid_order_from_ref_in_list(self):
-        stacks = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters': {'a': ['|Ref|vpc.id']}}),
-                  'app1': StackConfig(
-                      {'template-url': 'horst.yml', 'parameters': {'a': ['|Ref|vpc.id'], 'b': ['|Ref|default-sg.id']}}),
-                  'app2': StackConfig({'template-url': 'horst.yml',
-                                       'parameters': {'a': ['|Ref|vpc.id'], 'b': ['|Ref|default-sg.id'],
-                                                      'c': ['|Ref|app1.id']}}),
-                  'vpc': StackConfig({'template-url': 'horst.yml',
-                                      'parameters': {'logBucketName': 'is24-cloudtrail-logs',
-                                                     'includeGlobalServices': False}})
-                  }
-
-        expected = ['vpc', 'default-sg', 'app1', 'app2']
-
-        self.assertEqual(expected, DependencyResolver.get_stack_order(stacks))
+        self.assertEqual(expected, DependencyResolver.get_stack_order(VPC_SG_APP1_APP2))
 
     def test_get_stack_order_includes_independent_stacks(self):
-        stacks = {'default-sg': StackConfig({'template-url': 'horst.yml'}),
-                  'app1': StackConfig(
-                      {'template-url': 'horst.yml', 'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id'}}),
-                  'app2': StackConfig({'template-url': 'horst.yml',
-                                       'parameters': {'a': '|Ref|vpc.id', 'b': '|Ref|default-sg.id',
-                                                      'c': 'Ref::app1.id'}}),
-                  'vpc': StackConfig({'template-url': 'horst.yml',
-                                      'parameters': {'logBucketName': 'is24-cloudtrail-logs',
-                                                     'includeGlobalServices': False}})
-                  }
-
-        result = 4
-
-        self.assertEqual(result, len(DependencyResolver.get_stack_order(stacks)))
+        self.assertEqual(4, len(DependencyResolver.get_stack_order(INDEPENDENT_APPS_INDEPENDENT_VPC_AND_SG)))
 
     def test_get_stack_order_accepts_stacks_without_parameters_key(self):
         stacks = {'default-sg': {},
@@ -98,6 +88,35 @@ class DependencyResolverTests(TestCase):
 
         with self.assertRaises(CyclicDependencyException):
             DependencyResolver.get_stack_order(stacks)
+
+    def test_parallel_execution_order(self):
+        executions = DependencyResolver.get_parallel_execution_list(INDEPENDENT_APPS_INDEPENDENT_VPC_AND_SG)
+        self.assertIn('default-sg', executions[0].stacks)
+        self.assertIn('vpc', executions[0].stacks)
+        self.assertIn('app1', executions[1].stacks)
+        self.assertIn('app2', executions[1].stacks)
+
+    def test_parallel_execution_order_without_parallel_execution(self):
+        executions = DependencyResolver.get_parallel_execution_list(VPC_SG_APP1_APP2)
+        self.assertIn('vpc', executions[0].stacks)
+        self.assertIn('default-sg', executions[1].stacks)
+        self.assertIn('app1', executions[2].stacks)
+        self.assertIn('app2', executions[3].stacks)
+
+    def test_parallel_execution_order_with_independent_apps(self):
+        executions = DependencyResolver.get_parallel_execution_list(INDEPENDENT_APPS)
+        self.assertIn('vpc', executions[0].stacks)
+        self.assertIn('default-sg', executions[1].stacks)
+        self.assertIn('app1', executions[2].stacks)
+        self.assertIn('app2', executions[2].stacks)
+
+    def test_parallel_execution_order_with_third_app_depending_on_two(self):
+        executions = DependencyResolver.get_parallel_execution_list(THIRD_APP)
+        self.assertIn('vpc', executions[0].stacks)
+        self.assertIn('default-sg', executions[1].stacks)
+        self.assertIn('app1', executions[2].stacks)
+        self.assertIn('app2', executions[2].stacks)
+        self.assertIn('app3', executions[3].stacks)
 
     def test_filter_unmanaged_stacks(self):
         stacks = ['a', 'b', 'c']
