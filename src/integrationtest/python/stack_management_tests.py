@@ -5,7 +5,8 @@ import yaml
 import boto3
 from botocore.exceptions import ClientError
 
-from cfn_sphere import StackActionHandler
+from cfn_sphere.concurrent_stack_action_handler import ConcurrentStackActionHandler
+from cfn_sphere.sequential_stack_action_handler import SequentialStackActionHandler
 from cfn_sphere.stack_configuration import Config
 
 logging.getLogger('cfn_sphere').setLevel(logging.DEBUG)
@@ -55,18 +56,18 @@ class CfnSphereIntegrationTest(object):
                     pass
 
     def sync_stacks(self):
-        stack_handler = StackActionHandler(self.config)
+        stack_handler = ConcurrentStackActionHandler(self.config)
         self.logger.info("Syncing stacks")
         stack_handler.create_or_update_stacks()
 
     def sync_stacks_with_parameters_overwrite(self, cli_params):
         config = Config(config_file=os.path.join(self.test_resources_dir, "stacks.yml"), cli_params=cli_params)
-        stack_handler = StackActionHandler(config)
+        stack_handler = ConcurrentStackActionHandler(config)
         self.logger.info("Syncing stacks")
         stack_handler.create_or_update_stacks()
 
     def delete_stacks(self):
-        StackActionHandler(self.config).delete_stacks()
+        ConcurrentStackActionHandler(self.config).delete_stacks()
         self.verify_stacks_are_gone()
 
     def test_stacks_are_in_create_complete_state(self):
