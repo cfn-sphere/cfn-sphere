@@ -11,6 +11,9 @@ class Execution(object):
         else:
             self.stacks = set()
 
+    def __repr__(self):
+        return "ConcurrentExecution[%s]" % ", ".join(self.stacks)
+
 
 class Executions(list):
     def last(self):
@@ -117,10 +120,13 @@ class DependencyResolver(object):
             if graph.in_degree(stack) == 0:
                 executions.last().stacks.add(stack)
             else:
+                last_predecessor = 0
                 for pre in graph.predecessors(stack):
                     for i in range(0, len(executions)):
-                        if pre in executions[i].stacks:
-                            executions.get(i + 1).stacks.add(stack)
+                        if pre in executions[i].stacks and i > last_predecessor:
+                            last_predecessor = i
+
+                executions.get(last_predecessor + 1).stacks.add(stack)
 
         return executions
 

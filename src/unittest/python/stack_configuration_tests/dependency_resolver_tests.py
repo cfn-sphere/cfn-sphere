@@ -38,6 +38,7 @@ THIRD_APP = {'default-sg': StackConfig({'template-url': 'horst.yml', 'parameters
                    'app3': StackConfig({'template-url': 'horst.yml',
                                         'parameters': {'a': '|Ref|app1.url', 'b': '|Ref|app2.url'}})}
 
+
 class DependencyResolverTests(TestCase):
     def test_is_parameter_reference_returns_true_for_uppercase_ref(self):
         self.assertTrue(DependencyResolver.is_parameter_reference("|Ref|vpc.id"))
@@ -91,32 +92,58 @@ class DependencyResolverTests(TestCase):
 
     def test_parallel_execution_order(self):
         executions = DependencyResolver.get_parallel_execution_list(INDEPENDENT_APPS_INDEPENDENT_VPC_AND_SG)
+
         self.assertIn('default-sg', executions[0].stacks)
         self.assertIn('vpc', executions[0].stacks)
+        self.assertEqual(2, len(executions[0].stacks))
+
         self.assertIn('app1', executions[1].stacks)
         self.assertIn('app2', executions[1].stacks)
+        self.assertEqual(2, len(executions[1].stacks))
 
     def test_parallel_execution_order_without_parallel_execution(self):
         executions = DependencyResolver.get_parallel_execution_list(VPC_SG_APP1_APP2)
+
         self.assertIn('vpc', executions[0].stacks)
+        self.assertEqual(1, len(executions[0].stacks))
+
         self.assertIn('default-sg', executions[1].stacks)
+        self.assertEqual(1, len(executions[1].stacks))
+
         self.assertIn('app1', executions[2].stacks)
+        self.assertEqual(1, len(executions[2].stacks))
+
         self.assertIn('app2', executions[3].stacks)
+        self.assertEqual(1, len(executions[3].stacks))
 
     def test_parallel_execution_order_with_independent_apps(self):
         executions = DependencyResolver.get_parallel_execution_list(INDEPENDENT_APPS)
+
         self.assertIn('vpc', executions[0].stacks)
+        self.assertEqual(1, len(executions[0].stacks))
+
         self.assertIn('default-sg', executions[1].stacks)
+        self.assertEqual(1, len(executions[1].stacks))
+
         self.assertIn('app1', executions[2].stacks)
         self.assertIn('app2', executions[2].stacks)
+        self.assertEqual(2, len(executions[2].stacks))
 
     def test_parallel_execution_order_with_third_app_depending_on_two(self):
         executions = DependencyResolver.get_parallel_execution_list(THIRD_APP)
+
         self.assertIn('vpc', executions[0].stacks)
+        self.assertEqual(1, len(executions[0].stacks))
+
         self.assertIn('default-sg', executions[1].stacks)
+        self.assertEqual(1, len(executions[1].stacks))
+
         self.assertIn('app1', executions[2].stacks)
         self.assertIn('app2', executions[2].stacks)
+        self.assertEqual(2, len(executions[2].stacks))
+
         self.assertIn('app3', executions[3].stacks)
+        self.assertEqual(1, len(executions[3].stacks))
 
     def test_filter_unmanaged_stacks(self):
         stacks = ['a', 'b', 'c']
