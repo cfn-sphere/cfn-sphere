@@ -30,10 +30,14 @@ class StackActionHandler(object):
         for stack_name in stack_processing_order:
             stack_config = self.config.stacks.get(stack_name)
 
-            template = FileLoader.get_cloudformation_template(stack_config.template_url,
-                                                              stack_config.working_dir)
-
+            template = FileLoader.get_cloudformation_template(stack_config.template_url,stack_config.working_dir)
             transformed_template = CloudFormationTemplateTransformer.transform_template(template)
+
+            if stack_config.stack_policy_url:
+                self.logger.info("Using stack policy from {0}".format(stack_config.stack_policy_url))
+                stack_policy = FileLoader.get_yaml_or_json_file(stack_config.stack_policy_url, stack_config.working_dir)
+            else:
+                stack_policy = None
 
             parameters = self.parameter_resolver.resolve_parameter_values(stack_name, stack_config)
             merged_parameters = self.parameter_resolver.update_parameters_with_cli_parameters(
@@ -45,10 +49,12 @@ class StackActionHandler(object):
 
             stack = CloudFormationStack(template=transformed_template,
                                         parameters=merged_parameters,
-                                        tags=self.config.tags,
+                                        tags=stack_config.tags,
                                         name=stack_name,
                                         region=self.config.region,
-                                        timeout=stack_config.timeout)
+                                        timeout=stack_config.timeout,
+                                        service_role=stack_config.service_role,
+                                        stack_policy=stack_policy)
 
             if stack_name in existing_stacks:
 
@@ -69,8 +75,10 @@ class StackActionHandler(object):
         self.logger.info("Will delete stacks in the following order: {0}".format(", ".join(stack_processing_order)))
 
         for stack_name in stack_processing_order:
+            stack_config = self.config.stacks.get(stack_name)
+
             if stack_name in existing_stacks:
-                stack = CloudFormationStack(None, None, stack_name, None, None)
+                stack = CloudFormationStack(None, None, stack_name, None, None, service_role=stack_config.service_role)
                 self.cfn.validate_stack_is_ready_for_action(stack)
                 self.cfn.delete_stack(stack)
             else:

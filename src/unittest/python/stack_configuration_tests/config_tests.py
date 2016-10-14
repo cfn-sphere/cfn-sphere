@@ -12,13 +12,11 @@ from mock import patch, Mock
 from git.exc import InvalidGitRepositoryError
 
 from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.stack_configuration import Config, StackConfig, NoConfigException
+from cfn_sphere.stack_configuration import Config, StackConfig, InvalidConfigException
 
 
 class ConfigTests(TestCase):
     def setUp(self):
-        self.config_a = self.create_config_object()
-        self.config_b = self.create_config_object()
         self.stack_config_a = self.create_stack_config()
         self.stack_config_b = self.create_stack_config()
 
@@ -43,26 +41,26 @@ class ConfigTests(TestCase):
                             },
                            'any dir', {'any tag': 'any value'})
 
-    def test_properties_parsing(self):
+    def test_config_properties_parsing(self):
         config = Config(
-                config_dict={
-                    'region': 'eu-west-1',
-                    'tags': {
-                        'global-tag': 'global-tag-value'
-                    },
-                    'stacks': {
-                        'any-stack': {
-                            'timeout': 99,
-                            'template-url': 'foo.json',
-                            'tags': {
-                                'any-tag': 'any-tag-value'
-                            },
-                            'parameters': {
-                                'any-parameter': 'any-value'
-                            }
+            config_dict={
+                'region': 'eu-west-1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
                         }
                     }
                 }
+            }
         )
         self.assertEqual('eu-west-1', config.region)
         self.assertEqual(1, len(config.stacks.keys()))
@@ -70,34 +68,157 @@ class ConfigTests(TestCase):
         self.assertEqual('foo.json', config.stacks['any-stack'].template_url)
         self.assertDictContainsSubset({'any-tag': 'any-tag-value', 'global-tag': 'global-tag-value'},
                                       config.stacks['any-stack'].tags)
-        self.assertDictContainsSubset({'global-tag': 'global-tag-value'}, config.tags)
+        self.assertDictContainsSubset({'global-tag': 'global-tag-value'}, config.default_tags)
         self.assertDictContainsSubset({'any-parameter': 'any-value'}, config.stacks['any-stack'].parameters)
         self.assertEqual(99, config.stacks['any-stack'].timeout)
 
-    def test_raises_exception_if_no_region_key(self):
-        with self.assertRaises(NoConfigException):
+    def test_default_service_role_is_used_if_not_overwritten_by_stack_config(self):
+        config = Config(
+            config_dict={
+                'region': 'eu-west-1',
+                'service-role': 'arn:aws:iam::123456789:role/my-role1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
+                        }
+                    }
+                }
+            }
+        )
+
+        self.assertEqual('arn:aws:iam::123456789:role/my-role1', config.stacks["any-stack"].service_role)
+
+    def test_default_service_role_is_overwritten_by_stack_config(self):
+        config = Config(
+            config_dict={
+                'region': 'eu-west-1',
+                'service-role': 'arn:aws:iam::123456789:role/my-role1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'service-role': 'arn:aws:iam::123456789:role/my-role2',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
+                        }
+                    }
+                }
+            }
+        )
+
+        self.assertEqual('arn:aws:iam::123456789:role/my-role2', config.stacks["any-stack"].service_role)
+
+    def test_a_stacks_service_role_is_none_if_not_configured(self):
+        config = Config(
+            config_dict={
+                'region': 'eu-west-1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'timeout': 99,
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
+                        }
+                    }
+                }
+            }
+        )
+        self.assertIsNone(config.stacks["any-stack"].service_role)
+
+    def test_a_stacks_timeout_is_set_if_not_configured(self):
+        config = Config(
+            config_dict={
+                'region': 'eu-west-1',
+                'tags': {
+                    'global-tag': 'global-tag-value'
+                },
+                'stacks': {
+                    'any-stack': {
+                        'template-url': 'foo.json',
+                        'tags': {
+                            'any-tag': 'any-tag-value'
+                        },
+                        'parameters': {
+                            'any-parameter': 'any-value'
+                        }
+                    }
+                }
+            }
+        )
+        self.assertTrue(isinstance(config.stacks["any-stack"].timeout, int))
+
+    def test_validate_raises_exception_on_invalid_service_role_value(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'region': 'eu-west-q',
+                                'service-role': 'arn:aws:iam::123456789:role/my-role',
+                                'stacks': {'any-stack': {'template': 'foo.json'}}})
+
+    def test_validate_passes_on_valid_service_role_value(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'region': 'eu-west-q',
+                                'service-role': 'some-role',
+                                'stacks': {'any-stack': {'template': 'foo.json'}}})
+
+    def test_validate_raises_exception_if_no_region_key(self):
+        with self.assertRaises(InvalidConfigException):
             Config(config_dict={'foo': '', 'stacks': {'any-stack': {'template': 'foo.json'}}})
 
-    def test_raises_exception_if_no_stacks_key(self):
-        with self.assertRaises(NoConfigException):
+    def test_validate_raises_exception_if_no_stacks_key(self):
+        with self.assertRaises(InvalidConfigException):
             Config(config_dict={'region': 'eu-west-1'})
 
-    def test_properties_parsing_cli_params(self):
+    def test_validate_raises_exception_for_cli_param_on_non_configured_stack(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(cli_params=("stack1.p1=v1",),
+                   config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
+
+    def test_validate_raises_exception_for_invalid_config_key(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                'stacks': {'stack2': {'template-url': 'foo.json'}}})
+
+    def test_validate_raises_exception_for_invalid_stack_config_key(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                'stacks': {'stack2': {'invalid-key': 'some-value'}}})
+
+    def test_validate_raises_exception_for_empty_stack_config(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                'stacks': {'stack2': None}})
+
+    def test_validate_raises_exception_if_only_cli_params_given(self):
+        with self.assertRaises(InvalidConfigException):
+            Config(cli_params="foo")
+
+    def test_parse_cli_parameters(self):
         config = Config(cli_params=("stack1.p1=v1", "stack1.p2=v2"),
                         config_dict={'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}})
         self.assertTrue('p1' in config.cli_params['stack1'])
         self.assertTrue('p2' in config.cli_params['stack1'])
         self.assertTrue('v1' in config.cli_params['stack1'].values())
         self.assertTrue('v2' in config.cli_params['stack1'].values())
-
-    def test_raises_exception_for_cli_param_on_non_configured_stack(self):
-        with self.assertRaises(NoConfigException):
-            Config(cli_params=("stack1.p1=v1",),
-                   config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
-
-    def test_config_raises_exception_if_only_cli_params_given(self):
-        with self.assertRaises(NoConfigException):
-            Config(cli_params="foo")
 
     def test_parse_cli_parameters_throws_exception_on_invalid_syntax(self):
         with self.assertRaises(CfnSphereException):
@@ -145,7 +266,7 @@ class ConfigTests(TestCase):
     def test_equals_Config_tags(self):
         config_a_I = self.create_config_object()
         config_b_tags = self.create_config_object()
-        config_b_tags.tags = {}
+        config_b_tags.default_tags = {}
 
         self.assertNotEquals(config_a_I, config_b_tags)
 
@@ -191,12 +312,12 @@ class ConfigTests(TestCase):
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_without_file_based_config(self, repo_mock):
-        tags = { 'bla': 'blub' }
+        tags = {'bla': 'blub'}
         repo_mock.side_effect = InvalidGitRepositoryError
         config = Config(config_dict={'region': 'eu-west-1',
                                      'tags': tags,
                                      'stacks': {'stack1': {'template-url': 'foo.json'}}})
-        self.assertDictEqual(config.tags, tags)
+        self.assertDictEqual(config.default_tags, tags)
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_with_repo(self, repo_mock):
@@ -208,7 +329,7 @@ class ConfigTests(TestCase):
             yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}}, out)
 
         config = Config(config_file=config_file)
-        self.assertDictEqual(config.tags, {'config-git-repository': url})
+        self.assertDictEqual(config.default_tags, {'config-git-repository': url})
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_with_config_in_subdir_of_repo(self, repo_mock):
@@ -224,11 +345,11 @@ class ConfigTests(TestCase):
             yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}}, out)
 
         config = Config(config_file=config_file)
-        self.assertDictEqual(config.tags, {'config-git-repository': url})
+        self.assertDictEqual(config.default_tags, {'config-git-repository': url})
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_without_repo(self, repo_mock):
-        tags = { 'bla': 'blub' }
+        tags = {'bla': 'blub'}
         repo_mock.side_effect = InvalidGitRepositoryError
 
         (_, config_file) = tempfile.mkstemp()
@@ -236,4 +357,4 @@ class ConfigTests(TestCase):
             yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}, 'tags': tags}, out)
 
         config = Config(config_file=config_file)
-        self.assertDictEqual(config.tags, tags)
+        self.assertDictEqual(config.default_tags, tags)

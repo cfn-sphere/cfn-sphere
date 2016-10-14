@@ -65,15 +65,21 @@ def get_pretty_parameters_string(stack):
 
 def get_pretty_stack_outputs(stack_outputs):
     table = PrettyTable(["Output", "Value"])
+    table_has_entries = False
 
     for output in stack_outputs:
+        table_has_entries = True
         table.add_row([output["OutputKey"], output["OutputValue"]])
 
-    return table.get_string(sortby="Output")
+    if table_has_entries:
+        return table.get_string(sortby="Output")
+    else:
+        return None
 
 
 def strip_string(string):
-    return string[:100]
+    return string[:100] + "..."
+
 
 def convert_json_to_yaml_string(data):
     if not data:

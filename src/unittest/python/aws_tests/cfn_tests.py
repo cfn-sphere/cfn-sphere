@@ -190,6 +190,35 @@ class CloudFormationApiTests(TestCase):
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
         stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = None
+        stack.stack_policy = None
+        stack.timeout = 42
+
+        cfn = CloudFormation()
+        cfn.create_stack(stack)
+
+        cloudformation_mock.return_value.create_stack.assert_called_once_with(
+            Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            OnFailure='ROLLBACK',
+            Parameters=[('a', 'b')],
+            StackName='stack-name',
+            Tags=[('any-tag', 'any-tag-value')],
+            TemplateBody={'key': 'value'}
+        )
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
+    def test_create_stack_calls_cloudformation_api_properly_with_service_role(self, _, cloudformation_mock):
+        stack = Mock(spec=CloudFormationStack)
+        stack.name = "stack-name"
+        stack.get_parameters_list.return_value = [('a', 'b')]
+        stack.get_tags_list.return_value = [('any-tag', 'any-tag-value')]
+        stack.parameters = {}
+        stack.template = Mock(spec=CloudFormationTemplate)
+        stack.template.name = "template-name"
+        stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = "arn:aws:iam::1234567890:role/my-role"
+        stack.stack_policy = None
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -202,7 +231,36 @@ class CloudFormationApiTests(TestCase):
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
             TemplateBody={'key': 'value'},
-            TimeoutInMinutes=42)
+            RoleARN="arn:aws:iam::1234567890:role/my-role"
+        )
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
+    def test_create_stack_calls_cloudformation_api_properly_with_stack_policy(self, _, cloudformation_mock):
+        stack = Mock(spec=CloudFormationStack)
+        stack.name = "stack-name"
+        stack.get_parameters_list.return_value = [('a', 'b')]
+        stack.get_tags_list.return_value = [('any-tag', 'any-tag-value')]
+        stack.parameters = {}
+        stack.template = Mock(spec=CloudFormationTemplate)
+        stack.template.name = "template-name"
+        stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = None
+        stack.stack_policy = "{foo:baa}"
+        stack.timeout = 42
+
+        cfn = CloudFormation()
+        cfn.create_stack(stack)
+
+        cloudformation_mock.return_value.create_stack.assert_called_once_with(
+            Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            OnFailure='ROLLBACK',
+            Parameters=[('a', 'b')],
+            StackName='stack-name',
+            Tags=[('any-tag', 'any-tag-value')],
+            TemplateBody={'key': 'value'},
+            StackPolicyBody='"{foo:baa}"'
+        )
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
@@ -215,6 +273,8 @@ class CloudFormationApiTests(TestCase):
         stack.template = Mock(spec=CloudFormationTemplate)
         stack.template.name = "template-name"
         stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = None
+        stack.stack_policy = None
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -225,7 +285,62 @@ class CloudFormationApiTests(TestCase):
             Parameters=[('a', 'b')],
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
-            TemplateBody={'key': 'value'})
+            TemplateBody={'key': 'value'}
+        )
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
+    def test_update_stack_calls_cloudformation_api_properly_with_service_role(self, _, cloudformation_mock):
+        stack = Mock(spec=CloudFormationStack)
+        stack.name = "stack-name"
+        stack.get_parameters_list.return_value = [('a', 'b')]
+        stack.get_tags_list.return_value = [('any-tag', 'any-tag-value')]
+        stack.parameters = {}
+        stack.template = Mock(spec=CloudFormationTemplate)
+        stack.template.name = "template-name"
+        stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = "arn:aws:iam::1234567890:role/my-role"
+        stack.stack_policy = None
+        stack.timeout = 42
+
+        cfn = CloudFormation()
+        cfn.update_stack(stack)
+
+        cloudformation_mock.return_value.update_stack.assert_called_once_with(
+            Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            Parameters=[('a', 'b')],
+            StackName='stack-name',
+            Tags=[('any-tag', 'any-tag-value')],
+            TemplateBody={'key': 'value'},
+            RoleARN='arn:aws:iam::1234567890:role/my-role'
+        )
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
+    def test_update_stack_calls_cloudformation_api_properly_with_stack_policy(self, _, cloudformation_mock):
+        stack = Mock(spec=CloudFormationStack)
+        stack.name = "stack-name"
+        stack.get_parameters_list.return_value = [('a', 'b')]
+        stack.get_tags_list.return_value = [('any-tag', 'any-tag-value')]
+        stack.parameters = {}
+        stack.template = Mock(spec=CloudFormationTemplate)
+        stack.template.name = "template-name"
+        stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = None
+        stack.stack_policy = "{foo:baa}"
+        stack.timeout = 42
+
+        cfn = CloudFormation()
+        cfn.update_stack(stack)
+
+        cloudformation_mock.return_value.update_stack.assert_called_once_with(
+            Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            Parameters=[('a', 'b')],
+            StackName='stack-name',
+            Tags=[('any-tag', 'any-tag-value')],
+            TemplateBody={'key': 'value'},
+            StackPolicyBody='"{foo:baa}"'
+        )
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     def test_validate_stack_is_ready_for_action_raises_exception_on_unknown_stack_state(self, get_stack_mock):
@@ -239,7 +354,6 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
         with self.assertRaises(CfnStackActionFailedException):
             cfn.validate_stack_is_ready_for_action(stack)
-
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     def test_validate_stack_is_ready_for_action_raises_exception_on_update_in_progress(self, get_stack_mock):

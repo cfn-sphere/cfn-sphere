@@ -10,13 +10,16 @@ logging.getLogger('boto').setLevel(logging.FATAL)
 
 
 class CloudFormationStack(object):
-    def __init__(self, template, parameters, name, region, timeout=600, tags=None):
+    def __init__(self, template, parameters, name, region, timeout=600, tags=None, service_role=None,
+                 stack_policy=None):
         self.template = template
         self.parameters = parameters
         self.tags = {} if tags is None else tags
         self.name = name
         self.region = region
         self.timeout = timeout
+        self.service_role = service_role
+        self.stack_policy = stack_policy
 
     def __str__(self):
         return str(vars(self))
@@ -251,18 +254,24 @@ class CloudFormation(object):
         Create cloudformation stack
         :param stack: cfn_sphere.aws.cfn.CloudFormationStack
         """
-        self.client.create_stack(
-            StackName=stack.name,
-            TemplateBody=stack.template.get_template_json(),
-            Parameters=stack.get_parameters_list(),
-            TimeoutInMinutes=stack.timeout,
-            Capabilities=[
+        kwargs = {
+            "StackName": stack.name,
+            "TemplateBody": stack.template.get_template_json(),
+            "Parameters": stack.get_parameters_list(),
+            "Capabilities": [
                 'CAPABILITY_IAM',
                 'CAPABILITY_NAMED_IAM'
             ],
-            OnFailure='ROLLBACK',
-            Tags=stack.get_tags_list()
-        )
+            "OnFailure": 'ROLLBACK',
+            "Tags": stack.get_tags_list()
+        }
+
+        if stack.service_role:
+            kwargs["RoleARN"] = stack.service_role
+        if stack.stack_policy:
+            kwargs["StackPolicyBody"] = json.dumps(stack.stack_policy)
+
+        self.client.create_stack(**kwargs)
 
     @with_boto_retry()
     def _update_stack(self, stack):
@@ -270,16 +279,23 @@ class CloudFormation(object):
         Update cloudformation stack
         :param stack: cfn_sphere.aws.cfn.CloudFormationStack
         """
-        self.client.update_stack(
-            StackName=stack.name,
-            TemplateBody=stack.template.get_template_json(),
-            Parameters=stack.get_parameters_list(),
-            Capabilities=[
+        kwargs = {
+            "StackName": stack.name,
+            "TemplateBody": stack.template.get_template_json(),
+            "Parameters": stack.get_parameters_list(),
+            "Capabilities": [
                 'CAPABILITY_IAM',
                 'CAPABILITY_NAMED_IAM'
             ],
-            Tags=stack.get_tags_list()
-        )
+            "Tags": stack.get_tags_list()
+        }
+
+        if stack.service_role:
+            kwargs["RoleARN"] = stack.service_role
+        if stack.stack_policy:
+            kwargs["StackPolicyBody"] = json.dumps(stack.stack_policy)
+
+        self.client.update_stack(**kwargs)
 
     @with_boto_retry()
     def _delete_stack(self, stack):
@@ -287,7 +303,14 @@ class CloudFormation(object):
         Delete cloudformation stack
         :param stack: cfn_sphere.aws.cfn.CloudFormationStack
         """
-        self.client.delete_stack(StackName=stack.name)
+        kwargs = {
+            "StackName": stack.name
+        }
+
+        if stack.service_role:
+            kwargs["RoleARN"] = stack.service_role
+
+        self.client.delete_stack(**kwargs)
 
     def create_stack(self, stack):
         self.logger.debug("Creating stack: {0}".format(stack))
@@ -304,8 +327,11 @@ class CloudFormation(object):
 
             self.wait_for_stack_action_to_complete(stack.name, "create", stack.timeout)
 
-            stack_outputs_string = get_pretty_stack_outputs(self.get_stack_outputs(stack))
-            self.logger.info("Create completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs_string))
+            stack_outputs = get_pretty_stack_outputs(self.get_stack_outputs(stack))
+            if stack_outputs:
+                self.logger.info("Create completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs))
+            else:
+                self.logger.info("Create completed for {0}".format(stack.name))
         except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not create {0}: {1}".format(stack.name, e))
 
@@ -337,8 +363,11 @@ class CloudFormation(object):
 
             self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
 
-            stack_outputs_string = get_pretty_stack_outputs(self.get_stack_outputs(stack))
-            self.logger.info("Update completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs_string))
+            stack_outputs = get_pretty_stack_outputs(self.get_stack_outputs(stack))
+            if stack_outputs:
+                self.logger.info("Update completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs))
+            else:
+                self.logger.info("Update completed for {0}".format(stack.name))
         except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e))
 
