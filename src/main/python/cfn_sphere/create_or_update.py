@@ -35,7 +35,7 @@ class CreateOrUpdate(Thread):
 
         stack = CloudFormationStack(template=transformed_template,
                                     parameters=merged_parameters,
-                                    tags=self.config.tags,
+                                    tags=stack_config.tags,
                                     name=self.stack_name,
                                     region=self.config.region,
                                     timeout=stack_config.timeout)
