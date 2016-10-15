@@ -108,16 +108,13 @@ class DependencyResolver(object):
         executions = Executions()
 
         for stack in order:
-            if graph.in_degree(stack) == 0:
-                executions.get(0).stacks.add(stack)
-            else:
-                last_predecessor = 0
-                for pre in graph.predecessors(stack):
-                    for i in range(0, len(executions)):
-                        if pre in executions[i].stacks and i > last_predecessor:
-                            last_predecessor = i
+            last_predecessor = -1
+            for pre in graph.predecessors(stack):
+                for i in range(0, len(executions)):
+                    if pre in executions[i].stacks and i > last_predecessor:
+                        last_predecessor = i
 
-                executions.get(last_predecessor + 1).stacks.add(stack)
+            executions.get(last_predecessor + 1).stacks.add(stack)
 
         return executions
 
