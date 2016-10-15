@@ -13,17 +13,18 @@ Parameters:
   appVersion:
     Description: "Application version"
     Type: "String"
+    Default: 1
   kmsEncryptedValue:
     Description: "A string encrypted at rest with kms to be decrypted by cfn-sphere before handing it over to cfn"
     Type: "String"
+    Default: bla
   textFileParameter:
     Description: "A parameter to be filled by a text file with |File|my-file.txt"
     Type: "String"
+    Default: foo
 Resources:
   jobQueue:
     Type: "AWS::SQS::Queue"
-    Properties:
-      QueueName: "CfnSphereIntegrationtest"
   secGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:

@@ -4,7 +4,7 @@ stacks:
     template-url: templates/vpc.yml
     parameters:
           testtag: "unchanged"
-  cfn-sphere-test-instances:
+  cfn-sphere-test-instances-1:
     template-url: templates/instances.yml
     parameters:
       vpcID: "|Ref|cfn-sphere-test-vpc.id"
@@ -15,3 +15,11 @@ stacks:
       appVersion: "|keepOrUse|1"
       kmsEncryptedValue: "Place |kms|<ciphertext> value here to test decryption"
       textFileParameter: "|File|my-text-file-parameter.txt"
+  cfn-sphere-test-instances-2:
+    template-url: templates/instances.yml
+    parameters:
+      vpcID: "|Ref|cfn-sphere-test-vpc.id"
+      subnetID: "|Ref|cfn-sphere-test-vpc.subnetA"
+      subnetIDs:
+      - "|Ref|cfn-sphere-test-vpc.subnetA"
+      - "|Ref|cfn-sphere-test-vpc.subnetB"
