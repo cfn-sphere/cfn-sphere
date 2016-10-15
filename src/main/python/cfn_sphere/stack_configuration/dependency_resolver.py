@@ -5,23 +5,14 @@ from cfn_sphere.exceptions import CfnSphereException, InvalidDependencyGraphExce
 
 
 class Execution(object):
-    def __init__(self, stack=None):
-        if stack:
-            self.stacks = {stack}
-        else:
-            self.stacks = set()
+    def __init__(self):
+        self.stacks = set()
 
     def __repr__(self):
         return "ConcurrentExecution[%s]" % ", ".join(self.stacks)
 
 
 class Executions(list):
-    def last(self):
-        if len(self) == 0:
-            self.append(Execution())
-
-        return self[len(self) - 1]
-
     def get(self, index):
         while index >= len(self):
             self.append(Execution())
@@ -118,7 +109,7 @@ class DependencyResolver(object):
 
         for stack in order:
             if graph.in_degree(stack) == 0:
-                executions.last().stacks.add(stack)
+                executions.get(0).stacks.add(stack)
             else:
                 last_predecessor = 0
                 for pre in graph.predecessors(stack):
