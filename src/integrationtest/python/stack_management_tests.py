@@ -1,8 +1,10 @@
 import base64
-import os
+import json
 import logging
-import yaml
+import os
+
 import boto3
+import yaml
 from botocore.exceptions import ClientError
 
 from cfn_sphere import StackActionHandler
@@ -42,6 +44,9 @@ class CfnSphereIntegrationTest(object):
 
     def get_stack_description(self, stack_name):
         return self.cfn_conn.describe_stacks(StackName=stack_name)["Stacks"][0]
+
+    def get_stack_policy(self, stack_name):
+        return json.loads(self.cfn_conn.get_stack_policy(StackName=stack_name)["StackPolicyBody"])
 
     def verify_stacks_are_gone(self):
         for stack_name in self.config.stacks.keys():
@@ -180,6 +185,16 @@ class StackManagementTests(CfnSphereIntegrationTest):
         new_stack_last_update = self.get_stack_description("cfn-sphere-test-instances")["LastUpdatedTime"]
         self.assert_equal(old_stack_last_update, new_stack_last_update)
 
+    def test_instances_stack_has_specific_stack_policy_configured(self):
+        self.logger.info("Verify vpc stack has global-stack-policy configured ###")
+        stack_policy = self.get_stack_policy("cfn-sphere-test-instances")
+        self.assert_true(len(stack_policy["Statement"]) == 1)
+
+    def test_vpc_stack_has_global_stack_policy_configured(self):
+        self.logger.info("Verify vpc stack has global-stack-policy configured ###")
+        stack_policy = self.get_stack_policy("cfn-sphere-test-vpc")
+        self.assert_true(len(stack_policy["Statement"]) == 2)
+
     def run(self, setup=True, cleanup=True):
         try:
             if setup:
@@ -188,11 +203,15 @@ class StackManagementTests(CfnSphereIntegrationTest):
                 self.verify_stacks_are_gone()
                 self.sync_stacks()
 
+            self.logger.info("### Executing vpc stack tests ###")
+            self.test_vpc_stack_has_global_stack_policy_configured()
+
             self.logger.info("### Executing instances stack tests ###")
             self.test_stacks_are_in_create_complete_state()
             self.test_instance_stack_userdata()
             self.test_instance_stack_uses_vpc_outputs()
             self.test_instance_stack_uses_file_parameter()
+            self.test_instances_stack_has_specific_stack_policy_configured()
 
             self.logger.info("### Executing cli parameter update tests ###")
             self.sync_stacks_with_parameters_overwrite(
