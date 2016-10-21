@@ -129,7 +129,11 @@ class Config(object):
             try:
                 for key_value_parameter_pair in parameters:
                     stack_and_parameter_key, parameter_value = key_value_parameter_pair.split("=", 1)
-                    stack, parameter_key = stack_and_parameter_key.split(".", 1)
+                    if '.' in stack_and_parameter_key:
+                        stack, parameter_key = stack_and_parameter_key.split(".", 1)
+                    else:
+                        stack = None
+                        parameter_key = stack_and_parameter_key
 
                     stack_parameter = {parameter_key.strip(): parameter_value.strip()}
                     param_dict[stack.strip()].update(stack_parameter)

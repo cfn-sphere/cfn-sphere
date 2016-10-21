@@ -139,7 +139,8 @@ class ParameterResolver(object):
 
         """
         if stack_name in cli_parameters.keys():
-            for new_key, new_value in cli_parameters[stack_name].items():
-                parameters[new_key] = new_value
+            parameters.update(cli_parameters[stack_name])
+        if None in cli_parameters:
+            parameters.update(cli_parameters[None])
 
         return parameters
