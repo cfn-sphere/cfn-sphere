@@ -11,6 +11,7 @@ from cfn_sphere.util import get_logger
 
 ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "timeout", "tags"]
 
+PARAMETERS_FOR_ALL_STACKS = "*"
 
 class Config(object):
     def __init__(self, config_file=None, config_dict=None, cli_params=None):
@@ -132,7 +133,7 @@ class Config(object):
                     if '.' in stack_and_parameter_key:
                         stack, parameter_key = stack_and_parameter_key.split(".", 1)
                     else:
-                        stack = None
+                        stack = PARAMETERS_FOR_ALL_STACKS
                         parameter_key = stack_and_parameter_key
 
                     stack_parameter = {parameter_key.strip(): parameter_value.strip()}

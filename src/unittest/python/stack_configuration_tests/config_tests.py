@@ -12,7 +12,7 @@ from mock import patch, Mock
 from git.exc import InvalidGitRepositoryError
 
 from cfn_sphere.exceptions import CfnSphereException
-from cfn_sphere.stack_configuration import Config, StackConfig, InvalidConfigException
+from cfn_sphere.stack_configuration import Config, StackConfig, InvalidConfigException, PARAMETERS_FOR_ALL_STACKS
 
 
 class ConfigTests(TestCase):
@@ -246,6 +246,10 @@ class ConfigTests(TestCase):
         self.assertDictEqual({'stack1': {'p1': '1,2,3'}},
                              Config._parse_cli_parameters(("stack1.p1=1,2,3",)))
 
+    def test_parse_cli_parameters_accepts_all_stack_parameters(self):
+        self.assertDictEqual({PARAMETERS_FOR_ALL_STACKS: {'p1': '1,2,3'}, "stack2": {"p1": "v1"}},
+                             Config._parse_cli_parameters(("p1=1,2,3", "stack2.p1=v1 ")))
+
     def test_equals_Config(self):
         config_a_I = self.create_config_object()
 
@@ -285,8 +289,6 @@ class ConfigTests(TestCase):
         self.assertNotEquals(config_a_I, config_b_cli_stacks)
 
     def test_equals_StackConfig(self):
-        self.stack_config_a = self.create_stack_config()
-
         self.assertEquals(self.stack_config_a == self.stack_config_a, True)
         self.assertNotEquals(self.stack_config_a, 'any string')
 
