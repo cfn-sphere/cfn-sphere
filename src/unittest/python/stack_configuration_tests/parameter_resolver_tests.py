@@ -8,6 +8,8 @@ except ImportError:
 from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 
+from cfn_sphere.stack_configuration import PARAMETERS_FOR_ALL_STACKS
+
 
 class ParameterResolverTests(TestCase):
     def setUp(self):
@@ -187,6 +189,13 @@ class ParameterResolverTests(TestCase):
         result = ParameterResolver().update_parameters_with_cli_parameters(
             parameters={'foo': "foo"}, cli_parameters={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
         self.assertEqual({'foo': 'foo'}, result)
+
+    def test_update_parameters_with_cli_parameters_adds_all_stack_parameters(self):
+        result = ParameterResolver().update_parameters_with_cli_parameters(
+            parameters={'foo': "foo"},
+            cli_parameters={PARAMETERS_FOR_ALL_STACKS: {'foo': 'foobar'}},
+            stack_name='stack2')
+        self.assertEqual({'foo': 'foobar'}, result)
 
     @patch('cfn_sphere.stack_configuration.parameter_resolver.FileLoader.get_file')
     def test_resolve_value_from_file(self, get_file_mock):
