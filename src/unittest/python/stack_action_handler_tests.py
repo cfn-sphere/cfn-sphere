@@ -9,39 +9,9 @@ import six
 
 from cfn_sphere import StackActionHandler
 from cfn_sphere.aws.cfn import CloudFormationStack
-from cfn_sphere.stack_configuration import PARAMETERS_FOR_ALL_STACKS
 
 
 class StackActionHandlerTests(TestCase):
-    @patch('cfn_sphere.stack_configuration.Config')
-    @patch('cfn_sphere.CloudFormation')
-    @patch('cfn_sphere.stack_configuration.parameter_resolver.CloudFormation')
-    @patch('cfn_sphere.DependencyResolver')
-    @patch('cfn_sphere.FileLoader')
-    @patch('cfn_sphere.CloudFormationStack')
-    @patch('cfn_sphere.CustomResourceHandler')
-    def test_merge_parameters_for_all_stacks(self,
-                                             custom_resource_mock,
-                                             stack_mock,
-                                             template_loader_mock,
-                                             dependency_resolver_mock,
-                                             cfn_mock,
-                                             resolver_cfn_mock,
-                                             config_mock):
-        # Given
-        dependency_resolver_mock.return_value.get_stack_order.return_value = ['a']
-        cfn_mock.return_value.get_stack_names.return_value = []
-        config_mock.return_value.cli_params.return_value = {PARAMETERS_FOR_ALL_STACKS: {'p1': 'v1'},
-                                                            "stack2": {"p2": "v2"}
-                                                            }
-
-        # When
-        handler = StackActionHandler(config_mock)
-        handler.create_or_update_stacks()
-
-        # Then
-        stack_mock.assert_called_once_with(parameters={'p1': 'v1', "p2": "v23"})
-
     @patch('cfn_sphere.stack_configuration.Config')
     @patch('cfn_sphere.CloudFormation')
     @patch('cfn_sphere.ParameterResolver')
