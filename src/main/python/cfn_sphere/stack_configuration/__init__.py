@@ -88,7 +88,7 @@ class Config(object):
                              % repo.remotes.origin.url)
             return tags
         except InvalidGitRepositoryError as e:
-            self.logger.debug(e, exc_info=True)
+            self.logger.debug(e)
             (head, tail) = os.path.split(working_dir)
             if tail:
                 return self._find_git_repo_root(tags, head)
