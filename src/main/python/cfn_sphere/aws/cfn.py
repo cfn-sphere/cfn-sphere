@@ -30,6 +30,25 @@ class CloudFormationStack(object):
     def get_tags_list(self):
         return [{"Key": key, "Value": value} for key, value in self.tags.items()]
 
+    def __eq__(self, other):
+        try:
+            if (self.template == other.template
+                and self.parameters == other.parameters
+                and self.name == other.name
+                and self.region == other.region
+                and self.timeout == other.timeout
+                and self.tags == other.tags
+                and self.service_role == other.service_role
+                and self.stack_policy == other.stack_policy):
+                return True
+        except AttributeError:
+            return False
+
+        return False
+
+    def __ne__(self, other):
+        return not self == other
+
 
 class CloudFormation(object):
     @with_boto_retry()

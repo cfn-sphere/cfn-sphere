@@ -1,7 +1,6 @@
 from threading import Thread
 
-from cfn_sphere import CloudFormation, ParameterResolver, get_logger, FileLoader, CloudFormationTemplateTransformer, \
-    CloudFormationStack, CustomResourceHandler
+from cfn_sphere import CloudFormation, ParameterResolver, FileLoader, CloudFormationStack, CustomResourceHandler
 
 
 class CreateOrUpdate(Thread):
@@ -10,8 +9,6 @@ class CreateOrUpdate(Thread):
         self.config = config
         self.cfn = CloudFormation(region=self.config.region)
         self.parameter_resolver = ParameterResolver(region=self.config.region)
-        self.logger = get_logger(root=True)
-        self.exception = None
         super(CreateOrUpdate, self).__init__(name=stack_name)
 
     # def run(self):
@@ -22,19 +19,15 @@ class CreateOrUpdate(Thread):
 
     def run(self):
         stack_config = self.config.stacks.get(self.stack_name)
-        template = FileLoader.get_cloudformation_template(stack_config.template_url,
-                                                          stack_config.working_dir)
-        transformed_template = CloudFormationTemplateTransformer.transform_template(template)
+        template = FileLoader.get_transformed_cloudformation_template(stack_config.template_url,
+                                                                      stack_config.working_dir)
 
-        parameters = self.parameter_resolver.resolve_parameter_values(self.stack_name, stack_config)
-        merged_parameters = self.parameter_resolver.update_parameters_with_cli_parameters(
-            parameters=parameters,
-            cli_parameters=self.config.cli_params,
-            stack_name=self.stack_name)
-        self.logger.debug("Parameters after merging with cli options: {0}".format(merged_parameters))
+        parameters = self.parameter_resolver.resolve_parameter_values(self.stack_name,
+                                                                      stack_config,
+                                                                      self.config.cli_params)
 
-        stack = CloudFormationStack(template=transformed_template,
-                                    parameters=merged_parameters,
+        stack = CloudFormationStack(template=template,
+                                    parameters=parameters,
                                     tags=stack_config.tags,
                                     name=self.stack_name,
                                     region=self.config.region,

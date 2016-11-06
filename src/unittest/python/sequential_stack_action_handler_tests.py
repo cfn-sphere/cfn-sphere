@@ -11,7 +11,7 @@ from cfn_sphere.sequential_stack_action_handler import SequentialStackActionHand
 from cfn_sphere.aws.cfn import CloudFormationStack
 
 
-class StackActionHandlerTests(TestCase):
+class SequentialStackActionHandlerTests(TestCase):
     @patch('cfn_sphere.stack_configuration.Config')
     @patch('cfn_sphere.sequential_stack_action_handler.CloudFormation')
     @patch('cfn_sphere.sequential_stack_action_handler.DependencyResolver')

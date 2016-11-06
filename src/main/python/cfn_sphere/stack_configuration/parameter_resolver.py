@@ -1,10 +1,8 @@
-import pprint
-
-from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.aws.kms import KMS
 from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.util import get_logger
 
@@ -81,7 +79,7 @@ class ParameterResolver(object):
         except Exception as e:
             raise CfnSphereException("Could not get latest value for {0}: {1}".format(key, e))
 
-    def resolve_parameter_values(self, stack_name, stack_config):
+    def resolve_parameter_values(self, stack_name, stack_config, cli_parameters=None):
         resolved_parameters = {}
         stack_outputs = self.cfn.get_stacks_outputs()
 
@@ -125,6 +123,9 @@ class ParameterResolver(object):
                 resolved_parameters[key] = str(value)
             else:
                 raise NotImplementedError("Cannot handle {0} type for key: {1}".format(type(value), key))
+
+        if cli_parameters:
+            return self.update_parameters_with_cli_parameters(resolved_parameters, cli_parameters, stack_name)
 
         return resolved_parameters
 
