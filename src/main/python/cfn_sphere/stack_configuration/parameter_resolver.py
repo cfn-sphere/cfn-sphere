@@ -8,6 +8,7 @@ from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.util import get_logger
 
+from cfn_sphere.stack_configuration import PARAMETERS_FOR_ALL_STACKS
 
 class ParameterResolver(object):
     """
@@ -138,8 +139,10 @@ class ParameterResolver(object):
         :return: dict
 
         """
+        if PARAMETERS_FOR_ALL_STACKS in cli_parameters:
+            parameters.update(cli_parameters[PARAMETERS_FOR_ALL_STACKS])
+
         if stack_name in cli_parameters.keys():
-            for new_key, new_value in cli_parameters[stack_name].items():
-                parameters[new_key] = new_value
+            parameters.update(cli_parameters[stack_name])
 
         return parameters
