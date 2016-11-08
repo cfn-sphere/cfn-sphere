@@ -57,7 +57,7 @@ class CloudFormationApiTests(TestCase):
         event = {
             'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'StackName': 'my-stack',
-            'LogicalResourceId': 'cfn-sphere-test-vpc',
+            'LogicalResourceId': 'my-stack',
             'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'ResourceType': 'AWS::CloudFormation::Stack',
             'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
@@ -67,7 +67,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE", "my-stack")
         self.assertDictEqual(event, result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -75,7 +75,7 @@ class CloudFormationApiTests(TestCase):
         event = {
             'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'StackName': 'my-stack',
-            'LogicalResourceId': 'cfn-sphere-test-vpc',
+            'LogicalResourceId': 'my-stack',
             'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'ResourceType': 'AWS::CloudFormation::Stack',
             'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
@@ -85,7 +85,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 30, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE", "my-stack")
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -93,7 +93,7 @@ class CloudFormationApiTests(TestCase):
         event = {
             'PhysicalResourceId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'StackName': 'my-stack',
-            'LogicalResourceId': 'cfn-sphere-test-vpc',
+            'LogicalResourceId': 'my-stack',
             'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'ResourceType': 'AWS::CloudFormation::Stack',
             'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
@@ -103,7 +103,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE", "my-stack")
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -111,7 +111,7 @@ class CloudFormationApiTests(TestCase):
         event = {
             'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
             'StackName': 'my-stack',
-            'LogicalResourceId': 'VPC',
+            'LogicalResourceId': 'Topic',
             'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'ResourceType': 'AWS::SNS::Topic',
             'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
@@ -121,7 +121,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE", "my-stack")
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -129,7 +129,7 @@ class CloudFormationApiTests(TestCase):
         event = {
             'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
             'StackName': 'my-stack',
-            'LogicalResourceId': 'VPC',
+            'LogicalResourceId': 'my-stack',
             'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'ResourceType': 'AWS::CloudFormation::Stack',
             'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
@@ -140,14 +140,14 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
 
         with self.assertRaises(CfnStackActionFailedException):
-            cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+            cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE", "my-stack")
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     def test_handle_stack_event_returns_none_on_rollback_in_progress_state(self, _):
         event = {
             'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
             'StackName': 'my-stack',
-            'LogicalResourceId': 'VPC',
+            'LogicalResourceId': 'my-stack',
             'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'ResourceType': 'AWS::CloudFormation::Stack',
             'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
@@ -158,7 +158,7 @@ class CloudFormationApiTests(TestCase):
         valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
         cfn = CloudFormation()
 
-        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE", "my-stack")
         self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
@@ -166,7 +166,7 @@ class CloudFormationApiTests(TestCase):
         event = {
             'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
             'StackName': 'my-stack',
-            'LogicalResourceId': 'VPC',
+            'LogicalResourceId': 'my-stack',
             'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
             'ResourceType': 'AWS::CloudFormation::Stack',
             'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
@@ -177,7 +177,25 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
 
         with self.assertRaises(CfnStackActionFailedException):
-            cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE")
+            cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE", "my-stack")
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    def test_handle_stack_event_returns_none_for_nested_stack_events(self, _):
+        event = {
+            'PhysicalResourceId': 'arn:aws:sns:eu-west-1:1234567890:my-topic',
+            'StackName': 'my-stack',
+            'LogicalResourceId': 'my-nested-stack',
+            'StackId': 'arn:aws:cloudformation:eu-west-1:1234567890:stack/my-stack/my-stack-id',
+            'ResourceType': 'AWS::CloudFormation::Stack',
+            'Timestamp': datetime.datetime(2016, 4, 1, 8, 3, 27, 548000, tzinfo=tzutc()),
+            'EventId': 'my-event-id',
+            'ResourceStatus': 'CREATE_COMPLETE'
+        }
+        valid_from_timestamp = datetime.datetime(2016, 4, 1, 8, 3, 25, 548000, tzinfo=tzutc())
+        cfn = CloudFormation()
+
+        result = cfn.handle_stack_event(event, valid_from_timestamp, "CREATE_COMPLETE", "my-stack")
+        self.assertIsNone(result)
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
     @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')

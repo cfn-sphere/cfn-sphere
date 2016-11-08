@@ -417,17 +417,17 @@ class CloudFormation(object):
         elapsed = end_event["Timestamp"] - start_event["Timestamp"]
         self.logger.info("Stack {0} completed after {1}s".format(action, elapsed.seconds))
 
-    def wait_for_stack_event(self, stack_name, expected_stack_event_status, valid_from_timestamp, timeout):
+    def wait_for_stack_event(self, stack_name, expected_event_status, valid_from_timestamp, timeout):
         """
         Wait for a new stack event. Return it if it has the expected status
         :param stack_name: str
-        :param expected_stack_event_status: str
+        :param expected_event_status: str
         :param valid_from_timestamp: timestamp
         :param timeout: int
         :return: boto3 stack event
         :raise CfnStackActionFailedException:
         """
-        self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_stack_event_status,
+        self.logger.debug("Waiting for {0} events, newer than {1}".format(expected_event_status,
                                                                           valid_from_timestamp))
 
         seen_event_ids = []
@@ -440,27 +440,28 @@ class CloudFormation(object):
             for event in events:
                 if event["EventId"] not in seen_event_ids:
                     seen_event_ids.append(event["EventId"])
-                    event = self.handle_stack_event(event, valid_from_timestamp, expected_stack_event_status)
+                    event = self.handle_stack_event(event, valid_from_timestamp, expected_event_status, stack_name)
 
                     if event:
                         return event
 
             time.sleep(10)
         raise CfnStackActionFailedException(
-            "Timeout occurred waiting for '{0}' on stack {1}".format(expected_stack_event_status, stack_name))
+            "Timeout occurred waiting for '{0}' on stack {1}".format(expected_event_status, stack_name))
 
-    def handle_stack_event(self, event, valid_from_timestamp, expected_stack_event_status):
+    def handle_stack_event(self, event, valid_from_timestamp, expected_stack_event_status, stack_name):
         """
         Handle stack event. Return it if it has the expected status
-        :param event:
-        :param valid_from_timestamp:
+        :param event: raw event
+        :param valid_from_timestamp: earliest timestamp from which the event is considered relevant
         :param expected_stack_event_status:
+        :param stack_name: the relevant stacks name
         :return: boto3 stack event if it has expected status | None
         :raise CfnStackActionFailedException:
         """
         if event["Timestamp"] > valid_from_timestamp:
 
-            if event["ResourceType"] == "AWS::CloudFormation::Stack":
+            if event["ResourceType"] == "AWS::CloudFormation::Stack" and event["LogicalResourceId"] == stack_name:
                 self.logger.debug("Raw event: {0}".format(event))
 
                 if event["ResourceStatus"] == expected_stack_event_status:
