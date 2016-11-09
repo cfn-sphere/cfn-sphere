@@ -4,12 +4,17 @@ import os
 
 import yaml
 
+from cfn_sphere import CloudFormationTemplateTransformer
 from cfn_sphere.aws.s3 import S3
 from cfn_sphere.exceptions import TemplateErrorException, CfnSphereException
 from cfn_sphere.template import CloudFormationTemplate
 
 
 class FileLoader(object):
+    @classmethod
+    def get_transformed_cloudformation_template(cls, url, working_dir):
+        return CloudFormationTemplateTransformer.transform_template(cls.get_cloudformation_template(url, working_dir))
+
     @classmethod
     def get_cloudformation_template(cls, url, working_dir):
         """

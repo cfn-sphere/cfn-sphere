@@ -5,7 +5,8 @@ import boto3
 import click
 from botocore.exceptions import ClientError, BotoCoreError
 
-from cfn_sphere import StackActionHandler
+from cfn_sphere.concurrent_stack_action_handler import ConcurrentStackActionHandler
+from cfn_sphere.sequential_stack_action_handler import SequentialStackActionHandler
 from cfn_sphere import __version__
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.kms import KMS
@@ -56,7 +57,9 @@ def cli():
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-def sync(config, parameter, debug, confirm, yes):
+@click.option('--concurrent', '-x', is_flag=True, default=False, envvar='CFN_SPHERE_CONCURRENT',
+              help="Experimental: Run stack creation or updates concurrently where possible")
+def sync(config, parameter, debug, confirm, yes, concurrent):
     confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
@@ -70,10 +73,14 @@ def sync(config, parameter, debug, confirm, yes):
         click.confirm('This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
             get_first_account_alias()), abort=True)
 
-    try:
+    if not concurrent:
+        handler = SequentialStackActionHandler
+    else:
+        handler = ConcurrentStackActionHandler
 
+    try:
         config = Config(config_file=config, cli_params=parameter)
-        StackActionHandler(config).create_or_update_stacks()
+        handler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
         if debug:
@@ -108,7 +115,7 @@ def delete(config, debug, confirm, yes):
     try:
 
         config = Config(config)
-        StackActionHandler(config).delete_stacks()
+        SequentialStackActionHandler(config).delete_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
         if debug:

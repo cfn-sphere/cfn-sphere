@@ -4,6 +4,21 @@ from networkx.exception import NetworkXUnfeasible, NetworkXNoCycle
 from cfn_sphere.exceptions import CfnSphereException, InvalidDependencyGraphException, CyclicDependencyException
 
 
+class Execution(object):
+    def __init__(self):
+        self.stacks = set()
+
+    def __repr__(self):
+        return "ConcurrentExecution[%s]" % ", ".join(self.stacks)
+
+
+class Executions(list):
+    def get(self, index):
+        while index >= len(self):
+            self.append(Execution())
+        return self[index]
+
+
 class DependencyResolver(object):
     @staticmethod
     def parse_stack_reference_value(value):
@@ -72,6 +87,11 @@ class DependencyResolver(object):
 
     @classmethod
     def get_stack_order(cls, desired_stacks):
+        (order, _) = cls.get_stack_order_with_graph(desired_stacks)
+        return order
+
+    @classmethod
+    def get_stack_order_with_graph(cls, desired_stacks):
         graph = cls.create_stacks_directed_graph(desired_stacks)
         try:
             order = networkx.topological_sort_recursive(graph)
@@ -79,7 +99,24 @@ class DependencyResolver(object):
             cls.analyse_cyclic_dependencies(graph)
             raise InvalidDependencyGraphException("Could not define an order of stacks: {0}".format(e))
 
-        return cls.filter_unmanaged_stacks(desired_stacks, order)
+        return cls.filter_unmanaged_stacks(desired_stacks, order), graph
+
+    @classmethod
+    def get_parallel_execution_list(cls, stacks):
+        (order, graph) = cls.get_stack_order_with_graph(stacks)
+
+        executions = Executions()
+
+        for stack in order:
+            last_predecessor = -1
+            for pre in graph.predecessors(stack):
+                for i in range(0, len(executions)):
+                    if pre in executions[i].stacks and i > last_predecessor:
+                        last_predecessor = i
+
+            executions.get(last_predecessor + 1).stacks.add(stack)
+
+        return executions
 
 
 if __name__ == "__main__":

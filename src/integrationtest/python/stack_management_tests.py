@@ -7,7 +7,8 @@ import boto3
 import yaml
 from botocore.exceptions import ClientError
 
-from cfn_sphere import StackActionHandler
+from cfn_sphere.concurrent_stack_action_handler import ConcurrentStackActionHandler
+from cfn_sphere.sequential_stack_action_handler import SequentialStackActionHandler
 from cfn_sphere.stack_configuration import Config
 
 logging.getLogger('cfn_sphere').setLevel(logging.DEBUG)
@@ -60,18 +61,18 @@ class CfnSphereIntegrationTest(object):
                     pass
 
     def sync_stacks(self):
-        stack_handler = StackActionHandler(self.config)
+        stack_handler = ConcurrentStackActionHandler(self.config)
         self.logger.info("Syncing stacks")
         stack_handler.create_or_update_stacks()
 
     def sync_stacks_with_parameters_overwrite(self, cli_params):
         config = Config(config_file=os.path.join(self.test_resources_dir, "stacks.yml"), cli_params=cli_params)
-        stack_handler = StackActionHandler(config)
+        stack_handler = ConcurrentStackActionHandler(config)
         self.logger.info("Syncing stacks")
         stack_handler.create_or_update_stacks()
 
     def delete_stacks(self):
-        StackActionHandler(self.config).delete_stacks()
+        ConcurrentStackActionHandler(self.config).delete_stacks()
         self.verify_stacks_are_gone()
 
     def test_stacks_are_in_create_complete_state(self):
@@ -104,7 +105,7 @@ class StackManagementTests(CfnSphereIntegrationTest):
         self.logger.info("Verifying stacks use parameters given by cli")
 
         vpc_stack = self.get_stack_description("cfn-sphere-test-vpc")
-        instance_stack = self.get_stack_description("cfn-sphere-test-instances")
+        instance_stack = self.get_stack_description("cfn-sphere-test-instances-1")
 
         instance_stack_parameters = self.get_parameter_dict_from_stack(instance_stack)
         vpc_stack_parameters = self.get_parameter_dict_from_stack(vpc_stack)
@@ -113,10 +114,10 @@ class StackManagementTests(CfnSphereIntegrationTest):
         self.assert_equal("changed", vpc_stack_parameters["testtag"])
 
     def test_instance_stack_uses_vpc_outputs(self):
-        self.logger.info("Verifying cfn-sphere-test-instances uses referenced values from cfn-sphere-test-vpc stack")
+        self.logger.info("Verifying cfn-sphere-test-instances-1 uses referenced values from cfn-sphere-test-vpc stack")
 
         vpc_stack = self.get_stack_description("cfn-sphere-test-vpc")
-        instance_stack = self.get_stack_description("cfn-sphere-test-instances")
+        instance_stack = self.get_stack_description("cfn-sphere-test-instances-1")
 
         vpc_stack_outputs = self.get_output_dict_from_stack(vpc_stack)
         instance_stack_parameters = self.get_parameter_dict_from_stack(instance_stack)
@@ -127,10 +128,10 @@ class StackManagementTests(CfnSphereIntegrationTest):
         self.assert_equal(vpc_stack_parameters["testtag"], "unchanged")
 
     def test_instance_stack_userdata(self):
-        self.logger.info("Verifying user-data of instance in cfn-sphere-test-instances")
+        self.logger.info("Verifying user-data of instance in cfn-sphere-test-instances-1")
 
         autoscale_conn = boto3.client('autoscaling', region_name='eu-west-1')
-        instance_stack_resources = self.cfn_conn.describe_stack_resource(StackName="cfn-sphere-test-instances",
+        instance_stack_resources = self.cfn_conn.describe_stack_resource(StackName="cfn-sphere-test-instances-1",
                                                                          LogicalResourceId="lc")
         lc_name = \
             instance_stack_resources["StackResourceDetail"]["PhysicalResourceId"]
@@ -143,7 +144,7 @@ class StackManagementTests(CfnSphereIntegrationTest):
 
         # self.assert_equal("#taupage-ami-config", user_data_lines[0])
 
-        self.assert_equal("cfn-sphere-test-instances", user_data["application_id"])
+        self.assert_equal("cfn-sphere-test-instances-1", user_data["application_id"])
         self.assert_equal(1, user_data["application_version"])
         self.assert_equal("my-private-registry/foo1", user_data["source"])
 
@@ -157,7 +158,7 @@ class StackManagementTests(CfnSphereIntegrationTest):
 
         notify_cfn_config = user_data["notify_cfn"]
         self.assert_equal("asg", notify_cfn_config["resource"])
-        self.assert_equal("cfn-sphere-test-instances", notify_cfn_config["stack"])
+        self.assert_equal("cfn-sphere-test-instances-1", notify_cfn_config["stack"])
 
         ports_config = user_data["ports"]
         self.assert_equal(9000, ports_config[8080])
@@ -168,21 +169,21 @@ class StackManagementTests(CfnSphereIntegrationTest):
         self.assert_equal("test@example.com", registry_config["email"])
 
         environment_config = user_data["environment"]
-        self.assert_equal("cfn-sphere-test-instances", environment_config["DYNAMO_DB_PREFIX"])
+        self.assert_equal("cfn-sphere-test-instances-1", environment_config["DYNAMO_DB_PREFIX"])
 
         # uncomment this to test kms decryption
         # self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
 
     def test_instance_stack_uses_file_parameter(self):
-        instance_stack = self.get_stack_description("cfn-sphere-test-instances")
+        instance_stack = self.get_stack_description("cfn-sphere-test-instances-1")
         instance_stack_parameters = self.get_parameter_dict_from_stack(instance_stack)
         self.assert_equal("my-text-file-parameter", instance_stack_parameters["textFileParameter"])
 
     def test_instance_stack_doesnt_update_without_changes(self):
         self.logger.info("Verify stack doesn't update without changes ###")
-        old_stack_last_update = self.get_stack_description("cfn-sphere-test-instances")["LastUpdatedTime"]
+        old_stack_last_update = self.get_stack_description("cfn-sphere-test-instances-1")["LastUpdatedTime"]
         self.sync_stacks()
-        new_stack_last_update = self.get_stack_description("cfn-sphere-test-instances")["LastUpdatedTime"]
+        new_stack_last_update = self.get_stack_description("cfn-sphere-test-instances-1")["LastUpdatedTime"]
         self.assert_equal(old_stack_last_update, new_stack_last_update)
 
     def test_instances_stack_has_specific_stack_policy_configured(self):
@@ -215,7 +216,7 @@ class StackManagementTests(CfnSphereIntegrationTest):
 
             self.logger.info("### Executing cli parameter update tests ###")
             self.sync_stacks_with_parameters_overwrite(
-                ("cfn-sphere-test-vpc.testtag=changed", "cfn-sphere-test-instances.appVersion=2"))
+                ("cfn-sphere-test-vpc.testtag=changed", "cfn-sphere-test-instances-1.appVersion=2"))
             self.test_stacks_are_in_update_complete_state()
             self.test_stacks_use_updated_parameters()
 
