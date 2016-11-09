@@ -13,7 +13,7 @@ ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "
 
 
 class Config(object):
-    def __init__(self, config_file=None, config_dict=None, cli_params=None, git_repo_tagging=True):
+    def __init__(self, config_file=None, config_dict=None, cli_params=None):
         self.logger = get_logger()
 
         if isinstance(config_dict, dict):

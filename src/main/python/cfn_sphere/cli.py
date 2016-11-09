@@ -56,9 +56,7 @@ def cli():
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-@click.option('--norepotagging', '-r', is_flag=True, default=False, envvar='CFN_SPHERE_NO_REPO_TAGGING',
-              help="Do not automatically set config source repository tag")
-def sync(config, parameter, debug, confirm, yes, no_repo_tagging):
+def sync(config, parameter, debug, confirm, yes):
     confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
@@ -74,7 +72,7 @@ def sync(config, parameter, debug, confirm, yes, no_repo_tagging):
 
     try:
 
-        config = Config(config_file=config, cli_params=parameter, git_repo_tagging=not no_repo_tagging)
+        config = Config(config_file=config, cli_params=parameter)
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
