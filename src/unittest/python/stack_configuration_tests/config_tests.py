@@ -20,7 +20,8 @@ class ConfigTests(TestCase):
         self.stack_config_a = self.create_stack_config()
         self.stack_config_b = self.create_stack_config()
 
-    def create_config_object(self):
+    @staticmethod
+    def create_config_object():
         config_dict = {
             'region': 'region a',
             'tags': {'key_a': 'value a'},
@@ -40,6 +41,20 @@ class ConfigTests(TestCase):
                             'parameters': {'any parameter': 'any value'}
                             },
                            'any dir', {'any tag': 'any value'})
+
+    @patch("cfn_sphere.stack_configuration.Config._add_git_remote_url_tag")
+    def test_config_does_not_set_git_tag_if_disabled(self, add_git_remote_url_tag_mock):
+        Config(config_dict={'region': 'eu-west-1', 'stacks': {'foo': {'template-url': 'foo.json'}}},
+               git_repo_tagging=False)
+
+        add_git_remote_url_tag_mock.assert_not_called()
+
+    @patch("cfn_sphere.stack_configuration.Config._add_git_remote_url_tag")
+    def test_config_sets_git_tag_if_enabled(self, add_git_remote_url_tag_mock):
+        Config(config_dict={'region': 'eu-west-1', 'stacks': {'foo': {'template-url': 'foo.json'}}},
+               git_repo_tagging=True)
+
+        add_git_remote_url_tag_mock.assert_called()
 
     def test_config_properties_parsing(self):
         config = Config(

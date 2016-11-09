@@ -13,7 +13,7 @@ ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "
 
 
 class Config(object):
-    def __init__(self, config_file=None, config_dict=None, cli_params=None):
+    def __init__(self, config_file=None, config_dict=None, cli_params=None, git_repo_tagging=True):
         self.logger = get_logger()
 
         if isinstance(config_dict, dict):
@@ -31,7 +31,9 @@ class Config(object):
         self.default_stack_policy_url = config_dict.get("stack-policy-url")
         self.default_timeout = config_dict.get("timeout", 600)
         self.default_tags = config_dict.get("tags", {})
-        self.default_tags = self._add_git_remote_url_tag(self.default_tags, self.working_dir)
+
+        if git_repo_tagging:
+            self.default_tags = self._add_git_remote_url_tag(self.default_tags, self.working_dir)
 
         self.stacks = self._parse_stack_configs(config_dict)
         self._config_dict = config_dict
