@@ -81,7 +81,7 @@ class ParameterResolver(object):
         except Exception as e:
             raise CfnSphereException("Could not get latest value for {0}: {1}".format(key, e))
 
-    def resolve_parameter_values(self, stack_name, stack_config):
+    def resolve_parameter_values(self, stack_name, stack_config, cli_parameters=None):
         resolved_parameters = {}
         stack_outputs = self.cfn.get_stacks_outputs()
 
@@ -126,7 +126,10 @@ class ParameterResolver(object):
             else:
                 raise NotImplementedError("Cannot handle {0} type for key: {1}".format(type(value), key))
 
-        return resolved_parameters
+        if cli_parameters:
+            return self.update_parameters_with_cli_parameters(resolved_parameters, cli_parameters, stack_name)
+        else:
+            return resolved_parameters
 
     @staticmethod
     def update_parameters_with_cli_parameters(parameters, cli_parameters, stack_name):

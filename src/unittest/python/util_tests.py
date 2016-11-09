@@ -1,3 +1,9 @@
+import tempfile
+
+from git import InvalidGitRepositoryError
+
+from cfn_sphere.util import get_git_repository_remote_url
+
 try:
     from unittest2 import TestCase
     from mock import patch, Mock
@@ -198,3 +204,23 @@ class StackConfigTests(TestCase):
         s = "my-short-string"
         result = util.strip_string(s)
         self.assertEqual("my-short-string...", result)
+
+    @patch("cfn_sphere.util.Repo")
+    def test_get_git_repository_remote_url_returns_none_if_no_repository_present(self, repo_mock):
+        repo_mock.side_effect = InvalidGitRepositoryError
+        self.assertIsNone(get_git_repository_remote_url(tempfile.mkdtemp()))
+
+    @patch("cfn_sphere.util.Repo")
+    def test_get_git_repository_remote_url_returns_repo_url(self, repo_mock):
+        url = "http://config.repo.git"
+        repo_mock.return_value.remotes.origin.url = url
+        self.assertEqual(url, get_git_repository_remote_url(tempfile.mkdtemp()))
+
+    @patch("cfn_sphere.util.Repo")
+    def test_get_git_repository_remote_url_returns_repo_url_from_parent_dir(self, repo_mock):
+        url = "http://config.repo.git"
+        repo_object_mock = Mock()
+        repo_object_mock.remotes.origin.url = url
+        repo_mock.side_effect = [InvalidGitRepositoryError, repo_object_mock]
+
+        self.assertEqual(url, get_git_repository_remote_url(tempfile.mkdtemp()))

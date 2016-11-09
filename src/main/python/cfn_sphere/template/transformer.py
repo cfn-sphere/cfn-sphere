@@ -5,10 +5,14 @@ from cfn_sphere.exceptions import TemplateErrorException
 
 class CloudFormationTemplateTransformer(object):
     @classmethod
-    def transform_template(cls, template):
+    def transform_template(cls, template, additional_stack_description=None):
+        description = template.description
         conditions = template.conditions
         resources = template.resources
         outputs = template.outputs
+
+        if additional_stack_description:
+            description = cls.extend_stack_description(description, additional_stack_description)
 
         conditions = cls.scan_dict_values(conditions, cls.transform_reference_string)
         conditions = cls.scan_dict_values(conditions, cls.transform_getattr_string)
@@ -34,11 +38,23 @@ class CloudFormationTemplateTransformer(object):
         outputs = cls.scan_dict_values(outputs, cls.check_for_leftover_reference_values)
         outputs = cls.scan_dict_keys(outputs, cls.check_for_leftover_reference_keys)
 
+        template.description = description
         template.conditions = conditions
         template.resources = resources
         template.outputs = outputs
 
         return template
+
+    @classmethod
+    def extend_stack_description(cls, description, additional_stack_description):
+        additional_stack_description = " | {}".format(additional_stack_description)
+        total_length = len(description) + len(additional_stack_description)
+        if total_length > 1024:
+            strip_index = len(description) - (total_length - 1024)
+            return str(description)[:strip_index] + additional_stack_description
+        else:
+            return description + additional_stack_description
+
 
     @staticmethod
     def check_for_leftover_reference_values(value):

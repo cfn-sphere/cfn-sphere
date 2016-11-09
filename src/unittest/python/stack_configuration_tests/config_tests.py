@@ -42,20 +42,6 @@ class ConfigTests(TestCase):
                             },
                            'any dir', {'any tag': 'any value'})
 
-    @patch("cfn_sphere.stack_configuration.Config._add_git_remote_url_tag")
-    def test_config_does_not_set_git_tag_if_disabled(self, add_git_remote_url_tag_mock):
-        Config(config_dict={'region': 'eu-west-1', 'stacks': {'foo': {'template-url': 'foo.json'}}},
-               git_repo_tagging=False)
-
-        add_git_remote_url_tag_mock.assert_not_called()
-
-    @patch("cfn_sphere.stack_configuration.Config._add_git_remote_url_tag")
-    def test_config_sets_git_tag_if_enabled(self, add_git_remote_url_tag_mock):
-        Config(config_dict={'region': 'eu-west-1', 'stacks': {'foo': {'template-url': 'foo.json'}}},
-               git_repo_tagging=True)
-
-        add_git_remote_url_tag_mock.assert_called()
-
     def test_config_properties_parsing(self):
         config = Config(
             config_dict={
@@ -324,43 +310,6 @@ class ConfigTests(TestCase):
     def test_equals_StackConfig_working_dir(self):
         self.stack_config_b.working_dir = ''
         self.assertEquals(self.stack_config_a == self.stack_config_b, False)
-
-    @patch("cfn_sphere.stack_configuration.Repo")
-    def test_add_git_remote_url_tag_without_file_based_config(self, repo_mock):
-        tags = {'bla': 'blub'}
-        repo_mock.side_effect = InvalidGitRepositoryError
-        config = Config(config_dict={'region': 'eu-west-1',
-                                     'tags': tags,
-                                     'stacks': {'stack1': {'template-url': 'foo.json'}}})
-        self.assertDictEqual(config.default_tags, tags)
-
-    @patch("cfn_sphere.stack_configuration.Repo")
-    def test_add_git_remote_url_tag_with_repo(self, repo_mock):
-        url = "http://config.repo.git"
-        repo_mock.return_value.remotes.origin.url = url
-
-        (_, config_file) = tempfile.mkstemp()
-        with open(config_file, 'w') as out:
-            yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}}, out)
-
-        config = Config(config_file=config_file)
-        self.assertDictEqual(config.default_tags, {'config-git-repository': url})
-
-    @patch("cfn_sphere.stack_configuration.Repo")
-    def test_add_git_remote_url_tag_with_config_in_subdir_of_repo(self, repo_mock):
-        url = "http://config.repo.git"
-        repo_object_mock = Mock()
-        repo_mock.side_effect = [InvalidGitRepositoryError, repo_object_mock]
-        repo_object_mock.remotes.origin.url = url
-
-        config_dir = tempfile.mkdtemp() + "/config"
-        os.mkdir(config_dir)
-        config_file = config_dir + "/config.yaml"
-        with open(config_file, 'w') as out:
-            yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}}, out)
-
-        config = Config(config_file=config_file)
-        self.assertDictEqual(config.default_tags, {'config-git-repository': url})
 
     @patch("cfn_sphere.stack_configuration.Repo")
     def test_add_git_remote_url_tag_without_repo(self, repo_mock):

@@ -1,3 +1,17 @@
+DESCRIPTION_1000_CHARS = "V1nrIETxGEoaMZhfzYr3BTfjzIIguxW3aF0o24ggkyydnsYGQPe96uH8IjtnhAWziEYrharWhxP" \
+    "fEnlAd7kFG7x4yFz4cN3w79U1m5KsQOqTYicEIk1x87arcvIz0soxYdZ4fDsz1uq05cUzkz0mvX" \
+    "7oe2Zf4tUkBlc0FuPWoyITXbfEfTJVvjvDQiry2DQO7Hfv0vrNOzwLUY6nAz52rjJKBmB4lI7OE" \
+    "vn08ZWBTBBIzRTfAfdcpOfWnW7ekpmGfJZ13SRi8rvAPlP3PlOuKTJ08Lj0nwTj6jEA5JDsUrVF" \
+    "GHOEqnQ5M6bDv14irpt0VX5zRIf6Zf16jHBJTzNkNExld9PEnVey3IqNK10Ukg368fTIDdfAkgR" \
+    "3rFB4ZSNZqxG2WRDnyZ4X39hM4oO1g8GxeB3RVkOGOMmzrRZ7mbQiYuoVPTXD7HU3p686vCEO94" \
+    "DkSF9shH3B5twfCEGXrGfIa3APOXJ9E4OtA3BrBNblkxd8zingQhj8azqV6NJlbZoVkWUZBkJvb" \
+    "L4ECFYrlUifXw7gbQZIqm5eybUYSBtF4iFN3oncKAlE1s6pzLbMJ0pNJ0chMDHyaWyYYFlYZ3OV" \
+    "9O5h2QtEOvBgQciupLdRraoBMkF1uNFcB1w9VtylQbCKaOlKpIGdjYH2cL1TJGWOZPtm3dhmB2J" \
+    "Zf6zppaOVn9xeDM5haP6eSj9Lh9uzbKpCvjCIiuJGJtEZaHWb8iMm3ei7h7roZKA8oze3P07J7g" \
+    "e5IBZleyTQOyWDLzghgG5On3cgy6BAtnqwcz2hUetkczM5D0bPv2evnTNcxW3cfvo5LOL9pGIGU" \
+    "ZXRXzcjqiZ3SFVR6GoxbkS5T2ifRXfP8eq3m7OmNjZLlwAL821RExw23EuErVYmdy3D9qfqKqqq" \
+    "lfwvl8BOiGvvCHDW57QQnLefIecQSemhGZL8wqsfnNIY4TCIyZg7meXxJTi2iOOZYIoXrh42neK" \
+    "1fQNebEkWKskElr6QICH5TSIg"
 try:
     from unittest2 import TestCase
     from mock import Mock
@@ -5,8 +19,8 @@ except ImportError:
     from unittest import TestCase
     from mock import Mock
 
-import six
 import mock
+import six
 
 from cfn_sphere.exceptions import TemplateErrorException
 from cfn_sphere.template import CloudFormationTemplate
@@ -14,6 +28,32 @@ from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 
 
 class CloudFormationTemplateTransformerTests(TestCase):
+    def test_extend_stack_description_extends_description(self):
+        result = CloudFormationTemplateTransformer.extend_stack_description("my-description",
+                                                                            "my-additional-description")
+        self.assertEqual("my-description | my-additional-description", result)
+
+    def test_extend_stack_description_limits_length(self):
+        additional_description = "my-additional-description"
+
+        expected_result = DESCRIPTION_1000_CHARS[:996] + " | " + additional_description
+        result = CloudFormationTemplateTransformer.extend_stack_description(DESCRIPTION_1000_CHARS,
+                                                                            additional_description)
+        self.assertEqual(expected_result, result)
+        self.assertEqual(1024, len(result))
+
+    def test_extend_stack_description_does_not_cut_description(self):
+        description = DESCRIPTION_1000_CHARS[:996]
+        additional_description = "my-additional-description"
+        print(len(additional_description))
+        print(len(description))
+
+        expected_result = description + " | " + additional_description
+        result = CloudFormationTemplateTransformer.extend_stack_description(description,
+                                                                            additional_description)
+        self.assertEqual(expected_result, result)
+        self.assertEqual(1024, len(result))
+
     def test_scan_dict_keys_executes_key_handler_for_all_matching_keys(self):
         dictionary = {'key': 'value'}
         handler = Mock()

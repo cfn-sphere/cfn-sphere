@@ -1,3 +1,4 @@
+from cfn_sphere.template.template_handler import TemplateHandler
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
@@ -30,25 +31,17 @@ class StackActionHandler(object):
         for stack_name in stack_processing_order:
             stack_config = self.config.stacks.get(stack_name)
 
-            template = FileLoader.get_cloudformation_template(stack_config.template_url,stack_config.working_dir)
-            transformed_template = CloudFormationTemplateTransformer.transform_template(template)
-
             if stack_config.stack_policy_url:
                 self.logger.info("Using stack policy from {0}".format(stack_config.stack_policy_url))
                 stack_policy = FileLoader.get_yaml_or_json_file(stack_config.stack_policy_url, stack_config.working_dir)
             else:
                 stack_policy = None
 
-            parameters = self.parameter_resolver.resolve_parameter_values(stack_name, stack_config)
-            merged_parameters = self.parameter_resolver.update_parameters_with_cli_parameters(
-                parameters=parameters,
-                cli_parameters=self.cli_parameters,
-                stack_name=stack_name)
+            template = TemplateHandler.get_template(stack_config.template_url,stack_config.working_dir)
+            parameters = self.parameter_resolver.resolve_parameter_values(stack_name, stack_config, self.cli_parameters)
 
-            self.logger.debug("Parameters after merging with cli options: {0}".format(merged_parameters))
-
-            stack = CloudFormationStack(template=transformed_template,
-                                        parameters=merged_parameters,
+            stack = CloudFormationStack(template=template,
+                                        parameters=parameters,
                                         tags=stack_config.tags,
                                         name=stack_name,
                                         region=self.config.region,

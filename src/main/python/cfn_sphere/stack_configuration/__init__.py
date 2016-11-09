@@ -7,7 +7,7 @@ from git.repo.base import Repo
 from yaml.scanner import ScannerError
 
 from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
-from cfn_sphere.util import get_logger
+from cfn_sphere.util import get_logger, get_git_repository_remote_url
 
 ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "timeout", "tags"]
 
@@ -31,9 +31,6 @@ class Config(object):
         self.default_stack_policy_url = config_dict.get("stack-policy-url")
         self.default_timeout = config_dict.get("timeout", 600)
         self.default_tags = config_dict.get("tags", {})
-
-        if git_repo_tagging:
-            self.default_tags = self._add_git_remote_url_tag(self.default_tags, self.working_dir)
 
         self.stacks = self._parse_stack_configs(config_dict)
         self._config_dict = config_dict
@@ -76,27 +73,6 @@ class Config(object):
 
     def __ne__(self, other):
         return not self == other
-
-    def _add_git_remote_url_tag(self, tags, working_dir):
-        if not working_dir:
-            return tags
-        return self._find_git_repo_root(tags, working_dir)
-
-    def _find_git_repo_root(self, tags, working_dir):
-        try:
-            repo = Repo(working_dir)
-            tags["config-git-repository"] = repo.remotes.origin.url
-            self.logger.info("Stack config located in git repository, adding tag 'config-git-repository': '%s'"
-                             % repo.remotes.origin.url)
-            return tags
-        except InvalidGitRepositoryError as e:
-            self.logger.debug(e)
-            (head, tail) = os.path.split(working_dir)
-            if tail:
-                return self._find_git_repo_root(tags, head)
-            else:
-                self.logger.info("Stack config not located in a git repository")
-                return tags
 
     def _parse_stack_configs(self, config_dict):
         """

@@ -1,10 +1,13 @@
 import json
 import logging
+import os
 import time
 from functools import wraps
 
+import re
 import yaml
 from dateutil import parser
+from git import Repo, InvalidGitRepositoryError
 from prettytable import PrettyTable
 from six.moves.urllib import request as urllib2
 
@@ -155,5 +158,18 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
     return decorator
 
 
+def get_git_repository_remote_url(working_dir):
+    try:
+        repo = Repo(working_dir)
+        return repo.remotes.origin.url
+    except InvalidGitRepositoryError:
+        (head, tail) = os.path.split(working_dir)
+        if tail:
+            return get_git_repository_remote_url(head)
+        else:
+            return None
+
+
+
 if __name__ == "__main__":
-    print(get_cfn_api_server_time())
+    pass
