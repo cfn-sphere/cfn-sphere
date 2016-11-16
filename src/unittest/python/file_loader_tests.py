@@ -86,6 +86,24 @@ class FileLoaderTests(TestCase):
         with self.assertRaises(CfnSphereException):
             FileLoader.get_yaml_or_json_file('foo.json', 'baa')
 
+    @patch("cfn_sphere.file_loader.FileLoader.get_file")
+    def test_get_yaml_or_json_file_accepts_yaml_template_with_cfn_short_ref_function_references(self, get_file_mock):
+        get_file_mock.return_value = "myKey: !Ref myResource"
+        result = FileLoader.get_yaml_or_json_file("my-template.yaml", None)
+        self.assertEqual({"myKey": {"Ref": "myResource"}}, result)
+
+    @patch("cfn_sphere.file_loader.FileLoader.get_file")
+    def test_get_yaml_or_json_file_accepts_yaml_template_with_cfn_short_getatt_function_references(self, get_file_mock):
+        get_file_mock.return_value = "myKey: !GetAtt myResource.attributeName"
+        result = FileLoader.get_yaml_or_json_file("my-template.yaml", None)
+        self.assertEqual({"myKey": {"Fn::GetAtt": "myResource.attributeName"}}, result)
+
+    @patch("cfn_sphere.file_loader.FileLoader.get_file")
+    def test_get_yaml_or_json_file_accepts_yaml_template_with_cfn_short_join_function_references(self, get_file_mock):
+        get_file_mock.return_value = "myKey: !Join [ b, [ a, c] ]"
+        result = FileLoader.get_yaml_or_json_file("my-template.yaml", None)
+        self.assertEqual({"myKey": {"Fn::Join": ["b", ["a", "c"]]}}, result)
+
     @patch("cfn_sphere.file_loader.FileLoader._s3_get_file")
     def test_get_file_calls_correct_handler_for_s3_prefix(self, s3_get_file_mock):
         FileLoader.get_file("s3://foo/foo.yml", None)
@@ -123,4 +141,3 @@ class FileLoaderTests(TestCase):
 
         with self.assertRaises(CfnSphereException):
             FileLoader._s3_get_file("s3://foo/foo.yml")
-

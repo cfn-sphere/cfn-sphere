@@ -24,6 +24,41 @@ class FileLoader(object):
         except Exception as e:
             raise TemplateErrorException("Could not load file from {0}: {1}".format(url, e))
 
+    @staticmethod
+    def ignore_tags(loader, suffix, node):
+        """
+        Constructor method for PyYaml to handle cfn intrinsic functions specified as yaml tags
+        """
+        function_mapping = {
+            "!base64": "Fn::Base64",
+            "!if": "Fn::If",
+            "!equals": "Fn::Equals",
+            "!not": "Fn::Not",
+            "!findinmap": "Fn::FindInMap",
+            "!getatt": "Fn::GetAtt",
+            "!getazs": "Fn::GetAZs",
+            "!importvalue": "Fn::ImportValue",
+            "!join": "Fn::Join",
+            "!select": "Fn::Select",
+            "!sub": "Fn::Sub",
+            "!ref": "Ref"
+        }
+        try:
+            function = function_mapping[str(suffix).lower()]
+        except KeyError as key:
+            raise CfnSphereException("Unsupported cfn intrinsic function tag found: {0}".format(key))
+
+        if isinstance(node, yaml.ScalarNode):
+            value = loader.construct_scalar(node)
+        elif isinstance(node, yaml.SequenceNode):
+            value = loader.construct_sequence(node)
+        elif isinstance(node, yaml.MappingNode):
+            value = loader.construct_mapping(node)
+        else:
+            raise CfnSphereException("Invalid yaml node found while handling cfn intrinsic function tags")
+
+        return {function: value}
+
     @classmethod
     def get_yaml_or_json_file(cls, url, working_dir):
         """
@@ -40,6 +75,7 @@ class FileLoader(object):
             elif url.lower().endswith(".template"):
                 return json.loads(file_content)
             elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
+                yaml.add_multi_constructor(u"", cls.ignore_tags)
                 return yaml.load(file_content)
             else:
                 raise CfnSphereException("Invalid suffix, use [json|template|yml|yaml]")
@@ -86,4 +122,3 @@ class FileLoader(object):
             return S3().get_contents_from_url(url)
         except Exception as e:
             raise CfnSphereException("Could not load file from {0}: {1}".format(url, e))
-
