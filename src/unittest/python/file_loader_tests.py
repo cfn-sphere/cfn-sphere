@@ -1,3 +1,5 @@
+import yaml
+
 try:
     from unittest2 import TestCase
     from mock import patch, Mock
@@ -96,7 +98,7 @@ class FileLoaderTests(TestCase):
     def test_get_yaml_or_json_file_accepts_yaml_template_with_cfn_short_getatt_function_references(self, get_file_mock):
         get_file_mock.return_value = "myKey: !GetAtt myResource.attributeName"
         result = FileLoader.get_yaml_or_json_file("my-template.yaml", None)
-        self.assertEqual({"myKey": {"Fn::GetAtt": "myResource.attributeName"}}, result)
+        self.assertEqual({"myKey": {"Fn::GetAtt": ["myResource", "attributeName"]}}, result)
 
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
     def test_get_yaml_or_json_file_accepts_yaml_template_with_cfn_short_join_function_references(self, get_file_mock):
@@ -141,3 +143,122 @@ class FileLoaderTests(TestCase):
 
         with self.assertRaises(CfnSphereException):
             FileLoader._s3_get_file("s3://foo/foo.yml")
+
+    def test_handle_yaml_constructors_converts_base64(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = "myString"
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!base64", node_mock)
+        self.assertEqual({'Fn::Base64': 'myString'}, response)
+
+    def test_handle_yaml_constructors_converts_and(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["myCondition", "myOtherCondition"]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!and", node_mock)
+        self.assertEqual({'Fn::And': ["myCondition", "myOtherCondition"]}, response)
+
+    def test_handle_yaml_constructors_converts_equals(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["myValue", "myOtherValue"]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!equals", node_mock)
+        self.assertEqual({'Fn::Equals': ["myValue", "myOtherValue"]}, response)
+
+    def test_handle_yaml_constructors_converts_if(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["myCondition", "myOtherCondition"]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!if", node_mock)
+        self.assertEqual({'Fn::If': ["myCondition", "myOtherCondition"]}, response)
+
+    def test_handle_yaml_constructors_converts_not(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["myCondition"]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!not", node_mock)
+        self.assertEqual({'Fn::Not': ["myCondition"]}, response)
+
+    def test_handle_yaml_constructors_converts_or(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["myCondition", "myOtherCondition"]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!or", node_mock)
+        self.assertEqual({'Fn::Or': ["myCondition", "myOtherCondition"]}, response)
+
+    def test_handle_yaml_constructors_converts_find_in_map(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["MapName", "TopLevelKey", "SecondLevelKey"]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!FindInMap", node_mock)
+        self.assertEqual({'Fn::FindInMap': ["MapName", "TopLevelKey", "SecondLevelKey"]}, response)
+
+    def test_handle_yaml_constructors_converts_getatt(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = "logicalNameOfResource.attributeName"
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!GetAtt", node_mock)
+        self.assertEqual({'Fn::GetAtt': ["logicalNameOfResource", "attributeName"]}, response)
+
+    def test_handle_yaml_constructors_converts_get_azs(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = "region"
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!GetAZs", node_mock)
+        self.assertEqual({'Fn::GetAZs': "region"}, response)
+
+    def test_handle_yaml_constructors_converts_import_value(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = "sharedValue"
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!ImportValue", node_mock)
+        self.assertEqual({'Fn::ImportValue': "sharedValue"}, response)
+
+    def test_handle_yaml_constructors_converts_join(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["delimiter", ["a", "b"]]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!join", node_mock)
+        self.assertEqual({'Fn::Join': ["delimiter", ["a", "b"]]}, response)
+
+    def test_handle_yaml_constructors_converts_select(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["index", "list"]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!select", node_mock)
+        self.assertEqual({'Fn::Select': ["index", "list"]}, response)
+
+    def test_handle_yaml_constructors_converts_sub(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["string", {"key": "value"}]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!sub", node_mock)
+        self.assertEqual({'Fn::Sub': ["string", {"key": "value"}]}, response)
+
+    def test_handle_yaml_constructors_converts_ref(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = "myResource"
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!ref", node_mock)
+        self.assertEqual({'Ref': "myResource"}, response)
+
+    def test_handle_yaml_constructors_raises_exception_on_unknown_tag(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = "myResource"
+        node_mock = Mock(spec=yaml.ScalarNode)
+        with self.assertRaises(CfnSphereException):
+            FileLoader.handle_yaml_constructors(loader_mock, "!anyTag", node_mock)

@@ -25,26 +25,28 @@ class FileLoader(object):
             raise TemplateErrorException("Could not load file from {0}: {1}".format(url, e))
 
     @staticmethod
-    def ignore_tags(loader, suffix, node):
+    def handle_yaml_constructors(loader, suffix, node):
         """
         Constructor method for PyYaml to handle cfn intrinsic functions specified as yaml tags
         """
         function_mapping = {
-            "!base64": "Fn::Base64",
-            "!if": "Fn::If",
-            "!equals": "Fn::Equals",
-            "!not": "Fn::Not",
-            "!findinmap": "Fn::FindInMap",
-            "!getatt": "Fn::GetAtt",
-            "!getazs": "Fn::GetAZs",
-            "!importvalue": "Fn::ImportValue",
-            "!join": "Fn::Join",
-            "!select": "Fn::Select",
-            "!sub": "Fn::Sub",
-            "!ref": "Ref"
+            "!base64": ("Fn::Base64", lambda x: x),
+            "!and": ("Fn::And", lambda x: x),
+            "!equals": ("Fn::Equals", lambda x: x),
+            "!if": ("Fn::If", lambda x: x),
+            "!not": ("Fn::Not", lambda x: x),
+            "!or": ("Fn::Or", lambda x: x),
+            "!findinmap": ("Fn::FindInMap", lambda x: x),
+            "!getatt": ("Fn::GetAtt", lambda x: str(x).split(".",1)),
+            "!getazs": ("Fn::GetAZs", lambda x: x),
+            "!importvalue": ("Fn::ImportValue", lambda x: x),
+            "!join": ("Fn::Join", lambda x: [x[0], x[1]]),
+            "!select": ("Fn::Select", lambda x: x),
+            "!sub": ("Fn::Sub", lambda x: x),
+            "!ref": ("Ref", lambda x: x)
         }
         try:
-            function = function_mapping[str(suffix).lower()]
+            function, value_transformer = function_mapping[str(suffix).lower()]
         except KeyError as key:
             raise CfnSphereException("Unsupported cfn intrinsic function tag found: {0}".format(key))
 
@@ -57,7 +59,7 @@ class FileLoader(object):
         else:
             raise CfnSphereException("Invalid yaml node found while handling cfn intrinsic function tags")
 
-        return {function: value}
+        return {function: value_transformer(value)}
 
     @classmethod
     def get_yaml_or_json_file(cls, url, working_dir):
@@ -75,7 +77,7 @@ class FileLoader(object):
             elif url.lower().endswith(".template"):
                 return json.loads(file_content)
             elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
-                yaml.add_multi_constructor(u"", cls.ignore_tags)
+                yaml.add_multi_constructor(u"", cls.handle_yaml_constructors)
                 return yaml.load(file_content)
             else:
                 raise CfnSphereException("Invalid suffix, use [json|template|yml|yaml]")
