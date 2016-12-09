@@ -18,9 +18,11 @@ from cfn_sphere.util import convert_file, get_logger, get_latest_version
 LOGGER = get_logger(root=True)
 
 
-def get_first_account_alias():
+def get_first_account_alias_or_account_id():
     try:
         return boto3.client('iam').list_account_aliases()["AccountAliases"][0]
+    except IndexError:
+        return boto3.client('sts').get_caller_identity()["Arn"].split(":")[4]
     except (BotoCoreError, ClientError) as e:
         LOGGER.error(e)
         sys.exit(1)
@@ -68,7 +70,7 @@ def sync(config, parameter, debug, confirm, yes):
     if not confirm:
         check_update_available()
         click.confirm('This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
-            get_first_account_alias()), abort=True)
+            get_first_account_alias_or_account_id()), abort=True)
 
     try:
 
@@ -103,7 +105,7 @@ def delete(config, debug, confirm, yes):
     if not confirm:
         check_update_available()
         click.confirm('This action will delete all stacks in {0} from account: {1}\nAre you sure?'.format(
-            config, get_first_account_alias()), abort=True)
+            config, get_first_account_alias_or_account_id()), abort=True)
 
     try:
 
