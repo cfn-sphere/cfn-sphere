@@ -1,7 +1,7 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 import boto3
-from botocore.exceptions import BotoCoreError, ClientError
+from botocore.exceptions import BotoCoreError, ClientError, WaiterError
 
 from cfn_sphere.exceptions import CfnStackActionFailedException
 from cfn_sphere.util import *
@@ -250,6 +250,74 @@ class CloudFormation(object):
             return False
 
     @with_boto_retry()
+    def _create_change_set(self, stack, change_set_name):
+        """
+        Create cloudformation stack change set
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        :param change_set_name: str
+        """
+        kwargs = {
+            "StackName": stack.name,
+            "TemplateBody": stack.template.get_template_json(),
+            "Parameters": stack.get_parameters_list(),
+            "Capabilities": [
+                'CAPABILITY_IAM',
+                'CAPABILITY_NAMED_IAM'
+            ],
+            "Tags": stack.get_tags_list(),
+            "ChangeSetName": change_set_name
+        }
+
+        if stack.service_role:
+            kwargs["RoleARN"] = stack.service_role
+
+        try:
+            self.client.create_change_set(**kwargs)
+            self.client.get_waiter('change_set_create_complete').wait(
+                ChangeSetName=change_set_name,
+                StackName=stack.name
+            )
+        except WaiterError:
+            pass
+
+    @with_boto_retry()
+    def _describe_change_set(self, stack, change_set_name):
+        """
+        Describe change set for a specific cloudformation stack
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        :param change_set_name: str
+        :return dict
+        """
+        return self.client.describe_change_set(
+            ChangeSetName=change_set_name,
+            StackName=stack.name
+        )
+
+    @with_boto_retry()
+    def _execute_change_set(self, stack, change_set_name):
+        """
+        Execute cloudformation stack change set
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        :param change_set_name: str
+        """
+        self.client.execute_change_set(
+            ChangeSetName=change_set_name,
+            StackName=stack.name
+        )
+
+    @with_boto_retry()
+    def _delete_change_set(self, stack, change_set_name):
+        """
+        Execute cloudformation stack change set
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        :param change_set_name: str
+        """
+        self.client.delete_change_set(
+            ChangeSetName=change_set_name,
+            StackName=stack.name
+        )
+
+    @with_boto_retry()
     def _create_stack(self, stack):
         """
         Create cloudformation stack
@@ -274,30 +342,6 @@ class CloudFormation(object):
             kwargs["OnFailure"] = stack.failure_action
 
         self.client.create_stack(**kwargs)
-
-    @with_boto_retry()
-    def _update_stack(self, stack):
-        """
-        Update cloudformation stack
-        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
-        """
-        kwargs = {
-            "StackName": stack.name,
-            "TemplateBody": stack.template.get_template_json(),
-            "Parameters": stack.get_parameters_list(),
-            "Capabilities": [
-                'CAPABILITY_IAM',
-                'CAPABILITY_NAMED_IAM'
-            ],
-            "Tags": stack.get_tags_list()
-        }
-
-        if stack.service_role:
-            kwargs["RoleARN"] = stack.service_role
-        if stack.stack_policy:
-            kwargs["StackPolicyBody"] = json.dumps(stack.stack_policy)
-
-        self.client.update_stack(**kwargs)
 
     @with_boto_retry()
     def _delete_stack(self, stack):
@@ -341,37 +385,42 @@ class CloudFormation(object):
         self.logger.debug("Updating stack: {0}".format(stack))
         assert isinstance(stack, CloudFormationStack)
 
+        stack_parameters_string = get_pretty_parameters_string(stack)
+        timestamp = datetime.fromtimestamp(time.time()).strftime('%Y%m%d-%H%M%S%s')
+        change_set_name = "cfn-sphere-change-{0}".format(timestamp)
+
         try:
-            stack_parameters_string = get_pretty_parameters_string(stack)
+            self._create_change_set(stack, change_set_name)
+            change_set = self._describe_change_set(stack, change_set_name)
 
-            try:
-                self._update_stack(stack)
-            except ClientError as e:
+            if change_set["Changes"]:
+                self.logger.info(
+                    "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
+                                                                            stack.template.name,
+                                                                            stack_parameters_string))
 
-                if self.is_boto_no_update_required_exception(e):
-                    self.logger.info("Stack {0} does not need an update".format(stack.name))
-                    return
+                changes_string = get_pretty_stack_changes_string(change_set["Changes"])
+                self.logger.info("Applying changes:\n{0}".format(changes_string))
+                self._execute_change_set(stack, change_set_name)
+
+                self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
+
+                stack_outputs = get_pretty_stack_outputs(self.get_stack_outputs(stack))
+                if stack_outputs:
+                    self.logger.info("Update completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs))
                 else:
-                    self.logger.info(
-                        "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
-                                                                                stack.template.name,
-                                                                                stack_parameters_string))
-                    raise
+                    self.logger.info("Update completed for {0}".format(stack.name))
 
-            self.logger.info(
-                "Updating stack {0} ({1}) with parameters:\n{2}".format(stack.name,
-                                                                        stack.template.name,
-                                                                        stack_parameters_string))
-
-            self.wait_for_stack_action_to_complete(stack.name, "update", stack.timeout)
-
-            stack_outputs = get_pretty_stack_outputs(self.get_stack_outputs(stack))
-            if stack_outputs:
-                self.logger.info("Update completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs))
             else:
-                self.logger.info("Update completed for {0}".format(stack.name))
+                self.logger.info("Stack {0} does not need an update".format(stack.name))
+
+            self._delete_change_set(stack, change_set_name)
+
         except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not update {0}: {1}".format(stack.name, e))
+
+        finally:
+            self._delete_change_set(stack, change_set_name)
 
     def delete_stack(self, stack):
         self.logger.debug("Deleting stack: {0}".format(stack))

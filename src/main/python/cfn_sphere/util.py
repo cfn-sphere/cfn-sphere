@@ -65,6 +65,16 @@ def get_pretty_parameters_string(stack):
     return table.get_string(sortby="Parameter")
 
 
+def get_pretty_stack_changes_string(changes):
+    table = PrettyTable(["Resource", "Action", "Replacement"])
+
+    for change in changes:
+        resource_change = change["ResourceChange"]
+        table.add_row([resource_change["LogicalResourceId"], resource_change["Action"], resource_change["Replacement"]])
+
+    return table.get_string(sortby="Resource")
+
+
 def get_pretty_stack_outputs(stack_outputs):
     table = PrettyTable(["Output", "Value"])
     table_has_entries = False
@@ -167,7 +177,6 @@ def get_git_repository_remote_url(working_dir):
             return get_git_repository_remote_url(head)
         else:
             return None
-
 
 
 if __name__ == "__main__":
