@@ -11,7 +11,7 @@ logging.getLogger('boto').setLevel(logging.FATAL)
 
 class CloudFormationStack(object):
     def __init__(self, template, parameters, name, region, timeout=600, tags=None, service_role=None,
-                 stack_policy=None):
+                 stack_policy=None, failure_action=None):
         self.template = template
         self.parameters = parameters
         self.tags = {} if tags is None else tags
@@ -20,6 +20,7 @@ class CloudFormationStack(object):
         self.timeout = timeout
         self.service_role = service_role
         self.stack_policy = stack_policy
+        self.failure_action = failure_action
 
     def __str__(self):
         return str(vars(self))
@@ -262,7 +263,7 @@ class CloudFormation(object):
                 'CAPABILITY_IAM',
                 'CAPABILITY_NAMED_IAM'
             ],
-            "OnFailure": 'ROLLBACK',
+            "OnFailure": stack.failure_action,
             "Tags": stack.get_tags_list()
         }
 

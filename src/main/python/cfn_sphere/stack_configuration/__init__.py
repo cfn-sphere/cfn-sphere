@@ -2,12 +2,10 @@ import os
 from collections import defaultdict
 
 import yaml
-from git.exc import InvalidGitRepositoryError
-from git.repo.base import Repo
 from yaml.scanner import ScannerError
 
 from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
-from cfn_sphere.util import get_logger, get_git_repository_remote_url
+from cfn_sphere.util import get_logger
 
 ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "timeout", "tags"]
 
@@ -31,6 +29,7 @@ class Config(object):
         self.default_stack_policy_url = config_dict.get("stack-policy-url")
         self.default_timeout = config_dict.get("timeout", 600)
         self.default_tags = config_dict.get("tags", {})
+        self.default_failure_action = config_dict.get("on_failure", "ROLLBACK")
 
         self.stacks = self._parse_stack_configs(config_dict)
         self._config_dict = config_dict
@@ -88,7 +87,8 @@ class Config(object):
                                                default_tags=self.default_tags,
                                                default_timeout=self.default_timeout,
                                                default_service_role=self.default_service_role,
-                                               default_stack_policy_url=self.default_stack_policy_url)
+                                               default_stack_policy_url=self.default_stack_policy_url,
+                                               default_failure_action=self.default_failure_action)
 
             except InvalidConfigException as e:
                 raise InvalidConfigException("Invalid config for stack {0}: {1}".format(key, e))
@@ -137,7 +137,7 @@ class StackConfig(object):
     STACK_CONFIG_ALLOWED_CONFIG_KEYS = ["parameters", "template-url"] + ALLOWED_CONFIG_KEYS
 
     def __init__(self, stack_config_dict, working_dir=None, default_tags=None, default_timeout=600,
-                 default_service_role=None, default_stack_policy_url=None):
+                 default_service_role=None, default_stack_policy_url=None, default_failure_action="ROLLBACK"):
 
         if not stack_config_dict or not isinstance(stack_config_dict, dict):
             raise InvalidConfigException("Stack configuration must not be empty")
@@ -145,14 +145,18 @@ class StackConfig(object):
         if default_tags is None:
             default_tags = {}
         self.parameters = stack_config_dict.get("parameters", {})
+        self.template_url = stack_config_dict.get("template-url")
+
         self.tags = {}
         self.tags.update(default_tags)
         self.tags.update(stack_config_dict.get("tags", {}))
+
         self.service_role = stack_config_dict.get("service-role", default_service_role)
         self.stack_policy_url = stack_config_dict.get("stack-policy-url", default_stack_policy_url)
         self.timeout = stack_config_dict.get("timeout", default_timeout)
+        self.failure_action = stack_config_dict.get("on_failure", default_failure_action)
+
         self.working_dir = working_dir
-        self.template_url = stack_config_dict.get("template-url")
         self._stack_config_dict = stack_config_dict
 
         self._validate()
@@ -179,6 +183,14 @@ class StackConfig(object):
                 assert isinstance(self.stack_policy_url, str), \
                     "stack-policy-url must be of type str, not {0}".format(type(self.stack_policy_url))
 
+            if self.timeout:
+                assert isinstance(self.timeout, int), \
+                    "timeout must be of type int, not {0}".format(type(self.timeout))
+
+            if self.failure_action:
+                assert str(self.failure_action).lower() in ['do_nothing','rollback','delete'], \
+                    "on_failure property value must be one of 'DO_NOTHING'|'ROLLBACK'|'DELETE'"
+
         except AssertionError as e:
             raise InvalidConfigException(e)
 
@@ -190,7 +202,8 @@ class StackConfig(object):
                 and self.working_dir == other.working_dir
                 and self.service_role == other.service_role
                 and self.stack_policy_url == other.stack_policy_url
-                and self.template_url == other.template_url):
+                and self.template_url == other.template_url
+                and self.failure_action == other.failure_action):
                 return True
         except AttributeError:
             return False
