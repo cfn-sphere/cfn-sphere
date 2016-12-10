@@ -12,6 +12,7 @@ class CloudFormationTemplate(object):
         self.conditions = body_dict.get('Conditions', {})
         self.resources = body_dict.get('Resources', {})
         self.outputs = body_dict.get('Outputs', {})
+        self.transform = body_dict.get('Transform', None)
         self.post_custom_resources = body_dict.get('PostCustomResources', {})
 
     def get_no_echo_parameter_keys(self):
@@ -28,7 +29,8 @@ class CloudFormationTemplate(object):
             'Mappings': self.mappings,
             'Conditions': self.conditions,
             'Resources': self.resources,
-            'Outputs': self.outputs
+            'Outputs': self.outputs,
+            'Transform': self.transform
         }
 
     def get_pretty_template_json(self):

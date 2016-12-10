@@ -310,15 +310,3 @@ class ConfigTests(TestCase):
     def test_equals_StackConfig_working_dir(self):
         self.stack_config_b.working_dir = ''
         self.assertEquals(self.stack_config_a == self.stack_config_b, False)
-
-    @patch("cfn_sphere.stack_configuration.Repo")
-    def test_add_git_remote_url_tag_without_repo(self, repo_mock):
-        tags = {'bla': 'blub'}
-        repo_mock.side_effect = InvalidGitRepositoryError
-
-        (_, config_file) = tempfile.mkstemp()
-        with open(config_file, 'w') as out:
-            yaml.dump({'region': 'eu-west-1', 'stacks': {'stack1': {'template-url': 'foo.json'}}, 'tags': tags}, out)
-
-        config = Config(config_file=config_file)
-        self.assertDictEqual(config.default_tags, tags)

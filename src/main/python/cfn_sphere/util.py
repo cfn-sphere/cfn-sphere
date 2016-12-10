@@ -4,7 +4,6 @@ import os
 import time
 from functools import wraps
 
-import re
 import yaml
 from dateutil import parser
 from git import Repo, InvalidGitRepositoryError

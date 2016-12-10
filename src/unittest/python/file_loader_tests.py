@@ -22,6 +22,7 @@ class FileLoaderTests(TestCase):
             'Resources': 'Foo',
             'Parameters': {},
             'Outputs': {},
+            'Transform': None,
             'AWSTemplateFormatVersion': '2010-09-09',
             'Description': ''
         }
