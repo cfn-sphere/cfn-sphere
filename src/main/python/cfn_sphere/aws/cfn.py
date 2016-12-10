@@ -263,7 +263,6 @@ class CloudFormation(object):
                 'CAPABILITY_IAM',
                 'CAPABILITY_NAMED_IAM'
             ],
-            "OnFailure": stack.failure_action,
             "Tags": stack.get_tags_list()
         }
 
@@ -271,6 +270,8 @@ class CloudFormation(object):
             kwargs["RoleARN"] = stack.service_role
         if stack.stack_policy:
             kwargs["StackPolicyBody"] = json.dumps(stack.stack_policy)
+        if stack.failure_action:
+            kwargs["OnFailure"] = stack.failure_action
 
         self.client.create_stack(**kwargs)
 
