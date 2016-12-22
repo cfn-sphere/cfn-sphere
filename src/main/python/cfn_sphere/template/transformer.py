@@ -14,29 +14,47 @@ class CloudFormationTemplateTransformer(object):
         if additional_stack_description:
             description = cls.extend_stack_description(description, additional_stack_description)
 
-        conditions = cls.scan_dict_values(conditions, cls.transform_reference_string)
-        conditions = cls.scan_dict_values(conditions, cls.transform_getattr_string)
-        conditions = cls.scan_dict_keys(conditions, cls.transform_join_key)
-        conditions = cls.scan_dict_keys(conditions, cls.transform_taupage_user_data_key)
-        conditions = cls.scan_dict_keys(conditions, cls.transform_yaml_user_data_key)
-        conditions = cls.scan_dict_values(conditions, cls.check_for_leftover_reference_values)
-        conditions = cls.scan_dict_keys(conditions, cls.check_for_leftover_reference_keys)
+        conditions = cls.scan(
+            conditions,
+            key_handlers=[
+                cls.transform_join_key,
+                cls.transform_taupage_user_data_key,
+                cls.transform_yaml_user_data_key,
+                cls.check_for_leftover_reference_keys
+            ],
+            value_handlers=[
+                cls.transform_reference_string,
+                cls.transform_getattr_string,
+                cls.check_for_leftover_reference_values
+            ])
 
-        resources = cls.scan_dict_values(resources, cls.transform_reference_string)
-        resources = cls.scan_dict_values(resources, cls.transform_getattr_string)
-        resources = cls.scan_dict_keys(resources, cls.transform_join_key)
-        resources = cls.scan_dict_keys(resources, cls.transform_taupage_user_data_key)
-        resources = cls.scan_dict_keys(resources, cls.transform_yaml_user_data_key)
-        resources = cls.scan_dict_values(resources, cls.check_for_leftover_reference_values)
-        resources = cls.scan_dict_keys(resources, cls.check_for_leftover_reference_keys)
+        resources = cls.scan(
+            resources,
+            key_handlers=[
+                cls.transform_join_key,
+                cls.transform_taupage_user_data_key,
+                cls.transform_yaml_user_data_key,
+                cls.check_for_leftover_reference_keys
+            ],
+            value_handlers=[
+                cls.transform_reference_string,
+                cls.transform_getattr_string,
+                cls.check_for_leftover_reference_values
+            ])
 
-        outputs = cls.scan_dict_values(outputs, cls.transform_reference_string)
-        outputs = cls.scan_dict_values(outputs, cls.transform_getattr_string)
-        outputs = cls.scan_dict_keys(outputs, cls.transform_join_key)
-        outputs = cls.scan_dict_keys(outputs, cls.transform_taupage_user_data_key)
-        outputs = cls.scan_dict_keys(outputs, cls.transform_yaml_user_data_key)
-        outputs = cls.scan_dict_values(outputs, cls.check_for_leftover_reference_values)
-        outputs = cls.scan_dict_keys(outputs, cls.check_for_leftover_reference_keys)
+        outputs = cls.scan(
+            outputs,
+            key_handlers=[
+                cls.transform_join_key,
+                cls.transform_taupage_user_data_key,
+                cls.transform_yaml_user_data_key,
+                cls.check_for_leftover_reference_keys
+            ],
+            value_handlers=[
+                cls.transform_reference_string,
+                cls.transform_getattr_string,
+                cls.check_for_leftover_reference_values
+            ])
 
         template.description = description
         template.conditions = conditions
@@ -44,6 +62,38 @@ class CloudFormationTemplateTransformer(object):
         template.outputs = outputs
 
         return template
+
+    @classmethod
+    def scan(cls, value, key_handlers, value_handlers):
+
+        if isinstance(value, dict):
+            result = {}
+
+            for k, v in value.items():
+                for key_handler in key_handlers:
+                    k, v = key_handler(k, v)
+
+                result[k] = cls.scan(v, key_handlers, value_handlers)
+
+            return result
+
+        elif isinstance(value, list):
+            result = []
+
+            for item in value:
+                result.append(cls.scan(item, key_handlers, value_handlers))
+
+            return result
+
+        elif isinstance(value, string_types):
+            result = value
+            for value_handler in value_handlers:
+                result = value_handler(result)
+
+            return result
+
+        else:
+            return value
 
     @classmethod
     def extend_stack_description(cls, description, additional_stack_description):
@@ -54,7 +104,6 @@ class CloudFormationTemplateTransformer(object):
             return str(description)[:strip_index] + additional_stack_description
         else:
             return description + additional_stack_description
-
 
     @staticmethod
     def check_for_leftover_reference_values(value):
@@ -221,61 +270,6 @@ class CloudFormationTemplateTransformer(object):
                 lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
 
         return lines
-
-    @classmethod
-    def scan_dict_keys(cls, original_dict, key_handler):
-        result_dict = {}
-
-        for key, value in original_dict.items():
-            if isinstance(value, dict):
-                new_dict_value = cls.scan_dict_keys(value, key_handler)
-                new_key, new_value = key_handler(key, new_dict_value)
-                result_dict[new_key] = new_value
-
-            elif isinstance(value, list):
-                new_list_value = []
-
-                for item in value:
-                    if isinstance(item, dict):
-                        new_list_value.append(cls.scan_dict_keys(item, key_handler))
-                    else:
-                        new_list_value.append(item)
-
-                new_key, new_value = key_handler(key, new_list_value)
-                result_dict[new_key] = new_value
-
-            else:
-                new_key, new_value = key_handler(key, value)
-                result_dict[new_key] = new_value
-
-        return result_dict
-
-    @classmethod
-    def scan_dict_values(cls, original_dict, value_handler):
-        result_dict = {}
-
-        for key, value in original_dict.items():
-            if isinstance(value, dict):
-                result_dict[key] = cls.scan_dict_values(value, value_handler)
-
-            elif isinstance(value, list):
-                new_list_value = []
-                for item in value:
-                    if isinstance(item, dict):
-                        new_list_value.append(cls.scan_dict_values(item, value_handler))
-                    elif isinstance(item, string_types):
-                        new_list_value.append(value_handler(item))
-                    else:
-                        new_list_value.append(item)
-
-                result_dict[key] = new_list_value
-
-            elif isinstance(value, string_types):
-                result_dict[key] = value_handler(value)
-            else:
-                result_dict[key] = value
-
-        return result_dict
 
 
 if __name__ == "__main__":

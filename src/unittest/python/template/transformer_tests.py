@@ -1,17 +1,17 @@
 DESCRIPTION_1000_CHARS = "V1nrIETxGEoaMZhfzYr3BTfjzIIguxW3aF0o24ggkyydnsYGQPe96uH8IjtnhAWziEYrharWhxP" \
-    "fEnlAd7kFG7x4yFz4cN3w79U1m5KsQOqTYicEIk1x87arcvIz0soxYdZ4fDsz1uq05cUzkz0mvX" \
-    "7oe2Zf4tUkBlc0FuPWoyITXbfEfTJVvjvDQiry2DQO7Hfv0vrNOzwLUY6nAz52rjJKBmB4lI7OE" \
-    "vn08ZWBTBBIzRTfAfdcpOfWnW7ekpmGfJZ13SRi8rvAPlP3PlOuKTJ08Lj0nwTj6jEA5JDsUrVF" \
-    "GHOEqnQ5M6bDv14irpt0VX5zRIf6Zf16jHBJTzNkNExld9PEnVey3IqNK10Ukg368fTIDdfAkgR" \
-    "3rFB4ZSNZqxG2WRDnyZ4X39hM4oO1g8GxeB3RVkOGOMmzrRZ7mbQiYuoVPTXD7HU3p686vCEO94" \
-    "DkSF9shH3B5twfCEGXrGfIa3APOXJ9E4OtA3BrBNblkxd8zingQhj8azqV6NJlbZoVkWUZBkJvb" \
-    "L4ECFYrlUifXw7gbQZIqm5eybUYSBtF4iFN3oncKAlE1s6pzLbMJ0pNJ0chMDHyaWyYYFlYZ3OV" \
-    "9O5h2QtEOvBgQciupLdRraoBMkF1uNFcB1w9VtylQbCKaOlKpIGdjYH2cL1TJGWOZPtm3dhmB2J" \
-    "Zf6zppaOVn9xeDM5haP6eSj9Lh9uzbKpCvjCIiuJGJtEZaHWb8iMm3ei7h7roZKA8oze3P07J7g" \
-    "e5IBZleyTQOyWDLzghgG5On3cgy6BAtnqwcz2hUetkczM5D0bPv2evnTNcxW3cfvo5LOL9pGIGU" \
-    "ZXRXzcjqiZ3SFVR6GoxbkS5T2ifRXfP8eq3m7OmNjZLlwAL821RExw23EuErVYmdy3D9qfqKqqq" \
-    "lfwvl8BOiGvvCHDW57QQnLefIecQSemhGZL8wqsfnNIY4TCIyZg7meXxJTi2iOOZYIoXrh42neK" \
-    "1fQNebEkWKskElr6QICH5TSIg"
+                         "fEnlAd7kFG7x4yFz4cN3w79U1m5KsQOqTYicEIk1x87arcvIz0soxYdZ4fDsz1uq05cUzkz0mvX" \
+                         "7oe2Zf4tUkBlc0FuPWoyITXbfEfTJVvjvDQiry2DQO7Hfv0vrNOzwLUY6nAz52rjJKBmB4lI7OE" \
+                         "vn08ZWBTBBIzRTfAfdcpOfWnW7ekpmGfJZ13SRi8rvAPlP3PlOuKTJ08Lj0nwTj6jEA5JDsUrVF" \
+                         "GHOEqnQ5M6bDv14irpt0VX5zRIf6Zf16jHBJTzNkNExld9PEnVey3IqNK10Ukg368fTIDdfAkgR" \
+                         "3rFB4ZSNZqxG2WRDnyZ4X39hM4oO1g8GxeB3RVkOGOMmzrRZ7mbQiYuoVPTXD7HU3p686vCEO94" \
+                         "DkSF9shH3B5twfCEGXrGfIa3APOXJ9E4OtA3BrBNblkxd8zingQhj8azqV6NJlbZoVkWUZBkJvb" \
+                         "L4ECFYrlUifXw7gbQZIqm5eybUYSBtF4iFN3oncKAlE1s6pzLbMJ0pNJ0chMDHyaWyYYFlYZ3OV" \
+                         "9O5h2QtEOvBgQciupLdRraoBMkF1uNFcB1w9VtylQbCKaOlKpIGdjYH2cL1TJGWOZPtm3dhmB2J" \
+                         "Zf6zppaOVn9xeDM5haP6eSj9Lh9uzbKpCvjCIiuJGJtEZaHWb8iMm3ei7h7roZKA8oze3P07J7g" \
+                         "e5IBZleyTQOyWDLzghgG5On3cgy6BAtnqwcz2hUetkczM5D0bPv2evnTNcxW3cfvo5LOL9pGIGU" \
+                         "ZXRXzcjqiZ3SFVR6GoxbkS5T2ifRXfP8eq3m7OmNjZLlwAL821RExw23EuErVYmdy3D9qfqKqqq" \
+                         "lfwvl8BOiGvvCHDW57QQnLefIecQSemhGZL8wqsfnNIY4TCIyZg7meXxJTi2iOOZYIoXrh42neK" \
+                         "1fQNebEkWKskElr6QICH5TSIg"
 try:
     from unittest2 import TestCase
     from mock import Mock
@@ -45,8 +45,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
     def test_extend_stack_description_does_not_cut_description(self):
         description = DESCRIPTION_1000_CHARS[:996]
         additional_description = "my-additional-description"
-        print(len(additional_description))
-        print(len(description))
 
         expected_result = description + " | " + additional_description
         result = CloudFormationTemplateTransformer.extend_stack_description(description,
@@ -54,23 +52,23 @@ class CloudFormationTemplateTransformerTests(TestCase):
         self.assertEqual(expected_result, result)
         self.assertEqual(1024, len(result))
 
-    def test_scan_dict_keys_executes_key_handler_for_all_matching_keys(self):
+    def test_scan_executes_key_handler_for_all_matching_keys(self):
         dictionary = {'key': 'value'}
         handler = Mock()
         handler.return_value = 'new-key', 'new-value'
 
-        result = CloudFormationTemplateTransformer.scan_dict_keys(dictionary, handler)
+        result = CloudFormationTemplateTransformer.scan(dictionary, [handler], [])
         expected_calls = [mock.call('key', 'value')]
 
         six.assertCountEqual(self, expected_calls, handler.mock_calls)
         self.assertDictEqual(result, {'new-key': 'new-value'})
 
-    def test_scan_dict_values_executes_value_handler_for_all_matching_prefixes(self):
+    def test_scan_executes_value_handler_for_all_matching_prefixes(self):
         dictionary = {'a': 'foo123', 'b': {'c': 'foo234'}}
         handler = Mock()
         handler.return_value = "foo"
 
-        result = CloudFormationTemplateTransformer.scan_dict_values(dictionary, handler)
+        result = CloudFormationTemplateTransformer.scan(dictionary, [], [handler])
         expected_calls = [mock.call('foo123'), mock.call('foo234')]
         six.assertCountEqual(self, expected_calls, handler.mock_calls)
         six.assertCountEqual(self, result, {'a': 'foo', 'b': {'c': 'foo'}})
@@ -421,6 +419,37 @@ class CloudFormationTemplateTransformerTests(TestCase):
 
         with self.assertRaises(TemplateErrorException):
             CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+
+    def test_transform_template_properly_handles_reference_in_list_of_lists(self):
+        template_dict = {
+            'Resources':
+                {
+                    'myResource': {
+                        "Properties": {
+                            "PolicyDocument": {
+                                "Statement": [{
+                                    "Resource": {
+                                        "Fn::Join": [
+                                            "",
+                                            [
+                                                "a",
+                                                "|Ref|b",
+                                                "c"
+                                            ]
+                                        ]
+                                    }
+                                }]
+                            }
+                        }
+                    }
+                }
+        }
+
+        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+        expected = {'myResource': {'Properties': {
+            'PolicyDocument': {'Statement': [{'Resource': {'Fn::Join': ['', ['a', {'Ref': 'b'}, 'c']]}}]}}}}
+
+        self.assertEqual(expected, result.resources)
 
     def test_check_for_leftover_reference_values_raises_exception_on_existing_reference(self):
         with self.assertRaises(TemplateErrorException):
