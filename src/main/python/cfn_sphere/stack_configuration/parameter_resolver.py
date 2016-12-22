@@ -1,5 +1,8 @@
 import pprint
 
+import jmespath
+from jmespath.exceptions import JMESPathError
+
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
@@ -113,8 +116,7 @@ class ParameterResolver(object):
                     resolved_parameters[key] = str(self.kms.decrypt(value.split('|', 2)[2]))
 
                 elif self.is_file(value):
-                    url = value.split('|', 2)[2]
-                    resolved_parameters[key] = FileLoader.get_file(url, stack_config.working_dir)
+                    resolved_parameters[key] = self.handle_file_value(value, stack_config.working_dir)
 
                 else:
                     resolved_parameters[key] = value
@@ -130,6 +132,24 @@ class ParameterResolver(object):
             return self.update_parameters_with_cli_parameters(resolved_parameters, cli_parameters, stack_name)
         else:
             return resolved_parameters
+
+    @staticmethod
+    def handle_file_value(value, working_dir):
+        components = value.split('|', 3)
+
+        if len(components) == 3:
+            url = components[2]
+            return FileLoader.get_file(url, working_dir)
+        elif len(components) == 4:
+            url = components[2]
+            pattern = components[3]
+            file_content = FileLoader.get_yaml_or_json_file(url, working_dir)
+            try:
+                return jmespath.search(pattern, file_content)
+            except JMESPathError as e:
+                raise CfnSphereException(e)
+        else:
+            raise CfnSphereException("Invalid format for |File| macro, it must be |File|<path>[|<pattern>]")
 
     @staticmethod
     def update_parameters_with_cli_parameters(parameters, cli_parameters, stack_name):

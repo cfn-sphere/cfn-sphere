@@ -193,6 +193,41 @@ class ParameterResolverTests(TestCase):
 
         self.assertEqual({'foo': 'foobar'}, result)
 
+    @patch("cfn_sphere.stack_configuration.parameter_resolver.FileLoader.get_file")
+    def test_handle_file_value_loads_file_for_simple_file_reference(self, get_file_mock):
+        get_file_mock.return_value = "myValue"
+
+        result = ParameterResolver.handle_file_value("|file|s3://myBucket/myParameter.txt", None)
+
+        get_file_mock.assert_called_once_with("s3://myBucket/myParameter.txt", None)
+        self.assertEqual("myValue", result)
+
+    @patch("cfn_sphere.stack_configuration.parameter_resolver.FileLoader.get_yaml_or_json_file")
+    def test_handle_file_value_loads_file_for_reference_with_pattern(self, get_yaml_or_json_file_mock):
+        get_yaml_or_json_file_mock.return_value = {"accounts": [{"id": 1}, {"id": 2}, {"id": 3}]}
+
+        result = ParameterResolver.handle_file_value("|file|s3://myBucket/myAwsAccounts.json|accounts[*].id", None)
+
+        get_yaml_or_json_file_mock.assert_called_once_with("s3://myBucket/myAwsAccounts.json", None)
+        self.assertEqual([1, 2, 3], result)
+
+    @patch("cfn_sphere.stack_configuration.parameter_resolver.jmespath.search")
+    @patch("cfn_sphere.stack_configuration.parameter_resolver.FileLoader.get_yaml_or_json_file")
+    def test_handle_file_value_loads_file_for_reference_with_pattern_containing_pipe(self, f, jmespath_search_mock):
+        f.return_value = {"a": "b"}
+
+        ParameterResolver.handle_file_value("|file|s3://myBucket/myAwsAccounts.json|a|b", None)
+        jmespath_search_mock.assert_called_once_with("a|b", {'a': 'b'})
+
+    @patch("cfn_sphere.stack_configuration.parameter_resolver.FileLoader.get_yaml_or_json_file")
+    def test_handle_file_value_raises_exception_on_invalid_jmespath_pattern_syntax(self, _):
+        with self.assertRaises(CfnSphereException):
+            ParameterResolver.handle_file_value("|file|path|broken_pattern{}}", None)
+
+    def test_handle_file_value_raises_exception_on_invalid_macro_syntax(self):
+        with self.assertRaises(CfnSphereException):
+            ParameterResolver.handle_file_value("|file", None)
+
 
 def test_update_parameters_with_cli_parameters_does_not_affect_other_stacks(self):
     result = ParameterResolver().update_parameters_with_cli_parameters(
