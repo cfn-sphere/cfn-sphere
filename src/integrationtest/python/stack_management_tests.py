@@ -169,6 +169,7 @@ class StackManagementTests(CfnSphereIntegrationTest):
 
         environment_config = user_data["environment"]
         self.assert_equal("cfn-sphere-test-instances", environment_config["DYNAMO_DB_PREFIX"])
+        self.assert_equal("value-5-foo", environment_config["SOME_COMBINED_VALUE"])
 
         # uncomment this to test kms decryption
         # self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])

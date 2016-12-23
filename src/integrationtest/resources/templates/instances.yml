@@ -19,6 +19,15 @@ Parameters:
   textFileParameter:
     Description: "A parameter to be filled by a text file with |File|my-file.txt"
     Type: "String"
+  someParameterA:
+    Description: "Parameter to test referencing"
+    Type: String
+    Default: "value"
+  someParameterB:
+    Description: "Parameter to test referencing"
+    Type: Number
+    Default: 5
+
 Resources:
   jobQueue:
     Type: "AWS::SQS::Queue"
@@ -80,7 +89,7 @@ Resources:
           loadbalancer_name: "my-elb"
         notify_cfn:
           resource: asg
-          stack: "|Ref|AWS::StackName"
+          stack: !Ref "AWS::StackName"
         ports:
           8080: 9000
         root: true
@@ -92,4 +101,10 @@ Resources:
         environment:
           DYNAMO_DB_PREFIX: "|Ref|AWS::StackName"
           JOB_QUEUE_URL: "|Ref|jobQueue"
+          SOME_COMBINED_VALUE:
+            !sub
+              - "${a}-${b}-${c}"
+              - a: "|Ref|someParameterA"
+                b: !Ref someParameterB
+                c: "foo"
         kms_encrypted_value: "|Ref|kmsEncryptedValue"
