@@ -53,12 +53,12 @@ class CloudFormationTemplateTransformerTests(TestCase):
         self.assertEqual(1024, len(result))
 
     def test_scan_executes_key_handler_for_all_matching_keys(self):
-        dictionary = {'key': 'value'}
+        dictionary = {'|key|': 'value'}
         handler = Mock()
         handler.return_value = 'new-key', 'new-value'
 
         result = CloudFormationTemplateTransformer.scan(dictionary, [handler], [])
-        expected_calls = [mock.call('key', 'value')]
+        expected_calls = [mock.call('|key|', 'value')]
 
         self.assertEqual(expected_calls, handler.mock_calls)
         self.assertEqual(result, {'new-key': 'new-value'})
@@ -484,17 +484,21 @@ class CloudFormationTemplateTransformerTests(TestCase):
         with self.assertRaises(TemplateErrorException):
             CloudFormationTemplateTransformer.check_for_leftover_reference_keys('@Foo@', 'foo')
 
-    def test_check_for_leftover_reference_keys_raises_exception_on_existing_pipe_reference(self):
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.check_for_leftover_reference_keys('|foo|', 'foo')
-
-    def test_check_for_leftover_reference_keys_raises_exception_on_references_with_leading_spaces(self):
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.check_for_leftover_reference_keys('  |join|', 'value')
-
     def test_check_for_leftover_reference_keys_properly_returns_values_without_reference(self):
         self.assertEqual(('key', 'value'),
                          CloudFormationTemplateTransformer.check_for_leftover_reference_keys('key', 'value'))
 
     def test_check_for_leftover_reference_keys_properly_returns_empty_values(self):
         self.assertEqual(('', ''), CloudFormationTemplateTransformer.check_for_leftover_reference_keys('', ''))
+
+    def test_is_reference_key_returns_true_on_existing_pipe_reference(self):
+        self.assertTrue(CloudFormationTemplateTransformer.is_reference_key('|foo|'))
+
+    def test_is_reference_key_returns_true_on_references_with_leading_spaces(self):
+        self.assertTrue(CloudFormationTemplateTransformer.is_reference_key('  |join|'))
+
+    def test_is_reference_key_returns_false_for_empty_string(self):
+        self.assertFalse(CloudFormationTemplateTransformer.is_reference_key(''))
+
+    def test_is_reference_key_returns_false_for_simple_string(self):
+        self.assertFalse(CloudFormationTemplateTransformer.is_reference_key('foo'))

@@ -14,6 +14,7 @@ class CloudFormationTemplateTransformer(object):
         if additional_stack_description:
             description = cls.extend_stack_description(description, additional_stack_description)
 
+        # only executed for keys starting with '@' or '|' for performance reasons
         key_handlers = [
             cls.transform_join_key,
             cls.transform_taupage_user_data_key,
@@ -41,8 +42,9 @@ class CloudFormationTemplateTransformer(object):
             result = {}
 
             for k, v in value.items():
-                for key_handler in key_handlers:
-                    k, v = key_handler(k, cls.scan(v, key_handlers, value_handlers))
+                if cls.is_reference_key(k):
+                    for key_handler in key_handlers:
+                        k, v = key_handler(k, cls.scan(v, key_handlers, value_handlers))
 
                 result[k] = cls.scan(v, key_handlers, value_handlers)
 
@@ -83,14 +85,21 @@ class CloudFormationTemplateTransformer(object):
 
         return value
 
-    @staticmethod
-    def check_for_leftover_reference_keys(key, value):
-        if isinstance(value, string_types) and key.strip().startswith('|'):
-            raise TemplateErrorException("Unhandled reference key found: {0}".format(key))
-        if isinstance(value, string_types) and key.strip().startswith('@') and key.endswith('@'):
+    @classmethod
+    def check_for_leftover_reference_keys(cls, key, value):
+        if cls.is_reference_key(key):
             raise TemplateErrorException("Unhandled reference key found: {0}".format(key))
 
         return key, value
+
+    @staticmethod
+    def is_reference_key(key):
+        if isinstance(key, string_types) and key.strip().startswith('|'):
+            return True
+        elif isinstance(key, string_types) and key.strip().startswith('@') and key.endswith('@'):
+            return True
+        else:
+            return False
 
     @classmethod
     def transform_taupage_user_data_key(cls, key, value):
@@ -168,8 +177,7 @@ class CloudFormationTemplateTransformer(object):
         if not value:
             return value
 
-        if isinstance(value, string_types):
-            if value.lower().startswith('|ref|'):
+        if isinstance(value, string_types) and value.lower().startswith('|ref|'):
                 referenced_value = value[5:]
 
                 if not referenced_value:
@@ -213,7 +221,7 @@ class CloudFormationTemplateTransformer(object):
             if isinstance(key, string_types):
 
                 # do not go any further and directly return cfn functions and their values
-                if key.lower() in ['ref', 'fn::getatt', 'fn::join']:
+                if key.lower() == 'ref' or key.lower().startswith("fn::"):
                     return {key: value}
                 else:
 
