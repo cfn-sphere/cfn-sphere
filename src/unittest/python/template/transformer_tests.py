@@ -1,3 +1,16 @@
+try:
+    from unittest2 import TestCase
+    from mock import Mock
+except ImportError:
+    from unittest import TestCase
+    from mock import Mock
+
+import mock
+
+from cfn_sphere.exceptions import TemplateErrorException
+from cfn_sphere.template import CloudFormationTemplate
+from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
+
 DESCRIPTION_1000_CHARS = "V1nrIETxGEoaMZhfzYr3BTfjzIIguxW3aF0o24ggkyydnsYGQPe96uH8IjtnhAWziEYrharWhxP" \
                          "fEnlAd7kFG7x4yFz4cN3w79U1m5KsQOqTYicEIk1x87arcvIz0soxYdZ4fDsz1uq05cUzkz0mvX" \
                          "7oe2Zf4tUkBlc0FuPWoyITXbfEfTJVvjvDQiry2DQO7Hfv0vrNOzwLUY6nAz52rjJKBmB4lI7OE" \
@@ -12,19 +25,6 @@ DESCRIPTION_1000_CHARS = "V1nrIETxGEoaMZhfzYr3BTfjzIIguxW3aF0o24ggkyydnsYGQPe96u
                          "ZXRXzcjqiZ3SFVR6GoxbkS5T2ifRXfP8eq3m7OmNjZLlwAL821RExw23EuErVYmdy3D9qfqKqqq" \
                          "lfwvl8BOiGvvCHDW57QQnLefIecQSemhGZL8wqsfnNIY4TCIyZg7meXxJTi2iOOZYIoXrh42neK" \
                          "1fQNebEkWKskElr6QICH5TSIg"
-try:
-    from unittest2 import TestCase
-    from mock import Mock
-except ImportError:
-    from unittest import TestCase
-    from mock import Mock
-
-import mock
-import six
-
-from cfn_sphere.exceptions import TemplateErrorException
-from cfn_sphere.template import CloudFormationTemplate
-from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 
 
 class CloudFormationTemplateTransformerTests(TestCase):
@@ -60,8 +60,8 @@ class CloudFormationTemplateTransformerTests(TestCase):
         result = CloudFormationTemplateTransformer.scan(dictionary, [handler], [])
         expected_calls = [mock.call('key', 'value')]
 
-        six.assertCountEqual(self, expected_calls, handler.mock_calls)
-        self.assertDictEqual(result, {'new-key': 'new-value'})
+        self.assertEqual(expected_calls, handler.mock_calls)
+        self.assertEqual(result, {'new-key': 'new-value'})
 
     def test_scan_executes_value_handler_for_all_matching_prefixes(self):
         dictionary = {'a': 'foo123', 'b': {'c': 'foo234'}}
@@ -70,8 +70,9 @@ class CloudFormationTemplateTransformerTests(TestCase):
 
         result = CloudFormationTemplateTransformer.scan(dictionary, [], [handler])
         expected_calls = [mock.call('foo123'), mock.call('foo234')]
-        six.assertCountEqual(self, expected_calls, handler.mock_calls)
-        six.assertCountEqual(self, result, {'a': 'foo', 'b': {'c': 'foo'}})
+
+        self.assertEqual(sorted(expected_calls), sorted(handler.mock_calls))
+        self.assertEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
 
     def test_transform_dict_to_yaml_lines_list(self):
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({'my-key': 'my-value'})
@@ -202,7 +203,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
         ]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        six.assertCountEqual(self, expected, result)
+        self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_int_key_value(self):
         input = {'ports': {8080: 9000}}
@@ -213,7 +214,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
             {"Fn::Join": [": ", ["  8080", 9000]]}
         ]
 
-        six.assertCountEqual(self, expected, result)
+        self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_joins(self):
         input = {
@@ -243,7 +244,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
         ]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        six.assertCountEqual(self, expected, result)
+        self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_list_returns_stable_order(self):
         input = {'d': 'd', 'a': 'a', 'e': 'e', 'b': {'f': 'f', 'c': 'c', 'a': 'a'}, "#": "3"}
@@ -275,78 +276,96 @@ class CloudFormationTemplateTransformerTests(TestCase):
     def test_transform_template_properly_renders_dict(self):
         template_dict = {
             'Resources': {
-                'key1': '|ref|value',
-                'key2': '|getatt|resource|attribute',
-                '@TaupageUserData@':
-                    {
-                        'key1': 'value',
-                        'key2': {'ref': 'value'},
-                        'key3': {'|join|.': ['a', 'b', 'c']}
-                    }
-            }}
+                "myResource": {
+                    'key1': '|ref|value',
+                    'key2': '|getatt|resource|attribute',
+                    '@TaupageUserData@':
+                        {
+                            'key1': 'value',
+                            'key2': {'ref': 'value'},
+                            'key3': {'|join|.': ['|Ref|a', 'b', 'c']},
+                            'key4': '|ref|value'
+                        }
+                }
+            }
+        }
 
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
 
         expected = {
-            "key1": {
-                "Ref": "value"
-            },
-            "key2": {
-                "Fn::GetAtt": [
-                    "resource",
-                    "attribute"
-                ]
-            },
-            "UserData": {
-                "Fn::Base64": {
-                    "Fn::Join": [
-                        "\n",
-                        [
-                            "#taupage-ami-config",
-                            {
-                                "Fn::Join": [
-                                    ": ",
-                                    [
-                                        "key1",
-                                        "value"
-                                    ]
-                                ]
-                            },
-                            {
-                                "Fn::Join": [
-                                    ": ",
-                                    [
-                                        "key2",
-                                        {
-                                            "ref": "value"
-                                        }
-                                    ]
-                                ]
-                            },
-                            {
-                                "Fn::Join": [
-                                    ": ",
-                                    [
-                                        "key3",
-                                        {
-                                            "Fn::Join": [
-                                                ".",
-                                                [
-                                                    "a",
-                                                    "b",
-                                                    "c"
-                                                ]
-                                            ]
-                                        }
-                                    ]
-                                ]
-                            }
-                        ]
+            "myResource": {
+                "key1": {
+                    "Ref": "value"
+                },
+                "key2": {
+                    "Fn::GetAtt": [
+                        "resource",
+                        "attribute"
                     ]
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "\n",
+                            [
+                                "#taupage-ami-config",
+                                {
+                                    "Fn::Join": [
+                                        ": ",
+                                        [
+                                            "key1",
+                                            "value"
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        ": ",
+                                        [
+                                            "key2",
+                                            {
+                                                "ref": "value"
+                                            }
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        ": ",
+                                        [
+                                            "key3",
+                                            {
+                                                "Fn::Join": [
+                                                    ".",
+                                                    [
+                                                        {"Ref": "a"},
+                                                        "b",
+                                                        "c"
+                                                    ]
+                                                ]
+                                            }
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        ": ",
+                                        [
+                                            "key4",
+                                            {
+                                                "Ref": "value"
+                                            }
+                                        ]
+                                    ]
+                                },
+                            ]
+                        ]
+                    }
                 }
             }
         }
-        six.assertCountEqual(self, expected, result.resources)
+
+        self.assertEqual(expected, result.resources)
 
     def test_transform_template_transforms_references_in_conditions_section(self):
         template_dict = {
@@ -376,7 +395,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
         result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
         expected = {'key1': {'key2': [{'foo': {'Fn::Join': ['', ['a', 'b']]}, 'key3': 'value3'}]}}
 
-        six.assertCountEqual(self, expected, result.resources)
+        self.assertEqual(expected, result.resources)
 
     def test_transform_template_transforms_join_with_embedded_ref(self):
         template_dict = {
@@ -455,10 +474,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         with self.assertRaises(TemplateErrorException):
             CloudFormationTemplateTransformer.check_for_leftover_reference_values('|Ref|foo')
 
-    def test_check_for_leftover_reference_values_raises_exception_on_references_in_list_values(self):
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.check_for_leftover_reference_values(['a', '|Ref|foo', 'b'])
-
     def test_check_for_leftover_reference_values_properly_returns_values_without_reference(self):
         self.assertEqual('foo', CloudFormationTemplateTransformer.check_for_leftover_reference_values('foo'))
 
@@ -472,6 +487,10 @@ class CloudFormationTemplateTransformerTests(TestCase):
     def test_check_for_leftover_reference_keys_raises_exception_on_existing_pipe_reference(self):
         with self.assertRaises(TemplateErrorException):
             CloudFormationTemplateTransformer.check_for_leftover_reference_keys('|foo|', 'foo')
+
+    def test_check_for_leftover_reference_keys_raises_exception_on_references_with_leading_spaces(self):
+        with self.assertRaises(TemplateErrorException):
+            CloudFormationTemplateTransformer.check_for_leftover_reference_keys('  |join|', 'value')
 
     def test_check_for_leftover_reference_keys_properly_returns_values_without_reference(self):
         self.assertEqual(('key', 'value'),

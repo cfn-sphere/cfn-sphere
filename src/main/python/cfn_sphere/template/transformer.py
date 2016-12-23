@@ -14,52 +14,23 @@ class CloudFormationTemplateTransformer(object):
         if additional_stack_description:
             description = cls.extend_stack_description(description, additional_stack_description)
 
-        conditions = cls.scan(
-            conditions,
-            key_handlers=[
-                cls.transform_join_key,
-                cls.transform_taupage_user_data_key,
-                cls.transform_yaml_user_data_key,
-                cls.check_for_leftover_reference_keys
-            ],
-            value_handlers=[
-                cls.transform_reference_string,
-                cls.transform_getattr_string,
-                cls.check_for_leftover_reference_values
-            ])
+        key_handlers = [
+            cls.transform_join_key,
+            cls.transform_taupage_user_data_key,
+            cls.transform_yaml_user_data_key,
+            cls.check_for_leftover_reference_keys
+        ]
 
-        resources = cls.scan(
-            resources,
-            key_handlers=[
-                cls.transform_join_key,
-                cls.transform_taupage_user_data_key,
-                cls.transform_yaml_user_data_key,
-                cls.check_for_leftover_reference_keys
-            ],
-            value_handlers=[
-                cls.transform_reference_string,
-                cls.transform_getattr_string,
-                cls.check_for_leftover_reference_values
-            ])
-
-        outputs = cls.scan(
-            outputs,
-            key_handlers=[
-                cls.transform_join_key,
-                cls.transform_taupage_user_data_key,
-                cls.transform_yaml_user_data_key,
-                cls.check_for_leftover_reference_keys
-            ],
-            value_handlers=[
-                cls.transform_reference_string,
-                cls.transform_getattr_string,
-                cls.check_for_leftover_reference_values
-            ])
+        value_handlers = [
+            cls.transform_reference_string,
+            cls.transform_getattr_string,
+            cls.check_for_leftover_reference_values
+        ]
 
         template.description = description
-        template.conditions = conditions
-        template.resources = resources
-        template.outputs = outputs
+        template.conditions = cls.scan(conditions, key_handlers, value_handlers)
+        template.resources = cls.scan(resources, key_handlers, value_handlers)
+        template.outputs = cls.scan(outputs, key_handlers, value_handlers)
 
         return template
 
@@ -71,7 +42,7 @@ class CloudFormationTemplateTransformer(object):
 
             for k, v in value.items():
                 for key_handler in key_handlers:
-                    k, v = key_handler(k, v)
+                    k, v = key_handler(k, cls.scan(v, key_handlers, value_handlers))
 
                 result[k] = cls.scan(v, key_handlers, value_handlers)
 
@@ -107,21 +78,16 @@ class CloudFormationTemplateTransformer(object):
 
     @staticmethod
     def check_for_leftover_reference_values(value):
-        if isinstance(value, list):
-            for item in value:
-                if item.startswith('|'):
-                    raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
-        elif isinstance(value, string_types):
-            if value.startswith('|'):
-                raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
+        if isinstance(value, string_types) and value.strip().startswith('|'):
+            raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
 
         return value
 
     @staticmethod
     def check_for_leftover_reference_keys(key, value):
-        if key.startswith('|'):
+        if isinstance(value, string_types) and key.strip().startswith('|'):
             raise TemplateErrorException("Unhandled reference key found: {0}".format(key))
-        if key.startswith('@') and key.endswith('@'):
+        if isinstance(value, string_types) and key.strip().startswith('@') and key.endswith('@'):
             raise TemplateErrorException("Unhandled reference key found: {0}".format(key))
 
         return key, value
