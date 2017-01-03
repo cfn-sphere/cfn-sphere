@@ -208,7 +208,7 @@ class StackConfigTests(TestCase):
     @patch("cfn_sphere.util.Repo")
     def test_get_git_repository_remote_url_returns_none_if_no_repository_present(self, repo_mock):
         repo_mock.side_effect = InvalidGitRepositoryError
-        self.assertIsNone(get_git_repository_remote_url(tempfile.mkdtemp()))
+        self.assertEqual(None, get_git_repository_remote_url(tempfile.mkdtemp()))
 
     @patch("cfn_sphere.util.Repo")
     def test_get_git_repository_remote_url_returns_repo_url(self, repo_mock):
@@ -224,3 +224,9 @@ class StackConfigTests(TestCase):
         repo_mock.side_effect = [InvalidGitRepositoryError, repo_object_mock]
 
         self.assertEqual(url, get_git_repository_remote_url(tempfile.mkdtemp()))
+
+    def test_get_git_repository_remote_url_returns_none_for_none_working_dir(self):
+        self.assertEqual(None, get_git_repository_remote_url(None))
+
+    def test_get_git_repository_remote_url_returns_none_for_empty_string_working_dir(self):
+        self.assertEqual(None, get_git_repository_remote_url(""))

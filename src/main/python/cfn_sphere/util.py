@@ -158,6 +158,9 @@ def with_boto_retry(max_retries=3, pause_time_multiplier=5):
 
 
 def get_git_repository_remote_url(working_dir):
+    if not working_dir:
+        return None
+
     try:
         repo = Repo(working_dir)
         return repo.remotes.origin.url
@@ -167,7 +170,6 @@ def get_git_repository_remote_url(working_dir):
             return get_git_repository_remote_url(head)
         else:
             return None
-
 
 
 if __name__ == "__main__":
