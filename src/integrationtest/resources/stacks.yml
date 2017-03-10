@@ -1,5 +1,6 @@
 region: eu-west-1
 stack-policy-url: policies/global-stack-policy.json
+on_failure: "ROLLBACK"
 stacks:
   cfn-sphere-test-vpc:
     template-url: templates/vpc.yml
@@ -8,6 +9,7 @@ stacks:
   cfn-sphere-test-instances:
     stack-policy-url: policies/a-stack-policy.yml
     template-url: templates/instances.yml
+    on_failure: "DELETE"
     parameters:
       vpcID: "|Ref|cfn-sphere-test-vpc.id"
       subnetID: "|Ref|cfn-sphere-test-vpc.subnetA"

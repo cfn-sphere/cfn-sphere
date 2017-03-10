@@ -7,7 +7,8 @@ from yaml.scanner import ScannerError
 from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
 from cfn_sphere.util import get_logger
 
-ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "timeout", "tags"]
+ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "timeout", "tags", "on_failure",
+                       "disable_rollback"]
 
 
 class Config(object):
@@ -136,7 +137,7 @@ class Config(object):
 
 
 class StackConfig(object):
-    STACK_CONFIG_ALLOWED_CONFIG_KEYS = ["parameters", "template-url"] + ALLOWED_CONFIG_KEYS
+    STACK_CONFIG_ALLOWED_CONFIG_KEYS = ALLOWED_CONFIG_KEYS + ["parameters", "template-url"]
 
     def __init__(self, stack_config_dict, working_dir=None, default_tags=None, default_timeout=600,
                  default_service_role=None, default_stack_policy_url=None, default_failure_action="ROLLBACK",
