@@ -21,17 +21,21 @@ class CloudFormationTemplate(object):
             return []
 
     def get_template_body_dict(self):
-        return {
+        body_dict = {
             'AWSTemplateFormatVersion': self.template_format_version,
             'Description': self.description,
             'Metadata': self.metadata,
             'Parameters': self.parameters,
             'Mappings': self.mappings,
             'Conditions': self.conditions,
-            'Transform': self.transform,
             'Resources': self.resources,
             'Outputs': self.outputs
         }
+
+        if self.transform:
+            body_dict['Transform'] = self.transform
+
+        return body_dict
 
     def get_pretty_template_json(self):
         return json.dumps(self.get_template_body_dict(), indent=2)

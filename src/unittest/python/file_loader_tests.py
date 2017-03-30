@@ -21,7 +21,6 @@ class FileLoaderTests(TestCase):
             'Mappings': {},
             'Metadata': {},
             'Resources': 'Foo',
-            'Transform': {},
             'Parameters': {},
             'Outputs': {},
             'AWSTemplateFormatVersion': '2010-09-09',
@@ -30,9 +29,30 @@ class FileLoaderTests(TestCase):
 
         get_yaml_or_json_file_mock.return_value = {"Resources": "Foo"}
 
-        response = FileLoader.get_cloudformation_template("s3://my-bucket/template.yml", None)
+        result = FileLoader.get_cloudformation_template("s3://my-bucket/template.yml", None)
 
-        self.assertEqual(expected, response.get_template_body_dict())
+        self.assertEqual(expected, result.get_template_body_dict())
+        get_yaml_or_json_file_mock.assert_called_once_with('s3://my-bucket/template.yml', None)
+
+    @patch("cfn_sphere.file_loader.FileLoader.get_yaml_or_json_file")
+    def test_get_cloudformation_template_returns_template_with_transform_property(self, get_yaml_or_json_file_mock):
+        expected = {
+            'Conditions': {},
+            'Mappings': {},
+            'Metadata': {},
+            'Resources': 'Foo',
+            'Transform': 'transform-section',
+            'Parameters': {},
+            'Outputs': {},
+            'AWSTemplateFormatVersion': '2010-09-09',
+            'Description': ''
+        }
+
+        get_yaml_or_json_file_mock.return_value = {"Resources": "Foo", "Transform": "transform-section"}
+
+        result = FileLoader.get_cloudformation_template("s3://my-bucket/template.yml", None)
+
+        self.assertEqual(expected, result.get_template_body_dict())
         get_yaml_or_json_file_mock.assert_called_once_with('s3://my-bucket/template.yml', None)
 
     @patch("cfn_sphere.file_loader.FileLoader.get_yaml_or_json_file")
