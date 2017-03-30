@@ -1,3 +1,4 @@
+import re
 from six import string_types
 
 from cfn_sphere.exceptions import TemplateErrorException
@@ -80,7 +81,8 @@ class CloudFormationTemplateTransformer(object):
 
     @staticmethod
     def check_for_leftover_reference_values(value):
-        if isinstance(value, string_types) and value.strip().startswith('|'):
+        pattern = re.compile("^\|[a-zA-Z]+\|[a-zA-Z]+")
+        if isinstance(value, string_types) and pattern.search(value):
             raise TemplateErrorException("Unhandled reference value found: {0}".format(value))
 
         return value

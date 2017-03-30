@@ -474,6 +474,14 @@ class CloudFormationTemplateTransformerTests(TestCase):
         with self.assertRaises(TemplateErrorException):
             CloudFormationTemplateTransformer.check_for_leftover_reference_values('|Ref|foo')
 
+    def test_check_for_leftover_reference_values_passes_on_double_pipe_values(self):
+        self.assertEqual(('|| exit 1'),
+                         CloudFormationTemplateTransformer.check_for_leftover_reference_values('|| exit 1'))
+
+    def test_check_for_leftover_reference_values_passes_on_double_pipe_with_spaces_values(self):
+        self.assertEqual(('| xargs | grep'),
+                         CloudFormationTemplateTransformer.check_for_leftover_reference_values('| xargs | grep'))
+
     def test_check_for_leftover_reference_values_properly_returns_values_without_reference(self):
         self.assertEqual('foo', CloudFormationTemplateTransformer.check_for_leftover_reference_values('foo'))
 
