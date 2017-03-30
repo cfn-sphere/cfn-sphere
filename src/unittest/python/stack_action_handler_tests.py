@@ -17,9 +17,7 @@ class StackActionHandlerTests(TestCase):
     @patch('cfn_sphere.DependencyResolver')
     @patch('cfn_sphere.FileLoader')
     @patch('cfn_sphere.CloudFormationStack')
-    @patch('cfn_sphere.CustomResourceHandler')
     def test_delete_stacks(self,
-                           custom_resource_mock,
                            stack_mock,
                            template_loader_mock,
                            dependency_resolver_mock,
@@ -51,9 +49,7 @@ class StackActionHandlerTests(TestCase):
     @patch('cfn_sphere.DependencyResolver')
     @patch('cfn_sphere.FileLoader')
     @patch('cfn_sphere.CloudFormationStack')
-    @patch('cfn_sphere.CustomResourceHandler')
     def test_delete_stacks_uses_the_correct_order(self,
-                                                  custom_resource_mock,
                                                   stack_mock,
                                                   template_loader_mock,
                                                   dependency_resolver_mock,

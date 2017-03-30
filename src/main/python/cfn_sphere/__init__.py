@@ -5,7 +5,6 @@ from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.aws.cfn import CloudFormationStack
-from cfn_sphere.custom_resources import CustomResourceHandler
 from cfn_sphere.util import get_logger
 
 __version__ = '${version}'
@@ -37,7 +36,7 @@ class StackActionHandler(object):
             else:
                 stack_policy = None
 
-            template = TemplateHandler.get_template(stack_config.template_url,stack_config.working_dir)
+            template = TemplateHandler.get_template(stack_config.template_url, stack_config.working_dir)
             parameters = self.parameter_resolver.resolve_parameter_values(stack_name, stack_config, self.cli_parameters)
 
             stack = CloudFormationStack(template=template,
@@ -56,8 +55,6 @@ class StackActionHandler(object):
                 self.cfn.update_stack(stack)
             else:
                 self.cfn.create_stack(stack)
-
-            CustomResourceHandler.process_post_resources(stack)
 
     def delete_stacks(self):
         existing_stacks = self.cfn.get_stack_names()

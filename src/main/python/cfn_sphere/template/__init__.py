@@ -13,7 +13,6 @@ class CloudFormationTemplate(object):
         self.transform = body_dict.get('Transform', {})
         self.resources = body_dict.get('Resources', {})
         self.outputs = body_dict.get('Outputs', {})
-        self.post_custom_resources = body_dict.get('PostCustomResources', {})
 
     def get_no_echo_parameter_keys(self):
         if self.parameters:

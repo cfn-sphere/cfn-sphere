@@ -35,11 +35,3 @@ Resources:
         environment:
           JOB_QUEUE: "|Ref|testQueue"
           UPDATE_QUEUE: "|Ref|updateQueueUrl"
-PostCustomResources:
-  exposeTopicSubscription:
-    Type: "Custom::SNS::Subscription"
-    Properties:
-      TopicArn:
-        Ref: exposeTopicArn
-      TopicRegion: "us-east-1"
-      QueueResourceName: "testQueue"
