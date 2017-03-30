@@ -20,6 +20,7 @@ class CloudFormationTemplateTransformer(object):
             cls.transform_join_key,
             cls.transform_taupage_user_data_key,
             cls.transform_yaml_user_data_key,
+            cls.transform_include_key,
             cls.check_for_leftover_reference_keys
         ]
 
@@ -96,7 +97,7 @@ class CloudFormationTemplateTransformer(object):
 
     @staticmethod
     def is_reference_key(key):
-        if isinstance(key, string_types) and key.strip().startswith('|'):
+        if isinstance(key, string_types) and re.search("^\|[a-zA-Z]+\|", key.strip()):
             return True
         elif isinstance(key, string_types) and key.strip().startswith('@') and key.endswith('@'):
             return True
@@ -164,6 +165,23 @@ class CloudFormationTemplateTransformer(object):
 
         return key, value
 
+    @classmethod
+    def transform_include_key(cls, key, value):
+        if not value:
+            return key, value
+
+        if isinstance(key, string_types):
+            if key.lower().strip() == '|include|':
+                if not isinstance(value, string_types):
+                    raise TemplateErrorException("Value of '|include|' must be of type string")
+                if not value.lower().startswith("s3://"):
+                    raise TemplateErrorException("Value of '|include|' must start with s3://")
+
+                return "Fn::Transform", {"Name": "AWS::Include",
+                                         "Location": value}
+
+        return key, value
+
     @staticmethod
     def transform_kv_to_cfn_join(key, value):
         if isinstance(value, string_types) and ':' in key:
@@ -180,12 +198,12 @@ class CloudFormationTemplateTransformer(object):
             return value
 
         if isinstance(value, string_types) and value.lower().startswith('|ref|'):
-                referenced_value = value[5:]
+            referenced_value = value[5:]
 
-                if not referenced_value:
-                    raise TemplateErrorException("Reference must be like |ref|resource")
+            if not referenced_value:
+                raise TemplateErrorException("Reference must be like |ref|resource")
 
-                return {'Ref': referenced_value}
+            return {'Ref': referenced_value}
 
         return value
 

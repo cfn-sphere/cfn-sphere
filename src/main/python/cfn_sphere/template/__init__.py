@@ -10,6 +10,7 @@ class CloudFormationTemplate(object):
         self.parameters = body_dict.get('Parameters', {})
         self.mappings = body_dict.get('Mappings', {})
         self.conditions = body_dict.get('Conditions', {})
+        self.transform = body_dict.get('Transform', {})
         self.resources = body_dict.get('Resources', {})
         self.outputs = body_dict.get('Outputs', {})
         self.post_custom_resources = body_dict.get('PostCustomResources', {})
@@ -24,9 +25,11 @@ class CloudFormationTemplate(object):
         return {
             'AWSTemplateFormatVersion': self.template_format_version,
             'Description': self.description,
+            'Metadata': self.metadata,
             'Parameters': self.parameters,
             'Mappings': self.mappings,
             'Conditions': self.conditions,
+            'Transform': self.transform,
             'Resources': self.resources,
             'Outputs': self.outputs
         }

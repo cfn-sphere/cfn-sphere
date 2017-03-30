@@ -103,6 +103,11 @@ class CloudFormationTemplateTransformerTests(TestCase):
         result = CloudFormationTemplateTransformer.transform_join_key('|join|-', ['a', 'b', 'c', 'd', 'e'])
         self.assertEqual(('Fn::Join', ['-', ['a', 'b', 'c', 'd', 'e']]), result)
 
+    def test_transform_include_key_creates_valid_include(self):
+        result = CloudFormationTemplateTransformer.transform_include_key('|include|', 's3://myBucket/myTemplate.json')
+        self.assertEqual(('Fn::Transform', {'Name': 'AWS::Include', 'Location': 's3://myBucket/myTemplate.json'}),
+                         result)
+
     def test_transform_reference_string_creates_valid_cfn_reference(self):
         result = CloudFormationTemplateTransformer.transform_reference_string('|ref|my-value')
         self.assertEqual({'Ref': 'my-value'}, result)

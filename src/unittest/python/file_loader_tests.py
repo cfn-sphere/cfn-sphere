@@ -19,7 +19,9 @@ class FileLoaderTests(TestCase):
         expected = {
             'Conditions': {},
             'Mappings': {},
+            'Metadata': {},
             'Resources': 'Foo',
+            'Transform': {},
             'Parameters': {},
             'Outputs': {},
             'AWSTemplateFormatVersion': '2010-09-09',
