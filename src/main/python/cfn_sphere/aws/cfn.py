@@ -6,6 +6,11 @@ from botocore.exceptions import BotoCoreError, ClientError
 from cfn_sphere.exceptions import CfnStackActionFailedException
 from cfn_sphere.util import *
 
+import pprint
+import random
+import string
+import time
+
 logging.getLogger('boto').setLevel(logging.FATAL)
 
 
@@ -303,6 +308,40 @@ class CloudFormation(object):
         self.client.update_stack(**kwargs)
 
     @with_boto_retry()
+    def _describe_stack_change_set(self, stack, change_set):
+        while True:
+            resp = self.client.describe_change_set(ChangeSetName=change_set['Id'])
+
+            if resp['Status'] == 'CREATE_PENDING':
+                time.sleep(5)
+            else:
+                break
+
+        pprint.pprint(resp['Changes'])
+
+    @with_boto_retry()
+    def _create_stack_change_set(self, stack):
+        print self.get_stack_description(stack.name)['StackId']
+
+        kwargs = {
+            "StackName": self.get_stack_description(stack.name)['StackId'],
+            "TemplateBody": stack.template.get_template_json(),
+            "Parameters": stack.get_parameters_list(),
+            "Capabilities": [
+                'CAPABILITY_IAM',
+                'CAPABILITY_NAMED_IAM'
+            ],
+            "ChangeSetName": stack.name + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
+        }
+
+        if stack.service_role:
+            kwargs["RoleARN"] = stack.service_role
+
+        resp = self.client.create_change_set(**kwargs)
+
+        self._describe_stack_change_set(stack, resp)
+
+    @with_boto_retry()
     def _delete_stack(self, stack):
         """
         Delete cloudformation stack
@@ -316,6 +355,21 @@ class CloudFormation(object):
             kwargs["RoleARN"] = stack.service_role
 
         self.client.delete_stack(**kwargs)
+
+    def create_change_set(self, stack):
+        self.logger.debug("Creating stack changeset: {0}".format(stack))
+        assert isinstance(stack, CloudFormationStack)
+
+        try:
+            stack_parameters_string = get_pretty_parameters_string(stack)
+
+            self.logger.info(
+                "Creating stack changeset {0} ({1}) with parameters:\n{2}".format(stack.name,
+                                                                                  stack.template.name,
+                                                                                  stack_parameters_string))
+            self._create_stack_change_set(stack)
+        except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
+            raise CfnStackActionFailedException("Could not create change set {0}: {1}".format(stack.name, e))
 
     def create_stack(self, stack):
         self.logger.debug("Creating stack: {0}".format(stack))

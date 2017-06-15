@@ -17,6 +17,43 @@ class StackActionHandler(object):
         self.cfn = CloudFormation(region=self.config.region)
         self.parameter_resolver = ParameterResolver(region=self.config.region)
         self.cli_parameters = config.cli_params
+    
+    def create_change_set(self):
+        existing_stacks = self.cfn.get_stack_names()
+        desired_stacks = self.config.stacks
+        stack_processing_order = DependencyResolver().get_stack_order(desired_stacks)
+
+        if len(stack_processing_order) > 1:
+            self.logger.info(
+                "Will process stacks in the following order: {0}".format(", ".join(stack_processing_order)))
+
+        for stack_name in stack_processing_order:
+            stack_config = self.config.stacks.get(stack_name)
+
+            if stack_config.stack_policy_url:
+                self.logger.info("Using stack policy from {0}".format(stack_config.stack_policy_url))
+                stack_policy = FileLoader.get_yaml_or_json_file(stack_config.stack_policy_url, stack_config.working_dir)
+            else:
+                stack_policy = None
+
+            template = TemplateHandler.get_template(stack_config.template_url, stack_config.working_dir)
+            parameters = self.parameter_resolver.resolve_parameter_values(stack_name, stack_config, self.cli_parameters)
+
+            stack = CloudFormationStack(template=template,
+                                        parameters=parameters,
+                                        tags=stack_config.tags,
+                                        name=stack_name,
+                                        region=self.config.region,
+                                        timeout=stack_config.timeout,
+                                        service_role=stack_config.service_role,
+                                        stack_policy=stack_policy,
+                                        failure_action=stack_config.failure_action)
+
+            if stack_name in existing_stacks:
+                self.cfn.create_change_set(stack)
+            else:
+                print 'Stack will be created.'
+                        
 
     def create_or_update_stacks(self):
         existing_stacks = self.cfn.get_stack_names()
