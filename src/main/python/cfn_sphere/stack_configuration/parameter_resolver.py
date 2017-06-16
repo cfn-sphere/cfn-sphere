@@ -89,6 +89,8 @@ class ParameterResolver(object):
         stack_outputs = self.cfn.get_stacks_outputs()
 
         for key, value in stack_config.parameters.items():
+            if isinstance(value, unicode):
+                value = str(value)
 
             if isinstance(value, list):
                 self.logger.debug("List parameter found for {0}".format(key))

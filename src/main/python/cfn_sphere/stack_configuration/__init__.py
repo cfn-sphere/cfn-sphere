@@ -7,6 +7,20 @@ from yaml.scanner import ScannerError
 from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
 from cfn_sphere.util import get_logger
 
+
+import re
+
+pattern = re.compile( r'^(.*)ENV\[\'(.*)\'\](.*)$' )
+
+yaml.add_implicit_resolver ( "!env", pattern )
+
+def env_constructor(loader,node):
+  value = loader.construct_scalar(node)
+  start, envVar, remainingPath = pattern.match(value).groups()
+  return start + os.environ[envVar] + remainingPath
+
+yaml.add_constructor('!env', env_constructor)
+
 ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "timeout", "tags", "on_failure",
                        "disable_rollback"]
 
@@ -124,7 +138,7 @@ class Config(object):
     def _read_config_file(config_file):
         try:
             with open(config_file, "r") as f:
-                config_dict = yaml.safe_load(f.read())
+                config_dict = yaml.load(f.read())
                 if not isinstance(config_dict, dict):
                     raise InvalidConfigException(
                         "Config file {0} has invalid content, top level element must be a dict".format(config_file))
