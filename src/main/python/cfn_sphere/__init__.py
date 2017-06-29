@@ -52,7 +52,7 @@ class StackActionHandler(object):
             if stack_name in existing_stacks:
                 self.cfn.create_change_set(stack)
             else:
-                print 'Stack will be created.'
+                print('Stack will be created.')
                         
 
     def create_or_update_stacks(self):
