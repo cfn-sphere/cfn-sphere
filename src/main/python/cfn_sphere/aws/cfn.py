@@ -321,7 +321,7 @@ class CloudFormation(object):
 
     @with_boto_retry()
     def _create_stack_change_set(self, stack):
-        print self.get_stack_description(stack.name)['StackId']
+        print(self.get_stack_description(stack.name)['StackId'])
 
         kwargs = {
             "StackName": self.get_stack_description(stack.name)['StackId'],
