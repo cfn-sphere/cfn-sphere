@@ -308,7 +308,7 @@ class CloudFormation(object):
         self.client.update_stack(**kwargs)
 
     @with_boto_retry()
-    def _describe_stack_change_set(self, stack, change_set):
+    def _describe_stack_change_set(self, change_set):
         while True:
             resp = self.client.describe_change_set(ChangeSetName=change_set['Id'])
 
@@ -339,7 +339,7 @@ class CloudFormation(object):
 
         resp = self.client.create_change_set(**kwargs)
 
-        self._describe_stack_change_set(stack, resp)
+        self._describe_stack_change_set(resp)
 
     @with_boto_retry()
     def _delete_stack(self, stack):
@@ -357,7 +357,7 @@ class CloudFormation(object):
         self.client.delete_stack(**kwargs)
 
     def create_change_set(self, stack):
-        self.logger.debug("Creating stack changeset: {0}".format(stack))
+        self.logger.debug("Creating stack changeset: {}".format(stack))
         assert isinstance(stack, CloudFormationStack)
 
         try:
