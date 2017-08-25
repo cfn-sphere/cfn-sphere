@@ -2,6 +2,7 @@ from cfn_sphere.template.template_handler import TemplateHandler
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
+from cfn_sphere.exceptions import CfnStackActionFailedException
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.aws.cfn import CloudFormationStack
@@ -17,6 +18,25 @@ class StackActionHandler(object):
         self.cfn = CloudFormation(region=self.config.region)
         self.parameter_resolver = ParameterResolver(region=self.config.region)
         self.cli_parameters = config.cli_params
+
+    def execute_change_set(self):
+        print 'executing change set'
+        print self.config.change_set
+
+        change_set = self.cfn.get_change_set(self.config.change_set)
+        
+        if change_set is None:
+            raise CfnStackActionFailedException("Could not execute change set {0}: Does not exist or is in an invalid state.".format(
+                self.config.change_set))
+
+        stack_name = self.cfn.get_stack_name_by_arn(change_set['StackId'])
+        stack = self.cfn.get_stack(stack_name)
+
+        if not self.cfn.change_set_is_executable(change_set):
+            raise CfnStackActionFailedException("Could not execute change set {0}: Does not exist or is in an invalid state.".format(
+                self.config.change_set))
+        else:
+            self.cfn.execute_change_set(stack, self.config.change_set)
     
     def create_change_set(self):
         existing_stacks = self.cfn.get_stack_names()
@@ -52,7 +72,7 @@ class StackActionHandler(object):
             if stack_name in existing_stacks:
                 self.cfn.create_change_set(stack)
             else:
-                print('Stack will be created.')
+                raise CfnStackActionFailedException("Could not create change set for {0}: Does not exist".format(stack.name))
                         
 
     def create_or_update_stacks(self):

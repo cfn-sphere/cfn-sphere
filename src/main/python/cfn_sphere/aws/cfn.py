@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import boto3
-from botocore.exceptions import BotoCoreError, ClientError
+from botocore.exceptions import BotoCoreError, ClientError, ValidationError
 
 from cfn_sphere.exceptions import CfnStackActionFailedException
 from cfn_sphere.util import *
@@ -68,6 +68,17 @@ class CloudFormation(object):
         except (BotoCoreError, ClientError) as e:
             raise CfnSphereBotoError(e)
 
+    @with_boto_retry()
+    def get_stack_name_by_arn(self, stack_arn):
+        """
+        Get friendly stack name by stack arn
+        :return: string
+        """
+        response = self.client.describe_stacks(
+            StackName=stack_arn
+        )
+        return response['Stacks'][0]['StackName']
+
     @timed
     @with_boto_retry()
     def get_stack_description(self, stack_name):
@@ -116,6 +127,38 @@ class CloudFormation(object):
                 return False
             else:
                 raise CfnSphereBotoError(e)
+
+    @with_boto_retry()
+    def change_set_is_executable(self, change_set):
+        """
+        Check if a change set is executable
+
+        :param change_set: boto3 describe_change_set response
+        :return: bool
+        """
+        if change_set is None:
+            return False
+
+        if change_set['Status'] != "CREATE_COMPLETE":
+            self.logger.debug("Invalid changeset status: {}".format(change_set['Status']))
+            return False
+        elif change_set['ExecutionStatus'] != "AVAILABLE":
+            self.logger.debug("Invalid changeset execution status: {}".format(change_set['ExecutionStatus']))
+            return False
+        else:
+            return True
+
+    @with_boto_retry()
+    def get_change_set(self, change_set_id):
+        """
+        Get changeset info for a given changeset arn
+        :param change_set_id: str
+        :return: changeset details
+        """
+        try:
+            return self.client.describe_change_set(ChangeSetName=change_set_id)
+        except (ValidationError, BotoCoreError, ClientError):
+            return None
 
     @with_boto_retry()
     def get_stack_events(self, stack_name):
@@ -316,13 +359,17 @@ class CloudFormation(object):
                 time.sleep(5)
             else:
                 break
-
-        pprint.pprint(resp['Changes'])
+        
+        if resp['Status'] == "FAILED":
+            print "Changeset failed with reason:", resp["StatusReason"]
+        else:
+            changset_string = get_pretty_changeset_string(resp['Changes'])
+            self.logger.info(
+                "Stack changeset with changes:\n{}".format(changset_string))
+            print change_set['Id']
 
     @with_boto_retry()
     def _create_stack_change_set(self, stack):
-        print(self.get_stack_description(stack.name)['StackId'])
-
         kwargs = {
             "StackName": self.get_stack_description(stack.name)['StackId'],
             "TemplateBody": stack.template.get_template_json(),
@@ -338,7 +385,6 @@ class CloudFormation(object):
             kwargs["RoleARN"] = stack.service_role
 
         resp = self.client.create_change_set(**kwargs)
-
         self._describe_stack_change_set(resp)
 
     @with_boto_retry()
@@ -370,6 +416,21 @@ class CloudFormation(object):
             self._create_stack_change_set(stack)
         except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
             raise CfnStackActionFailedException("Could not create change set {0}: {1}".format(stack.name, e))
+
+    @with_boto_retry()
+    def execute_change_set(self, stack, change_set):
+        self.logger.debug("Executing stack changeset: {}".format(change_set))
+        try:
+            response = self.client.execute_change_set(ChangeSetName=change_set)
+            self.wait_for_stack_action_to_complete(stack.name, "update", 120)
+            stack_outputs = get_pretty_stack_outputs(self.get_stack_outputs(stack))
+            if stack_outputs:
+                self.logger.info("Update completed for {0} with outputs: \n{1}".format(stack.name, stack_outputs))
+            else:
+                self.logger.info("Update completed for {0}".format(stack.name))
+
+        except (BotoCoreError, ClientError, CfnSphereBotoError) as e:
+            raise CfnStackActionFailedException("Could not execute {0}: {1}".format(change_set, e))
 
     def create_stack(self, stack):
         self.logger.debug("Creating stack: {0}".format(stack))

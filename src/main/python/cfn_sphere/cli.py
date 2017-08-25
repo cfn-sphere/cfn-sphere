@@ -48,7 +48,7 @@ def check_update_available():
 def cli():
     pass
 
-@cli.command(help="change set")
+@cli.command(help="create change set")
 @click.argument('config', type=click.Path(exists=True))
 @click.option('--parameter', '-p', default=None, envvar='CFN_SPHERE_PARAMETERS', type=click.STRING, multiple=True,
               help="Stack parameter to overwrite, eg: --parameter stack1.p1=v1")
@@ -57,7 +57,7 @@ def cli():
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-def change_set(config, parameter, debug, confirm, yes):
+def create_change_set(config, parameter, debug, confirm, yes):
     confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
@@ -72,7 +72,6 @@ def change_set(config, parameter, debug, confirm, yes):
             get_first_account_alias_or_account_id()), abort=True)
 
     try:
-
         config = Config(config_file=config, cli_params=parameter)
         StackActionHandler(config).create_change_set()
     except CfnSphereException as e:
@@ -85,6 +84,44 @@ def change_set(config, parameter, debug, confirm, yes):
         LOGGER.exception(e)
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
+
+@cli.command(help="execute change set")
+@click.argument('change_set')
+@click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+@click.option('--region', '-r', default='eu-west-1', type=click.STRING, help="Change set region")
+def execute_change_set(change_set, debug, confirm, yes, region):
+    confirm = confirm or yes
+    if debug:
+        LOGGER.setLevel(logging.DEBUG)
+        boto3.set_stream_logger(name='boto3', level=logging.DEBUG)
+        boto3.set_stream_logger(name='botocore', level=logging.DEBUG)
+    else:
+        LOGGER.setLevel(logging.INFO)
+
+    if not confirm:
+        check_update_available()
+        click.confirm('This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
+            get_first_account_alias_or_account_id()), abort=True)
+
+    try:
+        config_dict = {'change_set': change_set, 'region': str(region)}
+        config = Config(config_dict=config_dict)
+        StackActionHandler(config).execute_change_set()
+    except CfnSphereException as e:
+        LOGGER.error(e)
+        if debug:
+            LOGGER.exception(e)
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.error("Failed with unexpected error")
+        LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
+        sys.exit(1)
+
 
 @cli.command(help="Sync AWS resources with definition file")
 @click.argument('config', type=click.Path(exists=True))

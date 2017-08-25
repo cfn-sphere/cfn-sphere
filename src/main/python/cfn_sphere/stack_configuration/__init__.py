@@ -8,7 +8,7 @@ from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
 from cfn_sphere.util import get_logger
 
 ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "timeout", "tags", "on_failure",
-                       "disable_rollback"]
+                       "disable_rollback", "change_set"]
 
 
 class Config(object):
@@ -26,6 +26,7 @@ class Config(object):
         self.cli_params = self._parse_cli_parameters(cli_params)
         self.region = config_dict.get("region")
 
+        self.change_set = config_dict.get("change_set")
         self.default_service_role = config_dict.get("service-role")
         self.default_stack_policy_url = config_dict.get("stack-policy-url")
         self.default_timeout = config_dict.get("timeout", 600)
@@ -47,8 +48,10 @@ class Config(object):
             assert self.region, "Please specify region in config file"
             assert isinstance(self.region, str), "Region must be of type str, not {0}".format(type(self.region))
 
-            assert self.stacks, "Please specify stacks in config file"
-            assert isinstance(self.stacks, dict), "stacks must be of type dict, not {0}".format(type(self.stacks))
+            # stacks config file not required when executing a change set
+            if self.change_set is None:
+                assert self.stacks, "Please specify stacks in config file"
+                assert isinstance(self.stacks, dict), "stacks must be of type dict, not {0}".format(type(self.stacks))
 
             for cli_stack in self.cli_params.keys():
                 assert cli_stack in self.stacks.keys(), "Stack '{0}' does not exist in config".format(cli_stack)
