@@ -1,3 +1,4 @@
+# Modifications copyright (C) 2017 KCOM
 from datetime import timedelta
 
 import boto3

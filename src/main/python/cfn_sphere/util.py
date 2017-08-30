@@ -1,3 +1,4 @@
+# Modifications copyright (C) 2017 KCOM
 import json
 import logging
 import os

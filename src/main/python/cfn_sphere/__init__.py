@@ -1,3 +1,4 @@
+# Modifications copyright (C) 2017 KCOM
 from cfn_sphere.template.template_handler import TemplateHandler
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver

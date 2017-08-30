@@ -1,3 +1,4 @@
+# Modifications copyright (C) 2017 KCOM
 import os
 from collections import defaultdict
 

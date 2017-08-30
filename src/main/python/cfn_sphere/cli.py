@@ -1,6 +1,6 @@
+# Modifications copyright (C) 2017 KCOM
 import logging
 import sys
-
 import boto3
 import click
 from botocore.exceptions import ClientError, BotoCoreError
