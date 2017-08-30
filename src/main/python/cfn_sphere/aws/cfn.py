@@ -361,12 +361,12 @@ class CloudFormation(object):
                 break
         
         if resp['Status'] == "FAILED":
-            print "Changeset failed with reason:", resp["StatusReason"]
+            print("Changeset failed with reason:", resp["StatusReason"])
         else:
             changset_string = get_pretty_changeset_string(resp['Changes'])
             self.logger.info(
                 "Stack changeset with changes:\n{}".format(changset_string))
-            print change_set['Id']
+            print(change_set['Id'])
 
     @with_boto_retry()
     def _create_stack_change_set(self, stack):

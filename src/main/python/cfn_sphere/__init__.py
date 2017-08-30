@@ -20,8 +20,8 @@ class StackActionHandler(object):
         self.cli_parameters = config.cli_params
 
     def execute_change_set(self):
-        print 'executing change set'
-        print self.config.change_set
+        print('executing change set')
+        print(self.config.change_set)
 
         change_set = self.cfn.get_change_set(self.config.change_set)
         
