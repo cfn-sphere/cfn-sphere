@@ -1,5 +1,5 @@
-# cfn-sphere
-A CLI tool intended to simplify AWS CloudFormation handling.
+# cfn-square
+A CLI tool intended to simplify AWS CloudFormation handling. Derived from cfn-sphere.
 
 [![Build Status](https://travis-ci.org/cfn-sphere/cfn-sphere.svg?branch=master)](https://travis-ci.org/cfn-sphere/cfn-sphere)
 
