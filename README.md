@@ -1,9 +1,7 @@
 # cfn-square
 A CLI tool intended to simplify AWS CloudFormation handling. Derived from cfn-sphere.
 
-[![Build Status](https://travis-ci.org/cfn-sphere/cfn-sphere.svg?branch=master)](https://travis-ci.org/cfn-sphere/cfn-sphere)
-
-[![Code Health](https://landscape.io/github/cfn-sphere/cfn-sphere/master/landscape.svg?style=flat)](https://landscape.io/github/cfn-sphere/cfn-sphere/master)
+[![Build Status](hhttps://travis-ci.org/Smart421/cfn-square.svg?branch=master)](https://travis-ci.org/cfn-sphere/cfn-sphere)
 
 ## Features
 - cfn templates in yml or json
