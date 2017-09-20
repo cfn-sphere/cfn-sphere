@@ -53,120 +53,115 @@ class CloudFormationTemplateTransformerTests(TestCase):
         self.assertEqual(1024, len(result))
 
     def test_scan_executes_key_handler_for_all_matching_keys(self):
-        dictionary = {'|key|': 'value'}
+        dictionary = {"|key|": "value"}
         handler = Mock()
-        handler.return_value = 'new-key', 'new-value'
+        handler.return_value = "new-key", "new-value"
 
         result = CloudFormationTemplateTransformer.scan(dictionary, [handler], [])
-        expected_calls = [mock.call('|key|', 'value')]
+        expected_calls = [mock.call("|key|", "value")]
 
         self.assertEqual(expected_calls, handler.mock_calls)
-        self.assertEqual(result, {'new-key': 'new-value'})
+        self.assertEqual(result, {"new-key": "new-value"})
 
     def test_scan_executes_value_handler_for_all_matching_prefixes(self):
-        dictionary = {'a': 'foo123', 'b': {'c': 'foo234'}}
+        dictionary = {"a": "foo123", "b": {"c": "foo234"}}
         handler = Mock()
         handler.return_value = "foo"
 
         result = CloudFormationTemplateTransformer.scan(dictionary, [], [handler])
-        expected_calls = [mock.call('foo123'), mock.call('foo234')]
+        expected_calls = [mock.call("foo123"), mock.call("foo234")]
 
         self.assertEqual(sorted(expected_calls), sorted(handler.mock_calls))
-        self.assertEqual(result, {'a': 'foo', 'b': {'c': 'foo'}})
+        self.assertEqual(result, {"a": "foo", "b": {"c": "foo"}})
 
     def test_transform_dict_to_yaml_lines_list(self):
-        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({'my-key': 'my-value'})
-        self.assertEqual([{'Fn::Join': [': ', ['my-key', 'my-value']]}], result)
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": "my-value"})
+        self.assertEqual([{"Fn::Join": [": ", ["my-key", "my-value"]]}], result)
 
     def test_transform_dict_to_yaml_lines_list_indents_sub_dicts(self):
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(
-            {'my-key': {'my-sub-key': 'value'}})
-        self.assertEqual(['my-key:', {'Fn::Join': [': ', ['  my-sub-key', 'value']]}], result)
+            {"my-key": {"my-sub-key": "value"}})
+        self.assertEqual(["my-key:", {"Fn::Join": [": ", ["  my-sub-key", "value"]]}], result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_integer_values(self):
-        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({'my-key': 3})
-        self.assertEqual([{'Fn::Join': [': ', ['my-key', 3]]}], result)
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": 3})
+        self.assertEqual([{"Fn::Join": [": ", ["my-key", 3]]}], result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_list_values(self):
-        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({'my-key': ['a', 'b']})
-        self.assertEqual(['my-key:', '- a', '- b'], result)
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": ["a", "b"]})
+        self.assertEqual(["my-key:", "  - a", "  - b"], result)
 
     def test_transform_join_key_creates_valid_cfn_join(self):
-        result = CloudFormationTemplateTransformer.transform_join_key('|join|-', ['a', 'b'])
-        self.assertEqual(('Fn::Join', ['-', ['a', 'b']]), result)
+        result = CloudFormationTemplateTransformer.transform_join_key("|join|-", ["a", "b"])
+        self.assertEqual(("Fn::Join", ["-", ["a", "b"]]), result)
 
     def test_transform_join_key_accepts_empty_join_string(self):
-        result = CloudFormationTemplateTransformer.transform_join_key('|join|', ['a', 'b'])
-        self.assertEqual(('Fn::Join', ['', ['a', 'b']]), result)
+        result = CloudFormationTemplateTransformer.transform_join_key("|join|", ["a", "b"])
+        self.assertEqual(("Fn::Join", ["", ["a", "b"]]), result)
 
     def test_transform_join_key_creates_valid_cfn_join_with_multiple_strings(self):
-        result = CloudFormationTemplateTransformer.transform_join_key('|join|-', ['a', 'b', 'c', 'd', 'e'])
-        self.assertEqual(('Fn::Join', ['-', ['a', 'b', 'c', 'd', 'e']]), result)
+        result = CloudFormationTemplateTransformer.transform_join_key("|join|-", ["a", "b", "c", "d", "e"])
+        self.assertEqual(("Fn::Join", ["-", ["a", "b", "c", "d", "e"]]), result)
 
     def test_transform_include_key_creates_valid_include(self):
-        result = CloudFormationTemplateTransformer.transform_include_key('|include|', 's3://myBucket/myTemplate.json')
-        self.assertEqual(('Fn::Transform', {'Name': 'AWS::Include', 'Location': 's3://myBucket/myTemplate.json'}),
+        result = CloudFormationTemplateTransformer.transform_include_key("|include|", "s3://myBucket/myTemplate.json")
+        self.assertEqual(("Fn::Transform", {"Name": "AWS::Include", "Location": "s3://myBucket/myTemplate.json"}),
                          result)
 
     def test_transform_reference_string_creates_valid_cfn_reference(self):
-        result = CloudFormationTemplateTransformer.transform_reference_string('|ref|my-value')
-        self.assertEqual({'Ref': 'my-value'}, result)
+        result = CloudFormationTemplateTransformer.transform_reference_string("|ref|my-value")
+        self.assertEqual({"Ref": "my-value"}, result)
 
     def test_transform_reference_string_ignores_value_without_reference(self):
-        result = CloudFormationTemplateTransformer.transform_reference_string('my-value')
-        self.assertEqual('my-value', result)
+        result = CloudFormationTemplateTransformer.transform_reference_string("my-value")
+        self.assertEqual("my-value", result)
 
     def test_transform_reference_string_raises_exception_on_empty_reference(self):
         with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.transform_reference_string('|ref|')
+            CloudFormationTemplateTransformer.transform_reference_string("|ref|")
 
     def test_transform_reference_string_ignores_none_values(self):
         result = CloudFormationTemplateTransformer.transform_reference_string(None)
         self.assertEqual(None, result)
 
     def test_transform_reference_string_ignores_empty_strings(self):
-        result = CloudFormationTemplateTransformer.transform_reference_string('')
-        self.assertEqual('', result)
+        result = CloudFormationTemplateTransformer.transform_reference_string("")
+        self.assertEqual("", result)
 
     def test_transform_getattr_string_creates_valid_cfn_getattr(self):
-        result = CloudFormationTemplateTransformer.transform_getattr_string('|getatt|resource|attribute')
-        self.assertEqual({'Fn::GetAtt': ['resource', 'attribute']}, result)
+        result = CloudFormationTemplateTransformer.transform_getattr_string("|getatt|resource|attribute")
+        self.assertEqual({"Fn::GetAtt": ["resource", "attribute"]}, result)
 
     def test_transform_getattr_string_raises_exception_on_missing_resource(self):
         with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.transform_getattr_string('|getatt|attribute')
+            CloudFormationTemplateTransformer.transform_getattr_string("|getatt|attribute")
 
     def test_transform_getattr_string_ignores_none_values(self):
         result = CloudFormationTemplateTransformer.transform_getattr_string(None)
         self.assertEqual(None, result)
 
     def test_transform_getattr_string_ignores_empty_strings(self):
-        result = CloudFormationTemplateTransformer.transform_getattr_string('')
-        self.assertEqual('', result)
+        result = CloudFormationTemplateTransformer.transform_getattr_string("")
+        self.assertEqual("", result)
 
     def test_transform_taupage_user_data_key(self):
         input = {
             "application_id": "stackName",
             "application_version": "imageVersion",
             "environment": {
-                "SSO_KEY": "mySsoKey",
+                "SSO_KEY": "|Ref|mySsoKey",
                 "QUEUE_URL": {"ref": "myQueueUrl"}
             }
         }
-        expected = {'Fn::Base64':
-            {
-                'Fn::Join':
-                    ['\n', ['#taupage-ami-config',
-                            {'Fn::Join': [': ', ['application_id', 'stackName']]},
-                            {'Fn::Join': [': ', ['application_version', 'imageVersion']]},
-                            'environment:',
-                            {'Fn::Join': [': ', ['  QUEUE_URL', {'ref': 'myQueueUrl'}]]},
-                            {'Fn::Join': [': ', ['  SSO_KEY', 'mySsoKey']]}]
-                     ]
-            }
-        }
 
-        key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key('@taupageUserData@', input)
+        expected = {'Fn::Base64': {'Fn::Join': ['\n', ['#taupage-ami-config',
+                                                       {'Fn::Join': [': ', ['application_id', 'stackName']]},
+                                                       {'Fn::Join': [': ', ['application_version', 'imageVersion']]},
+                                                       'environment:',
+                                                       {'Fn::Join': [': ', ['  QUEUE_URL', {'ref': 'myQueueUrl'}]]},
+                                                       {'Fn::Join': [': ', ['  SSO_KEY', '|Ref|mySsoKey']]}]]}}
+
+        key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key("@taupageUserData@", input)
         self.assertEqual("UserData", key)
         self.assertEqual(expected, value)
 
@@ -179,31 +174,90 @@ class CloudFormationTemplateTransformerTests(TestCase):
                 "QUEUE_URL": {"ref": "myQueueUrl"}
             }
         }
-        expected = {'Fn::Base64':
-                        {'Fn::Join': ['\n', [
-                            {'Fn::Join': [': ', ['application_id', 'stackName']]},
-                            {'Fn::Join': [': ', ['application_version', 'imageVersion']]},
-                            'environment:',
-                            {'Fn::Join': [': ', ['  QUEUE_URL', {'ref': 'myQueueUrl'}]]},
-                            {'Fn::Join': [': ', ['  SSO_KEY', 'mySsoKey']]}]]
+        expected = {"Fn::Base64":
+                        {"Fn::Join": ["\n", [
+                            {"Fn::Join": [": ", ["application_id", "stackName"]]},
+                            {"Fn::Join": [": ", ["application_version", "imageVersion"]]},
+                            "environment:",
+                            {"Fn::Join": [": ", ["  QUEUE_URL", {"ref": "myQueueUrl"}]]},
+                            {"Fn::Join": [": ", ["  SSO_KEY", "mySsoKey"]]}]]
                          }
                     }
 
-        key, value = CloudFormationTemplateTransformer.transform_yaml_user_data_key('@YamlUserData@', input)
+        key, value = CloudFormationTemplateTransformer.transform_yaml_user_data_key("@YamlUserData@", input)
 
         self.assertEqual("UserData", key)
         self.assertEqual(expected, value)
 
+    def test_transform_dict_to_yaml_lines(self):
+        input = {
+            "docker-compose": {
+                "version": "2",
+                "services": {
+                    "grafana": {
+                        "environment": {
+                            "GF_SECURITY_ADMIN_PASSWORD": "|Ref|grafanaAdminPassword"
+                        },
+                        "ports": [
+                            "3000:3000"
+                        ],
+                        "restart": "always"
+                    }
+                }
+            }
+        }
+
+        expected = [
+            "docker-compose:",
+            "  services:",
+            "    grafana:",
+            "      environment:",
+            {"Fn::Join": [": ",
+                          ["        GF_SECURITY_ADMIN_PASSWORD",
+                           "|Ref|grafanaAdminPassword"]]},
+            "      ports:",
+            "        - 3000:3000",
+            {"Fn::Join": [": ", ["      restart", "always"]]},
+            {"Fn::Join": [": ", ["  version", "2"]]}
+        ]
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        self.assertEqual(expected, result)
+
+    def test_transform_dict(self):
+        input = {
+            "a": {
+                "baa": {"key": "value"}
+            },
+            "b": [{"c": "d"}, "e", 2, [1, 2, 3]]
+        }
+
+        expected = ['a:',
+                    '  baa:',
+                    {'Fn::Join': [': ', ['    key', 'value']]},
+                    'b:',
+                    {'Fn::Join': [': ', ['  - c', 'd']]},
+                    '  - e',
+                    '  - 2',
+                    '  -',
+                    '    - 1',
+                    '    - 2',
+                    '    - 3'
+                    ]
+
+        result = CloudFormationTemplateTransformer._transform_dict(input)
+        self.assertEqual(expected, result)
+
     def test_transform_dict_to_yaml_lines_list_accepts_multiple_sub_dicts(self):
         input = {
             "foo": {
-                'baa': {'key': 'value'}
+                "baa": {"key": "value"}
             }
         }
         expected = [
-            'foo:',
-            '  baa:',
-            {'Fn::Join': [': ', ['    key', 'value']]}
+            "foo:",
+            "  baa:",
+            {"Fn::Join": [": ", ["    key", "value"]]}
 
         ]
 
@@ -211,7 +265,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
         self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_int_key_value(self):
-        input = {'ports': {8080: 9000}}
+        input = {"ports": {8080: 9000}}
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
         expected = [
@@ -227,291 +281,307 @@ class CloudFormationTemplateTransformerTests(TestCase):
         }
 
         expected = [
-            {
-                "Fn::Join": [
-                    ": ",
-                    [
-                        "source",
-                        {
-                            "Fn::Join": [
-                                ":",
-                                [
-                                    "my-registry/my-app",
-                                    {
-                                        "Ref": "appVersion"
-                                    }
-                                ]
-                            ]
-                        }
+            {'Fn::Join': [': ', [
+                'source',
+                {'Fn::Join': [
+                    ':', [
+                        'my-registry/my-app',
+                        {'Ref': 'appVersion'}
                     ]
                 ]
-            }
+                }]]
+             }
         ]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
         self.assertEqual(expected, result)
 
-    def test_transform_dict_to_yaml_lines_list_returns_stable_order(self):
-        input = {'d': 'd', 'a': 'a', 'e': 'e', 'b': {'f': 'f', 'c': 'c', 'a': 'a'}, "#": "3"}
 
-        expected = [{'Fn::Join': [': ', ['#', '3']]},
-                    {'Fn::Join': [': ', ['a', 'a']]},
-                    'b:',
-                    {'Fn::Join': [': ', ['  a', 'a']]},
-                    {'Fn::Join': [': ', ['  c', 'c']]},
-                    {'Fn::Join': [': ', ['  f', 'f']]},
-                    {'Fn::Join': [': ', ['d', 'd']]},
-                    {'Fn::Join': [': ', ['e', 'e']]}]
+def test_transform_dict_to_yaml_lines_list_returns_stable_order(self):
+    input = {"d": "d", "a": "a", "e": "e", "b": {"f": "f", "c": "c", "a": "a"}, "#": "3"}
 
-        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        self.assertEqual(expected, result)
+    expected = [{"Fn::Join": [": ", ["#", "3"]]},
+                {"Fn::Join": [": ", ["a", "a"]]},
+                "b:",
+                {"Fn::Join": [": ", ["  a", "a"]]},
+                {"Fn::Join": [": ", ["  c", "c"]]},
+                {"Fn::Join": [": ", ["  f", "f"]]},
+                {"Fn::Join": [": ", ["d", "d"]]},
+                {"Fn::Join": [": ", ["e", "e"]]}]
 
-    def test_transform_kv_to_cfn_join_accepts_int_key_value(self):
-        result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join(8080, 9000)
-        expected = {'Fn::Join': [': ', [8080, 9000]]}
+    result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+    self.assertEqual(expected, result)
 
-        self.assertEqual(expected, result)
 
-    def test_transform_kv_to_cfn_join_quotes_strings_with_colons(self):
-        result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join('f:b', 'foo:baa')
-        expected = {'Fn::Join': [': ', ["'f:b'", "'foo:baa'"]]}
+def test_transform_kv_to_cfn_join_accepts_int_key_value(self):
+    result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join(8080, 9000)
+    expected = {"Fn::Join": [": ", [8080, 9000]]}
 
-        self.assertEqual(expected, result)
+    self.assertEqual(expected, result)
 
-    def test_transform_template_properly_renders_dict(self):
-        template_dict = {
-            'Resources': {
-                "myResource": {
-                    'key1': '|ref|value',
-                    'key2': '|getatt|resource|attribute',
-                    '@TaupageUserData@':
-                        {
-                            'key1': 'value',
-                            'key2': {'ref': 'value'},
-                            'key3': {'|join|.': ['|Ref|a', 'b', 'c']},
-                            'key4': '|ref|value'
-                        }
-                }
-            }
-        }
 
-        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+def test_transform_kv_to_cfn_join_quotes_strings_with_colons(self):
+    result = CloudFormationTemplateTransformer.transform_kv_to_cfn_join('f:b', 'foo:baa')
+    expected = {'Fn::Join': [': ', ["'f:b'", "'foo:baa'"]]}
 
-        expected = {
+    self.assertEqual(expected, result)
+
+
+def test_transform_template_properly_renders_dict(self):
+    template_dict = {
+        "Resources": {
             "myResource": {
-                "key1": {
-                    "Ref": "value"
-                },
-                "key2": {
-                    "Fn::GetAtt": [
-                        "resource",
-                        "attribute"
-                    ]
-                },
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "\n",
-                            [
-                                "#taupage-ami-config",
-                                {
-                                    "Fn::Join": [
-                                        ": ",
-                                        [
-                                            "key1",
-                                            "value"
-                                        ]
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        ": ",
-                                        [
-                                            "key2",
-                                            {
-                                                "ref": "value"
-                                            }
-                                        ]
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        ": ",
-                                        [
-                                            "key3",
-                                            {
-                                                "Fn::Join": [
-                                                    ".",
-                                                    [
-                                                        {"Ref": "a"},
-                                                        "b",
-                                                        "c"
-                                                    ]
-                                                ]
-                                            }
-                                        ]
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        ": ",
-                                        [
-                                            "key4",
-                                            {
-                                                "Ref": "value"
-                                            }
-                                        ]
-                                    ]
-                                },
-                            ]
-                        ]
+                "key1": "|ref|value",
+                "key2": "|getatt|resource|attribute",
+                "@TaupageUserData@":
+                    {
+                        "key1": "value",
+                        "key2": {"ref": "value"},
+                        "key3": {"|join|.": ["|Ref|a", "b", "c"]},
+                        "key4": "|ref|value"
                     }
+            }
+        }
+    }
+
+    result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+
+    expected = {
+        "myResource": {
+            "key1": {
+                "Ref": "value"
+            },
+            "key2": {
+                "Fn::GetAtt": [
+                    "resource",
+                    "attribute"
+                ]
+            },
+            "UserData": {
+                "Fn::Base64": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "#taupage-ami-config",
+                            {
+                                "Fn::Join": [
+                                    ": ",
+                                    [
+                                        "key1",
+                                        "value"
+                                    ]
+                                ]
+                            },
+                            {
+                                "Fn::Join": [
+                                    ": ",
+                                    [
+                                        "key2",
+                                        {
+                                            "ref": "value"
+                                        }
+                                    ]
+                                ]
+                            },
+                            {
+                                "Fn::Join": [
+                                    ": ",
+                                    [
+                                        "key3",
+                                        {
+                                            "Fn::Join": [
+                                                ".",
+                                                [
+                                                    {"Ref": "a"},
+                                                    "b",
+                                                    "c"
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                ]
+                            },
+                            {
+                                "Fn::Join": [
+                                    ": ",
+                                    [
+                                        "key4",
+                                        {
+                                            "Ref": "value"
+                                        }
+                                    ]
+                                ]
+                            },
+                        ]
+                    ]
                 }
             }
         }
+    }
 
-        self.assertEqual(expected, result.resources)
+    self.assertEqual(expected, result.resources)
 
-    def test_transform_template_transforms_references_in_conditions_section(self):
-        template_dict = {
-            'Conditions': {'key1': ["|ref|foo", "a", "b"], "key2": "|Ref|baa"}
-        }
 
-        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
-        expected = {'key1': [{'Ref': 'foo'}, 'a', 'b'], 'key2': {'Ref': 'baa'}}
+def test_transform_template_transforms_references_in_conditions_section(self):
+    template_dict = {
+        "Conditions": {"key1": ["|ref|foo", "a", "b"], "key2": "|Ref|baa"}
+    }
 
-        self.assertEqual(expected, result.conditions)
+    result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+    expected = {"key1": [{"Ref": "foo"}, "a", "b"], "key2": {"Ref": "baa"}}
 
-    def test_transform_template_transforms_list_values(self):
-        template_dict = {
-            'Resources': {'key1': ["|ref|foo", "a", "b"]}
-        }
+    self.assertEqual(expected, result.conditions)
 
-        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
-        expected = {'key1': [{'Ref': 'foo'}, 'a', 'b']}
 
-        self.assertEqual(expected, result.resources)
+def test_transform_template_transforms_list_values(self):
+    template_dict = {
+        "Resources": {"key1": ["|ref|foo", "a", "b"]}
+    }
 
-    def test_transform_template_transforms_dict_list_items(self):
-        template_dict = {
-            'Resources': {'key1': {'key2': [{'key3': 'value3', 'foo': {'|Join|': ['a', 'b']}}]}}
-        }
+    result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+    expected = {"key1": [{"Ref": "foo"}, "a", "b"]}
 
-        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
-        expected = {'key1': {'key2': [{'foo': {'Fn::Join': ['', ['a', 'b']]}, 'key3': 'value3'}]}}
+    self.assertEqual(expected, result.resources)
 
-        self.assertEqual(expected, result.resources)
 
-    def test_transform_template_transforms_join_with_embedded_ref(self):
-        template_dict = {
-            'Resources': {'key1': {"|join|.": ["|ref|foo", "b"]}}
-        }
+def test_transform_template_transforms_dict_list_items(self):
+    template_dict = {
+        "Resources": {"key1": {"key2": [{"key3": "value3", "foo": {"|Join|": ["a", "b"]}}]}}
+    }
 
-        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
-        expected = {'key1': {'Fn::Join': ['.', [{'Ref': 'foo'}, 'b']]}}
+    result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+    expected = {"key1": {"key2": [{"foo": {"Fn::Join": ["", ["a", "b"]]}, "key3": "value3"}]}}
 
-        self.assertEqual(expected, result.resources)
+    self.assertEqual(expected, result.resources)
 
-    def test_transform_template_raises_exception_on_unknown_reference_value(self):
-        template_dict = {
-            'Resources': {'key1': "|foo|foo"}
-        }
 
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+def test_transform_template_transforms_join_with_embedded_ref(self):
+    template_dict = {
+        "Resources": {"key1": {"|join|.": ["|ref|foo", "b"]}}
+    }
 
-    def test_transform_template_raises_exception_on_unknown_reference_key(self):
-        template_dict = {
-            'Resources': {'|key|': "foo"}
-        }
+    result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+    expected = {"key1": {"Fn::Join": [".", [{"Ref": "foo"}, "b"]]}}
 
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+    self.assertEqual(expected, result.resources)
 
-    def test_transform_template_raises_exception_on_unknown_at_reference_key(self):
-        template_dict = {
-            'Resources': {'@foo@': "foo"}
-        }
 
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
+def test_transform_template_raises_exception_on_unknown_reference_value(self):
+    template_dict = {
+        "Resources": {"key1": "|foo|foo"}
+    }
 
-    def test_transform_template_raises_exception_on_embedded_reference(self):
-        template_dict = {
-            'Resources': {'key1': {"foo": ["|foo|foo", "b"]}}
-        }
+    with self.assertRaises(TemplateErrorException):
+        CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
 
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
 
-    def test_transform_template_properly_handles_reference_in_list_of_lists(self):
-        template_dict = {
-            'Resources':
-                {
-                    'myResource': {
-                        "Properties": {
-                            "PolicyDocument": {
-                                "Statement": [{
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            "",
-                                            [
-                                                "a",
-                                                "|Ref|b",
-                                                "c"
-                                            ]
+def test_transform_template_raises_exception_on_unknown_reference_key(self):
+    template_dict = {
+        "Resources": {"|key|": "foo"}
+    }
+
+    with self.assertRaises(TemplateErrorException):
+        CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+
+
+def test_transform_template_raises_exception_on_unknown_at_reference_key(self):
+    template_dict = {
+        "Resources": {"@foo@": "foo"}
+    }
+
+    with self.assertRaises(TemplateErrorException):
+        CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+
+
+def test_transform_template_raises_exception_on_embedded_reference(self):
+    template_dict = {
+        "Resources": {"key1": {"foo": ["|foo|foo", "b"]}}
+    }
+
+    with self.assertRaises(TemplateErrorException):
+        CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+
+
+def test_transform_template_properly_handles_reference_in_list_of_lists(self):
+    template_dict = {
+        "Resources":
+            {
+                "myResource": {
+                    "Properties": {
+                        "PolicyDocument": {
+                            "Statement": [{
+                                "Resource": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "a",
+                                            "|Ref|b",
+                                            "c"
                                         ]
-                                    }
-                                }]
-                            }
+                                    ]
+                                }
+                            }]
                         }
                     }
                 }
-        }
+            }
+    }
 
-        result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, 'foo'))
-        expected = {'myResource': {'Properties': {
-            'PolicyDocument': {'Statement': [{'Resource': {'Fn::Join': ['', ['a', {'Ref': 'b'}, 'c']]}}]}}}}
+    result = CloudFormationTemplateTransformer.transform_template(CloudFormationTemplate(template_dict, "foo"))
+    expected = {"myResource": {"Properties": {
+        "PolicyDocument": {"Statement": [{"Resource": {"Fn::Join": ["", ["a", {"Ref": "b"}, "c"]]}}]}}}}
 
-        self.assertEqual(expected, result.resources)
+    self.assertEqual(expected, result.resources)
 
-    def test_check_for_leftover_reference_values_raises_exception_on_existing_reference(self):
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.check_for_leftover_reference_values('|Ref|foo')
 
-    def test_check_for_leftover_reference_values_passes_on_double_pipe_values(self):
-        self.assertEqual(('|| exit 1'),
-                         CloudFormationTemplateTransformer.check_for_leftover_reference_values('|| exit 1'))
+def test_check_for_leftover_reference_values_raises_exception_on_existing_reference(self):
+    with self.assertRaises(TemplateErrorException):
+        CloudFormationTemplateTransformer.check_for_leftover_reference_values("|Ref|foo")
 
-    def test_check_for_leftover_reference_values_passes_on_double_pipe_with_spaces_values(self):
-        self.assertEqual(('| xargs | grep'),
-                         CloudFormationTemplateTransformer.check_for_leftover_reference_values('| xargs | grep'))
 
-    def test_check_for_leftover_reference_values_properly_returns_values_without_reference(self):
-        self.assertEqual('foo', CloudFormationTemplateTransformer.check_for_leftover_reference_values('foo'))
+def test_check_for_leftover_reference_values_passes_on_double_pipe_values(self):
+    self.assertEqual(("|| exit 1"),
+                     CloudFormationTemplateTransformer.check_for_leftover_reference_values("|| exit 1"))
 
-    def test_check_for_leftover_reference_values_properly_returns_empty_values(self):
-        self.assertEqual('', CloudFormationTemplateTransformer.check_for_leftover_reference_values(''))
 
-    def test_check_for_leftover_reference_keys_raises_exception_on_existing_at_reference(self):
-        with self.assertRaises(TemplateErrorException):
-            CloudFormationTemplateTransformer.check_for_leftover_reference_keys('@Foo@', 'foo')
+def test_check_for_leftover_reference_values_passes_on_double_pipe_with_spaces_values(self):
+    self.assertEqual(("| xargs | grep"),
+                     CloudFormationTemplateTransformer.check_for_leftover_reference_values("| xargs | grep"))
 
-    def test_check_for_leftover_reference_keys_properly_returns_values_without_reference(self):
-        self.assertEqual(('key', 'value'),
-                         CloudFormationTemplateTransformer.check_for_leftover_reference_keys('key', 'value'))
 
-    def test_check_for_leftover_reference_keys_properly_returns_empty_values(self):
-        self.assertEqual(('', ''), CloudFormationTemplateTransformer.check_for_leftover_reference_keys('', ''))
+def test_check_for_leftover_reference_values_properly_returns_values_without_reference(self):
+    self.assertEqual("foo", CloudFormationTemplateTransformer.check_for_leftover_reference_values("foo"))
 
-    def test_is_reference_key_returns_true_on_existing_pipe_reference(self):
-        self.assertTrue(CloudFormationTemplateTransformer.is_reference_key('|foo|'))
 
-    def test_is_reference_key_returns_true_on_references_with_leading_spaces(self):
-        self.assertTrue(CloudFormationTemplateTransformer.is_reference_key('  |join|'))
+def test_check_for_leftover_reference_values_properly_returns_empty_values(self):
+    self.assertEqual("", CloudFormationTemplateTransformer.check_for_leftover_reference_values(""))
 
-    def test_is_reference_key_returns_false_for_empty_string(self):
-        self.assertFalse(CloudFormationTemplateTransformer.is_reference_key(''))
 
-    def test_is_reference_key_returns_false_for_simple_string(self):
-        self.assertFalse(CloudFormationTemplateTransformer.is_reference_key('foo'))
+def test_check_for_leftover_reference_keys_raises_exception_on_existing_at_reference(self):
+    with self.assertRaises(TemplateErrorException):
+        CloudFormationTemplateTransformer.check_for_leftover_reference_keys("@Foo@", "foo")
+
+
+def test_check_for_leftover_reference_keys_properly_returns_values_without_reference(self):
+    self.assertEqual(("key", "value"),
+                     CloudFormationTemplateTransformer.check_for_leftover_reference_keys("key", "value"))
+
+
+def test_check_for_leftover_reference_keys_properly_returns_empty_values(self):
+    self.assertEqual(("", ""), CloudFormationTemplateTransformer.check_for_leftover_reference_keys("", ""))
+
+
+def test_is_reference_key_returns_true_on_existing_pipe_reference(self):
+    self.assertTrue(CloudFormationTemplateTransformer.is_reference_key("|foo|"))
+
+
+def test_is_reference_key_returns_true_on_references_with_leading_spaces(self):
+    self.assertTrue(CloudFormationTemplateTransformer.is_reference_key("  |join|"))
+
+
+def test_is_reference_key_returns_false_for_empty_string(self):
+    self.assertFalse(CloudFormationTemplateTransformer.is_reference_key(""))
+
+
+def test_is_reference_key_returns_false_for_simple_string(self):
+    self.assertFalse(CloudFormationTemplateTransformer.is_reference_key("foo"))
