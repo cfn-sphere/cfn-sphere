@@ -5,7 +5,6 @@ python:
   - '3.3'
   - '3.4'
   - '3.5'
-  - '3.6'
   - "pypy"
 before_install:
   - git fetch --unshallow
