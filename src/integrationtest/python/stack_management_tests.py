@@ -171,13 +171,13 @@ class StackManagementTests(CfnSphereIntegrationTest):
         self.assert_equal("cfn-sphere-test-instances", environment_config["DYNAMO_DB_PREFIX"])
         self.assert_equal("value-5-foo", environment_config["SOME_COMBINED_VALUE"])
 
-        list_values = user_data["list-values"]
-        print(list_values)
-        self.assert_equal(list_values.length, 4)
-        self.assert_equal("a", list_values[0])
-        self.assert_equal("b", list_values[1])
-        self.assert_equal("b", list_values[2])
-        self.assert_equal("b", list_values[3])
+        # list_values = user_data["list-values"]
+        # print(list_values)
+        # self.assert_equal(list_values.length, 4)
+        # self.assert_equal("a", list_values[0])
+        # self.assert_equal("b", list_values[1])
+        # self.assert_equal("b", list_values[2])
+        # self.assert_equal("b", list_values[3])
 
         # uncomment this to test kms decryption
         # self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
