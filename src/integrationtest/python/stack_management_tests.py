@@ -6,6 +6,7 @@ import os
 import boto3
 import yaml
 from botocore.exceptions import ClientError
+from yaml.scanner import ScannerError
 
 from cfn_sphere import StackActionHandler
 from cfn_sphere.stack_configuration import Config
@@ -136,12 +137,11 @@ class StackManagementTests(CfnSphereIntegrationTest):
             instance_stack_resources["StackResourceDetail"]["PhysicalResourceId"]
         lc = autoscale_conn.describe_launch_configurations(LaunchConfigurationNames=[lc_name])["LaunchConfigurations"][
             0]
-        print()
-        user_data = yaml.load(base64.b64decode(lc["UserData"]))
-
-        # raise Exception(user_data)
-
-        # self.assert_equal("#taupage-ami-config", user_data_lines[0])
+        try:
+            user_data = yaml.load(base64.b64decode(lc["UserData"]))
+        except ScannerError as e:
+            raise Exception(
+                "Could not parse yaml UserData from:\n{0}\nERROR:\n{1}".format(base64.b64decode(lc["UserData"]), e))
 
         self.assert_equal("cfn-sphere-test-instances", user_data["application_id"])
         self.assert_equal(1, user_data["application_version"])
@@ -170,6 +170,14 @@ class StackManagementTests(CfnSphereIntegrationTest):
         environment_config = user_data["environment"]
         self.assert_equal("cfn-sphere-test-instances", environment_config["DYNAMO_DB_PREFIX"])
         self.assert_equal("value-5-foo", environment_config["SOME_COMBINED_VALUE"])
+
+        list_values = user_data["list-values"]
+        print(list_values)
+        self.assert_equal(list_values.length, 4)
+        self.assert_equal("a", list_values[0])
+        self.assert_equal("b", list_values[1])
+        self.assert_equal("b", list_values[2])
+        self.assert_equal("b", list_values[3])
 
         # uncomment this to test kms decryption
         # self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
