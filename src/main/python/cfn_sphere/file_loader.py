@@ -43,7 +43,8 @@ class FileLoader(object):
             "!join": ("Fn::Join", lambda x: [x[0], x[1]]),
             "!select": ("Fn::Select", lambda x: x),
             "!sub": ("Fn::Sub", lambda x: x),
-            "!ref": ("Ref", lambda x: x)
+            "!ref": ("Ref", lambda x: x),
+            "!condition": ("Condition", lambda x: x),
         }
         try:
             function, value_transformer = function_mapping[str(suffix).lower()]
