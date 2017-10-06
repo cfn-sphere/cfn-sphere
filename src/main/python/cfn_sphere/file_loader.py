@@ -30,21 +30,21 @@ class FileLoader(object):
         Constructor method for PyYaml to handle cfn intrinsic functions specified as yaml tags
         """
         function_mapping = {
-            "!base64": ("Fn::Base64", lambda x: x),
             "!and": ("Fn::And", lambda x: x),
+            "!base64": ("Fn::Base64", lambda x: x),
+            "!condition": ("Condition", lambda x: x),
             "!equals": ("Fn::Equals", lambda x: x),
-            "!if": ("Fn::If", lambda x: x),
-            "!not": ("Fn::Not", lambda x: x),
-            "!or": ("Fn::Or", lambda x: x),
             "!findinmap": ("Fn::FindInMap", lambda x: x),
             "!getatt": ("Fn::GetAtt", lambda x: str(x).split(".",1)),
             "!getazs": ("Fn::GetAZs", lambda x: x),
+            "!if": ("Fn::If", lambda x: x),
             "!importvalue": ("Fn::ImportValue", lambda x: x),
             "!join": ("Fn::Join", lambda x: [x[0], x[1]]),
+            "!not": ("Fn::Not", lambda x: x),
+            "!or": ("Fn::Or", lambda x: x),
+            "!ref": ("Ref", lambda x: x),
             "!select": ("Fn::Select", lambda x: x),
             "!sub": ("Fn::Sub", lambda x: x),
-            "!ref": ("Ref", lambda x: x),
-            "!condition": ("Condition", lambda x: x),
         }
         try:
             function, value_transformer = function_mapping[str(suffix).lower()]
