@@ -147,11 +147,44 @@ class CloudFormationTemplateTransformerTests(TestCase):
 
     def test_transform_taupage_user_data_key(self):
         input = {
-            "application_id": "stackName",
-            "application_version": 3,
+            "notify_cfn": {
+                "resource": "asg",
+                "stack": {"Ref": "AWS::StackName"}
+            },
+            "cloudwatch_logs": {
+                "/var/log/application.log": {"Ref": "applicationLog"},
+                "/var/log/syslog": {"Ref": "syslog"}
+            },
             "environment": {
-                "SSO_KEY": {"ref": "mySsoKey"},
-                "QUEUE_URL": {"ref": "myQueueUrl"}
+                "DYNAMODB_INDEX_NAME": {"Ref": "dynamodbIndexName"},
+                "JAVA_OPTS": "-Xmx3g",
+                "METRICS_NAMESPACE": {"Ref": "AWS::StackName"},
+                "ELASTICSEARCH_URL": {"Ref": "elasticsearchUrl"},
+                "IMPORT_QUEUE_URL": {"Ref": "importQueue"}
+            },
+            "application_id": {"Ref": "AWS::StackName"},
+            "health_check_port": 8080,
+            "health_check_timeout_seconds": 9000,
+            "ports": {
+                "8080": 9000
+            },
+            "health_check_path": "/status",
+            "root": True,
+            "ecr": {
+                "region": {"Ref": "AWS::Region"}
+            },
+            "runtime": "Docker",
+            "healthcheck": {
+                "type": "elb",
+                "loadbalancer_name": {"Ref": "elb"}
+            },
+            "application_version": {"Ref": "dockerImageVersion"},
+            "source": {
+                "Fn::Join": [
+                    ":", [
+                        "my-docker-repo/my-app-image",
+                        {"Ref": "dockerImageVersion"}
+                    ]]
             }
         }
 
@@ -161,29 +194,169 @@ class CloudFormationTemplateTransformerTests(TestCase):
                     "\n",
                     [
                         "#taupage-ami-config",
-                        "application_id: stackName",
-                        "application_version: 3",
-                        "environment:",
-                        "  QUEUE_URL:",
+                        "application_id:",
                         {
                             "Fn::Join": [
                                 "",
                                 [
-                                    "    ",
+                                    "  ",
                                     {
-                                        "ref": "myQueueUrl"
+                                        "Ref": "AWS::StackName"
                                     }
                                 ]
                             ]
                         },
-                        "  SSO_KEY:",
+                        "application_version:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "  ",
+                                    {
+                                        "Ref": "dockerImageVersion"
+                                    }
+                                ]
+                            ]
+                        },
+                        "cloudwatch_logs:",
+                        "  /var/log/application.log:",
                         {
                             "Fn::Join": [
                                 "",
                                 [
                                     "    ",
                                     {
-                                        "ref": "mySsoKey"
+                                        "Ref": "applicationLog"
+                                    }
+                                ]
+                            ]
+                        },
+                        "  /var/log/syslog:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "Ref": "syslog"
+                                    }
+                                ]
+                            ]
+                        },
+                        "ecr:",
+                        "  region:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "Ref": "AWS::Region"
+                                    }
+                                ]
+                            ]
+                        },
+                        "environment:",
+                        "  DYNAMODB_INDEX_NAME:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "Ref": "dynamodbIndexName"
+                                    }
+                                ]
+                            ]
+                        },
+                        "  ELASTICSEARCH_URL:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "Ref": "elasticsearchUrl"
+                                    }
+                                ]
+                            ]
+                        },
+                        "  IMPORT_QUEUE_URL:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "Ref": "importQueue"
+                                    }
+                                ]
+                            ]
+                        },
+                        "  JAVA_OPTS: -Xmx3g",
+                        "  METRICS_NAMESPACE:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        },
+                        "health_check_path: /status",
+                        "health_check_port: 8080",
+                        "health_check_timeout_seconds: 9000",
+                        "healthcheck:",
+                        "  loadbalancer_name:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "Ref": "elb"
+                                    }
+                                ]
+                            ]
+                        },
+                        "  type: elb",
+                        "notify_cfn:",
+                        "  resource: asg",
+                        "  stack:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        },
+                        "ports:",
+                        "  8080: 9000",
+                        "root: True",
+                        "runtime: Docker",
+                        "source:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "  ",
+                                    {
+                                        "Fn::Join": [
+                                            ":",
+                                            [
+                                                "my-docker-repo/my-app-image",
+                                                {
+                                                    "Ref": "dockerImageVersion"
+                                                }
+                                            ]
+                                        ]
                                     }
                                 ]
                             ]
