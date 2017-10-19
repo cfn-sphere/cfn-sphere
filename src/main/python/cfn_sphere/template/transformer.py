@@ -231,9 +231,6 @@ class CloudFormationTemplateTransformer(object):
         lines = []
 
         for key, value in sorted(dict_value.items()):
-
-            print("TRANSFORMING_DICT_VALUES: {} : {}".format(key, value))
-
             # key indentation with two spaces
             if indentation_level > 0:
                 indented_key = "  " * indentation_level + prefix + str(key)
@@ -247,16 +244,10 @@ class CloudFormationTemplateTransformer(object):
                     # aws functions results will always be a string
                     result = {key: value}
                     line = cls.transform_kv_to_cfn_join(indented_hyphen, result, delimiter="")
-
-                    print("INDENTED_HYPHEN: '{}'".format(indented_hyphen))
-                    print("RESULT: {}".format(result))
-                    print("LINE: {}".format(line))
                     lines.append(line)
                 else:
-                    print("NON_REFERENCE_KEY: {}".format(key))
                     # recursion for dict or list values
                     if isinstance(value, dict):
-                        print("DICT_VALUE: {}".format(value))
                         result = cls._transform_dict(value, indentation_level + 1)
                         if isinstance(result, dict):
                             lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
@@ -267,11 +258,9 @@ class CloudFormationTemplateTransformer(object):
                             raise TemplateErrorException("Failed to convert dict to list of lines")
 
                     elif isinstance(value, list):
-                        print("LIST_VALUE: {}".format(value))
                         lines.append(indented_key + ":")
                         lines.extend(cls._transform_list(value, indentation_level + 1))
                     else:
-                        print("SIMPLE_VALUE: {}".format(value))
                         lines.append(indented_key + ": " + str(value))
             else:
                 lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
@@ -285,7 +274,6 @@ class CloudFormationTemplateTransformer(object):
         indented_hyphen = '  ' * indentation_level + "-"
 
         for item in list_value:
-            print("LIST_ITEM: {}".format(item))
             if isinstance(item, dict):
                 lines.extend(cls._transform_dict(item, indentation_level, prefix="-"))
             # list of list

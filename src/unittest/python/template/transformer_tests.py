@@ -199,35 +199,123 @@ class CloudFormationTemplateTransformerTests(TestCase):
         self.assertEqual(expected, value)
 
     def test_transform_yaml_user_data_key(self):
-        input = {
-            "application_id": "stackName",
-            "application_version": "imageVersion",
-            "environment": {
-                "SSO_KEY": "mySsoKey",
-                "QUEUE_URL": {"ref": "myQueueUrl"}
-            }
-        }
+        input = {'docker-compose': {
+            'services': {
+                'db': {
+                    'environment': {'MYSQL_DATABASE': 'wordpress',
+                                    'MYSQL_PASSWORD': 'wordpress',
+                                    'MYSQL_ROOT_PASSWORD': 'wordpress',
+                                    'MYSQL_USER': 'wordpress'},
+                    'image': 'mysql:5.7',
+                    'restart': 'always',
+                    'volumes': ['db_data:/var/lib/mysql']},
+                'wordpress': {
+                    'depends_on': ['db'],
+                    'environment': {'WORDPRESS_DB_HOST': 'db:3306',
+                                    'WORDPRESS_DB_PASSWORD': 'wordpress'},
+                    'image': {'fn::join': [':',
+                                           ['wordpress',
+                                            {'ref': 'wp_version'}]]},
+                    'ports': ['8000:80'],
+                    'restart': 'always'}},
+            'version': '2',
+            'volumes': {'db_data': None}},
+            'healthchecks': [
+                {'http': {'port': 8000}},
+                {'AwsElb': {'loadbalancer_name': {'Ref': 'my-alb'}}}],
+            'pre_start': [
+                {'AwsEcrLogin': {'account_id': 123456789123,
+                                 'region': 'eu-west-1'}}],
+            'signals': [
+                {'AwsCfn': {'logical_resource_id': {'fn::getatt': ['my-asg', 'arn']},
+                            'region': 'eu-west-1',
+                            'stack_name': 'my-stack'}}]}
+
         expected = {
             "Fn::Base64": {
                 "Fn::Join": [
                     "\n",
                     [
-                        "application_id: stackName",
-                        "application_version: imageVersion",
-                        "environment:",
-                        "  QUEUE_URL:",
+                        "docker-compose:",
+                        "  services:",
+                        "    db:",
+                        "      environment:",
+                        "        MYSQL_DATABASE: wordpress",
+                        "        MYSQL_PASSWORD: wordpress",
+                        "        MYSQL_ROOT_PASSWORD: wordpress",
+                        "        MYSQL_USER: wordpress",
+                        "      image: mysql:5.7",
+                        "      restart: always",
+                        "      volumes:",
+                        "        -db_data:/var/lib/mysql",
+                        "    wordpress:",
+                        "      depends_on:",
+                        "        -db",
+                        "      environment:",
+                        "        WORDPRESS_DB_HOST: db:3306",
+                        "        WORDPRESS_DB_PASSWORD: wordpress",
+                        "      image:",
                         {
                             "Fn::Join": [
                                 "",
                                 [
-                                    "    ",
+                                    "        ",
                                     {
-                                        "ref": "myQueueUrl"
+                                        "fn::join": [
+                                            ":",
+                                            [
+                                                "wordpress",
+                                                {
+                                                    "ref": "wp_version"
+                                                }
+                                            ]
+                                        ]
                                     }
                                 ]
                             ]
                         },
-                        "  SSO_KEY: mySsoKey"
+                        "      ports:",
+                        "        -8000:80",
+                        "      restart: always",
+                        "  version: 2",
+                        "  volumes:",
+                        "    db_data: None",
+                        "healthchecks:",
+                        "  -http:",
+                        "    port: 8000",
+                        "  -AwsElb:",
+                        "    loadbalancer_name:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "      ",
+                                    {
+                                        "Ref": "my-alb"
+                                    }
+                                ]
+                            ]
+                        },
+                        "pre_start:",
+                        "  -AwsEcrLogin:",
+                        "    account_id: 123456789123",
+                        "    region: eu-west-1",
+                        "signals:",
+                        "  -AwsCfn:",
+                        "    logical_resource_id:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "      ",
+                                    {
+                                        "fn::getatt": ["my-asg", "arn"]
+                                    }
+                                ]
+                            ]
+                        },
+                        "    region: eu-west-1",
+                        "    stack_name: my-stack"
                     ]
                 ]
             }
