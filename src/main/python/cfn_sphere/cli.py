@@ -196,15 +196,17 @@ def validate_template(template_file, confirm, yes):
 @click.argument('cleartext', type=str)
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
+@click.option('--context', '-c', default=None, envvar='CFN_SPHERE_CONTEXT', type=click.STRING, multiple=True,
+              help="Context for encryption, passed as kv pairs, e.g. --context key=value")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-def encrypt(region, keyid, cleartext, confirm, yes):
+def encrypt(region, keyid, cleartext, context, confirm, yes):
     confirm = confirm or yes
     if not confirm:
         check_update_available()
 
     try:
-        cipertext = KMS(region).encrypt(keyid, cleartext)
+        cipertext = KMS(region).encrypt(keyid, cleartext, kv_list_to_dict(context))
         click.echo("Ciphertext: {0}".format(cipertext))
     except CfnSphereException as e:
         LOGGER.error(e)
@@ -219,17 +221,19 @@ def encrypt(region, keyid, cleartext, confirm, yes):
 @cli.command(help="Decrypt a given ciphertext with AWS Key Management Service")
 @click.argument('region', type=str)
 @click.argument('ciphertext', type=str)
+@click.option('--context', '-c', default=None, envvar='CFN_SPHERE_CONTEXT', type=click.STRING, multiple=True,
+              help="Context for decryption, passed as kv pairs, e.g. --context key=value")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-def decrypt(region, ciphertext, confirm, yes):
+def decrypt(region, ciphertext, context, confirm, yes):
     confirm = confirm or yes
     if not confirm:
         check_update_available()
 
     try:
-        cleartext = KMS(region).decrypt(ciphertext)
+        cleartext = KMS(region).decrypt(ciphertext, kv_list_to_dict(context))
         click.echo("Cleartext: {0}".format(cleartext))
     except CfnSphereException as e:
         LOGGER.error(e)
@@ -239,6 +243,17 @@ def decrypt(region, ciphertext, confirm, yes):
         LOGGER.exception(e)
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
+
+
+def kv_list_to_dict(list):
+    result = {}
+    for item in list:
+        parts = str(item).split("=")
+        if not len(parts) == 2:
+            raise CfnSphereException("Could not parse kv input: {0}, please ensure it is passed as k=v".format(list))
+        result[parts[0]] = parts[1]
+
+    return result
 
 
 def main():

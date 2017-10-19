@@ -16,7 +16,15 @@ class KMSTests(TestCase):
         boto_mock.return_value.decrypt.return_value = {'Plaintext': b'decryptedValue'}
 
         self.assertEqual('decryptedValue', KMS().decrypt("ZW5jcnlwdGVkVmFsdWU="))
-        boto_mock.return_value.decrypt.assert_called_once_with(CiphertextBlob=b'encryptedValue')
+        boto_mock.return_value.decrypt.assert_called_once_with(CiphertextBlob=b'encryptedValue', EncryptionContext=None)
+
+    @patch('cfn_sphere.aws.kms.boto3.client')
+    def test_decrypt_value_with_execution_context(self, boto_mock):
+        boto_mock.return_value.decrypt.return_value = {'Plaintext': b'decryptedValue'}
+
+        self.assertEqual('decryptedValue', KMS().decrypt("ZW5jcnlwdGVkVmFsdWU=", {"k1": "v1", "k2": "v2"}))
+        boto_mock.return_value.decrypt.assert_called_once_with(CiphertextBlob=b'encryptedValue',
+                                                               EncryptionContext={'k2': 'v2', 'k1': 'v1'})
 
     @patch('cfn_sphere.aws.kms.boto3.client')
     def test_decrypt_value_with_unicode_char(self, boto_mock):
@@ -27,4 +35,5 @@ class KMSTests(TestCase):
                          KMS().decrypt("KOKVr8Kw4pahwrDvvInila/vuLUg4pS74pSB4pS7"))
 
         boto_mock.return_value.decrypt.assert_called_once_with(
-            CiphertextBlob=base64.b64decode("KOKVr8Kw4pahwrDvvInila/vuLUg4pS74pSB4pS7".encode()))
+            CiphertextBlob=base64.b64decode("KOKVr8Kw4pahwrDvvInila/vuLUg4pS74pSB4pS7".encode()),
+            EncryptionContext=None)
