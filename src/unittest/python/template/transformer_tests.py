@@ -1,3 +1,5 @@
+import json
+
 try:
     from unittest2 import TestCase
     from mock import Mock
@@ -74,18 +76,17 @@ class CloudFormationTemplateTransformerTests(TestCase):
         self.assertEqual(sorted(expected_calls), sorted(handler.mock_calls))
         self.assertEqual(result, {"a": "foo", "b": {"c": "foo"}})
 
-    def test_transform_dict_to_yaml_lines_list(self):
+    def test_transform_dict_to_yaml_lines_list_with_simple_kv(self):
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": "my-value"})
-        self.assertEqual([{"Fn::Join": [": ", ["my-key", "my-value"]]}], result)
+        self.assertEqual(["my-key: my-value"], result)
 
     def test_transform_dict_to_yaml_lines_list_indents_sub_dicts(self):
-        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(
-            {"my-key": {"my-sub-key": "value"}})
-        self.assertEqual(["my-key:", {"Fn::Join": [": ", ["  my-sub-key", "value"]]}], result)
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": {"my-sub-key": "v"}})
+        self.assertEqual(["my-key:", "  my-sub-key: v"], result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_integer_values(self):
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": 3})
-        self.assertEqual([{"Fn::Join": [": ", ["my-key", 3]]}], result)
+        self.assertEqual(["my-key: 3"], result)
 
     # def test_transform_dict_to_yaml_lines_list_accepts_list_values(self):
     #     result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": ["a", "b"]})
@@ -147,21 +148,53 @@ class CloudFormationTemplateTransformerTests(TestCase):
     def test_transform_taupage_user_data_key(self):
         input = {
             "application_id": "stackName",
-            "application_version": "imageVersion",
+            "application_version": 3,
             "environment": {
-                "SSO_KEY": "|Ref|mySsoKey",
+                "SSO_KEY": {"ref": "mySsoKey"},
                 "QUEUE_URL": {"ref": "myQueueUrl"}
             }
         }
 
-        expected = {'Fn::Base64': {'Fn::Join': ['\n', ['#taupage-ami-config',
-                                                       {'Fn::Join': [': ', ['application_id', 'stackName']]},
-                                                       {'Fn::Join': [': ', ['application_version', 'imageVersion']]},
-                                                       'environment:',
-                                                       {'Fn::Join': [': ', ['  QUEUE_URL', {'ref': 'myQueueUrl'}]]},
-                                                       {'Fn::Join': [': ', ['  SSO_KEY', '|Ref|mySsoKey']]}]]}}
+        expected = {
+            "Fn::Base64": {
+                "Fn::Join": [
+                    "\n",
+                    [
+                        "#taupage-ami-config",
+                        "application_id: stackName",
+                        "application_version: 3",
+                        "environment:",
+                        "  QUEUE_URL:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "ref": "myQueueUrl"
+                                    }
+                                ]
+                            ]
+                        },
+                        "  SSO_KEY:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "ref": "mySsoKey"
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            }
+        }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key("@taupageUserData@", input)
+        print(json.dumps(value, indent=4))
         self.assertEqual("UserData", key)
         self.assertEqual(expected, value)
 
@@ -174,79 +207,145 @@ class CloudFormationTemplateTransformerTests(TestCase):
                 "QUEUE_URL": {"ref": "myQueueUrl"}
             }
         }
-        expected = {"Fn::Base64":
-                        {"Fn::Join": ["\n", [
-                            {"Fn::Join": [": ", ["application_id", "stackName"]]},
-                            {"Fn::Join": [": ", ["application_version", "imageVersion"]]},
-                            "environment:",
-                            {"Fn::Join": [": ", ["  QUEUE_URL", {"ref": "myQueueUrl"}]]},
-                            {"Fn::Join": [": ", ["  SSO_KEY", "mySsoKey"]]}]]
-                         }
-                    }
+        expected = {
+            "Fn::Base64": {
+                "Fn::Join": [
+                    "\n",
+                    [
+                        "application_id: stackName",
+                        "application_version: imageVersion",
+                        "environment:",
+                        "  QUEUE_URL:",
+                        {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "    ",
+                                    {
+                                        "ref": "myQueueUrl"
+                                    }
+                                ]
+                            ]
+                        },
+                        "  SSO_KEY: mySsoKey"
+                    ]
+                ]
+            }
+        }
 
         key, value = CloudFormationTemplateTransformer.transform_yaml_user_data_key("@YamlUserData@", input)
-
+        print(json.dumps(value, indent=4))
         self.assertEqual("UserData", key)
         self.assertEqual(expected, value)
 
-    # def test_transform_dict_to_yaml_lines(self):
-    #     input = {
-    #         "docker-compose": {
-    #             "version": "2",
-    #             "services": {
-    #                 "grafana": {
-    #                     "environment": {
-    #                         "GF_SECURITY_ADMIN_PASSWORD": "|Ref|grafanaAdminPassword"
-    #                     },
-    #                     "ports": [
-    #                         "3000:3000"
-    #                     ],
-    #                     "restart": "always"
-    #                 }
-    #             }
-    #         }
-    #     }
-    #
-    #     expected = [
-    #         "docker-compose:",
-    #         "  services:",
-    #         "    grafana:",
-    #         "      environment:",
-    #         {"Fn::Join": [": ",
-    #                       ["        GF_SECURITY_ADMIN_PASSWORD",
-    #                        "|Ref|grafanaAdminPassword"]]},
-    #         "      ports:",
-    #         "        - 3000:3000",
-    #         {"Fn::Join": [": ", ["      restart", "always"]]},
-    #         {"Fn::Join": [": ", ["  version", "2"]]}
-    #     ]
-    #
-    #     result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-    #     self.assertEqual(expected, result)
+    def test_transform_dict_to_yaml_lines(self):
+        input = {
+            "docker-compose": {
+                "version": "2",
+                "services": {
+                    "grafana": {
+                        "environment": {
+                            "GF_SECURITY_ADMIN_PASSWORD": {"Ref": "grafanaAdminPassword"}
+                        },
+                        "ports": [
+                            "3000:3000"
+                        ],
+                        "restart": "always"
+                    }
+                }
+            }
+        }
 
-    # def test_transform_dict(self):
-    #     input = {
-    #         "a": {
-    #             "baa": {"key": "value"}
-    #         },
-    #         "b": [{"c": "d"}, "e", 2, [1, 2, {"Ref": "Foo"}]]
-    #     }
-    #
-    #     expected = ['a:',
-    #                 '  baa:',
-    #                 {'Fn::Join': [': ', ['    key', 'value']]},
-    #                 'b:',
-    #                 {'Fn::Join': [': ', ['  - c', 'd']]},
-    #                 '  - e',
-    #                 '  - 2',
-    #                 '  -',
-    #                 '    - 1',
-    #                 '    - 2',
-    #                 {'Fn::Join': ['', ['    -', {"Ref": "Foo"}]]},
-    #                 ]
-    #
-    #     result = CloudFormationTemplateTransformer._transform_dict(input)
-    #     self.assertEqual(expected, result)
+        expected = [
+            "docker-compose:",
+            "  services:",
+            "    grafana:",
+            "      environment:",
+            "        GF_SECURITY_ADMIN_PASSWORD:",
+            {
+                "Fn::Join": [
+                    "",
+                    [
+                        "          ",
+                        {
+                            "Ref": "grafanaAdminPassword"
+                        }
+                    ]
+                ]
+            },
+            "      ports:",
+            "        -3000:3000",
+            "      restart: always",
+            "  version: 2"
+        ]
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        print(json.dumps(result, indent=4))
+        self.assertEqual(expected, result)
+
+    def test_transform_dict(self):
+        input = {
+            "a": {
+                "baa": {"key": "value"}
+            },
+            "b": [{"c": "d"}, "e", 2, [1, 2, {"Ref": "Foo"}]]
+        }
+
+        expected = [
+            "a:",
+            "  baa:",
+            "    key: value",
+            "b:",
+            "  -c: d",
+            "  -e",
+            "  -2",
+            "  -",
+            "    -1",
+            "    -2",
+            {
+                "Fn::Join": [
+                    "",
+                    [
+                        "    -",
+                        {
+                            "Ref": "Foo"
+                        }
+                    ]
+                ]
+            }
+        ]
+
+        result = CloudFormationTemplateTransformer._transform_dict(input)
+        print(json.dumps(result, indent=4))
+        self.assertEqual(expected, result)
+
+    def test_transform_dict_with_ref_in_nested_list(self):
+        input = {
+            "key": ["a", "b", ["a", {"Ref": "Foo"}]]
+        }
+
+        expected = [
+            "key:",
+            "  -a",
+            "  -b",
+            "  -",
+            "    -a",
+            {
+                "Fn::Join": [
+                    "",
+                    [
+                        "    -",
+                        {
+                            "Ref": "Foo"
+                        }
+                    ]
+                ]
+            }
+        ]
+
+        result = CloudFormationTemplateTransformer._transform_dict(input)
+        print(json.dumps(result, indent=4))
+        self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_multiple_sub_dicts(self):
         input = {
@@ -254,12 +353,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
                 "baa": {"key": "value"}
             }
         }
-        expected = [
-            "foo:",
-            "  baa:",
-            {"Fn::Join": [": ", ["    key", "value"]]}
-
-        ]
+        expected = ["foo:", "  baa:", "    key: value"]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
         self.assertEqual(expected, result)
@@ -281,19 +375,30 @@ class CloudFormationTemplateTransformerTests(TestCase):
         }
 
         expected = [
-            {'Fn::Join': [': ', [
-                'source',
-                {'Fn::Join': [
-                    ':', [
-                        'my-registry/my-app',
-                        {'Ref': 'appVersion'}
+            "source:",
+            {
+                "Fn::Join": [
+                    "",
+                    [
+                        "  ",
+                        {
+                            "Fn::Join": [
+                                ":",
+                                [
+                                    "my-registry/my-app",
+                                    {
+                                        "Ref": "appVersion"
+                                    }
+                                ]
+                            ]
+                        }
                     ]
                 ]
-                }]]
-             }
+            }
         ]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
 

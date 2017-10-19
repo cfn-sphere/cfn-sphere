@@ -183,14 +183,14 @@ class CloudFormationTemplateTransformer(object):
         return key, value
 
     @staticmethod
-    def transform_kv_to_cfn_join(key, value):
-        if isinstance(value, string_types) and ':' in key:
+    def transform_kv_to_cfn_join(key, value, delimiter=": "):
+        if isinstance(value, string_types) and ":" in key:
             key = "'{0}'".format(key)
 
-        if isinstance(value, string_types) and ':' in value:
+        if isinstance(value, string_types) and ":" in value:
             value = "'{0}'".format(value)
 
-        return {'Fn::Join': [': ', [key, value]]}
+        return {'Fn::Join': [delimiter, [key, value]]}
 
     @staticmethod
     def transform_reference_string(value):
@@ -226,41 +226,53 @@ class CloudFormationTemplateTransformer(object):
 
         return value
 
-    # new implementation still in testing
     @classmethod
     def _transform_dict(cls, dict_value, indentation_level=0, prefix=""):
         lines = []
 
         for key, value in sorted(dict_value.items()):
 
+            print("TRANSFORMING_DICT_VALUES: {} : {}".format(key, value))
+
             # key indentation with two spaces
             if indentation_level > 0:
-                indented_key = '  ' * indentation_level + prefix + str(key)
+                indented_key = "  " * indentation_level + prefix + str(key)
             else:
-                indented_key = key
+                indented_key = prefix + str(key)
 
             if isinstance(key, string_types):
                 # do not go any further and directly return cfn functions and their values
-                if key.lower() == 'ref' or key.lower().startswith("fn::"):
-                    return {key: value}
-                else:
+                if key.lower() == "ref" or key.lower().startswith("fn::"):
+                    indented_hyphen = '  ' * indentation_level + prefix
+                    # aws functions results will always be a string
+                    result = {key: value}
+                    line = cls.transform_kv_to_cfn_join(indented_hyphen, result, delimiter="")
 
+                    print("INDENTED_HYPHEN: '{}'".format(indented_hyphen))
+                    print("RESULT: {}".format(result))
+                    print("LINE: {}".format(line))
+                    lines.append(line)
+                else:
+                    print("NON_REFERENCE_KEY: {}".format(key))
                     # recursion for dict or list values
                     if isinstance(value, dict):
+                        print("DICT_VALUE: {}".format(value))
                         result = cls._transform_dict(value, indentation_level + 1)
                         if isinstance(result, dict):
                             lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
                         elif isinstance(result, list):
-                            lines.append(indented_key + ':')
+                            lines.append(indented_key + ":")
                             lines.extend(result)
                         else:
                             raise TemplateErrorException("Failed to convert dict to list of lines")
 
                     elif isinstance(value, list):
-                        lines.append(indented_key + ':')
+                        print("LIST_VALUE: {}".format(value))
+                        lines.append(indented_key + ":")
                         lines.extend(cls._transform_list(value, indentation_level + 1))
                     else:
-                        lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
+                        print("SIMPLE_VALUE: {}".format(value))
+                        lines.append(indented_key + ": " + str(value))
             else:
                 lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
 
@@ -270,58 +282,21 @@ class CloudFormationTemplateTransformer(object):
     def _transform_list(cls, list_value, indentation_level=0):
         lines = []
 
+        indented_hyphen = '  ' * indentation_level + "-"
+
         for item in list_value:
+            print("LIST_ITEM: {}".format(item))
             if isinstance(item, dict):
-                lines.extend(cls._transform_dict(item, indentation_level, prefix="- "))
+                lines.extend(cls._transform_dict(item, indentation_level, prefix="-"))
             # list of list
             elif isinstance(item, list):
-                lines.append('  ' * indentation_level + "-")
+                lines.append(indented_hyphen)
                 lines.extend(cls._transform_list(item, indentation_level + 1))
             else:
-                lines.append('  ' * indentation_level + "- " + str(item))
+                lines.append(indented_hyphen + str(item))
 
         return lines
 
-    #old implementation still used
     @classmethod
-    def transform_dict_to_yaml_lines_list(cls, userdata_dict, indentation_level=0):
-        lines = []
-
-        for key, value in sorted(userdata_dict.items()):
-
-            # key indentation with two spaces
-            if indentation_level > 0:
-                indented_key = '  ' * indentation_level + str(key)
-            else:
-                indented_key = key
-
-            if isinstance(key, string_types):
-
-                # do not go any further and directly return cfn functions and their values
-                if key.lower() == 'ref' or key.lower().startswith("fn::"):
-                    return {key: value}
-                else:
-
-                    # recursion for dict values
-                    if isinstance(value, dict):
-                        result = cls.transform_dict_to_yaml_lines_list(value, indentation_level + 1)
-                        if isinstance(result, dict):
-                            lines.append(cls.transform_kv_to_cfn_join(indented_key, result))
-                        elif isinstance(result, list):
-                            lines.append(indented_key + ':')
-                            lines.extend(result)
-                        else:
-                            raise TemplateErrorException("Failed to convert dict to list of lines")
-                    elif isinstance(value, list):
-                        lines.extend([indented_key + ':'] + ['- {0}'.format(item) for item in value])
-
-                    else:
-                        lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
-            else:
-                lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
-
-        return lines
-
-
-if __name__ == "__main__":
-    template = CloudFormationTemplateTransformer
+    def transform_dict_to_yaml_lines_list(cls, userdata_dict):
+        return cls._transform_dict(userdata_dict)
