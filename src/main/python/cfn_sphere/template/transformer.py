@@ -260,8 +260,12 @@ class CloudFormationTemplateTransformer(object):
                     elif isinstance(value, list):
                         lines.append(indented_key + ":")
                         lines.extend(cls._transform_list(value, indentation_level + 1))
-                    else:
+                    elif isinstance(value, int):
                         lines.append(indented_key + ": " + str(value))
+                    elif isinstance(value, float):
+                        lines.append(indented_key + ": " + str(value))
+                    else:
+                        lines.append(indented_key + ": '" + str(value) + "'")
             else:
                 lines.append(cls.transform_kv_to_cfn_join(indented_key, value))
 
@@ -275,13 +279,17 @@ class CloudFormationTemplateTransformer(object):
 
         for item in list_value:
             if isinstance(item, dict):
-                lines.extend(cls._transform_dict(item, indentation_level, prefix="-"))
+                lines.extend(cls._transform_dict(item, indentation_level, prefix="- "))
             # list of list
             elif isinstance(item, list):
                 lines.append(indented_hyphen)
                 lines.extend(cls._transform_list(item, indentation_level + 1))
+            elif isinstance(item, int):
+                lines.append(indented_hyphen + " " + str(item))
+            elif isinstance(item, float):
+                lines.append(indented_hyphen + " " + str(item))
             else:
-                lines.append(indented_hyphen + str(item))
+                lines.append(indented_hyphen + " '" + str(item) + "'")
 
         return lines
 

@@ -78,11 +78,11 @@ class CloudFormationTemplateTransformerTests(TestCase):
 
     def test_transform_dict_to_yaml_lines_list_with_simple_kv(self):
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": "my-value"})
-        self.assertEqual(["my-key: my-value"], result)
+        self.assertEqual(["my-key: 'my-value'"], result)
 
     def test_transform_dict_to_yaml_lines_list_indents_sub_dicts(self):
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": {"my-sub-key": "v"}})
-        self.assertEqual(["my-key:", "  my-sub-key: v"], result)
+        self.assertEqual(["my-key:", "  my-sub-key: 'v'"], result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_integer_values(self):
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list({"my-key": 3})
@@ -293,7 +293,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
                                 ]
                             ]
                         },
-                        "  JAVA_OPTS: -Xmx3g",
+                        "  JAVA_OPTS: '-Xmx3g'",
                         "  METRICS_NAMESPACE:",
                         {
                             "Fn::Join": [
@@ -306,7 +306,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
                                 ]
                             ]
                         },
-                        "health_check_path: /status",
+                        "health_check_path: '/status'",
                         "health_check_port: 8080",
                         "health_check_timeout_seconds: 9000",
                         "healthcheck:",
@@ -322,9 +322,9 @@ class CloudFormationTemplateTransformerTests(TestCase):
                                 ]
                             ]
                         },
-                        "  type: elb",
+                        "  type: 'elb'",
                         "notify_cfn:",
-                        "  resource: asg",
+                        "  resource: 'asg'",
                         "  stack:",
                         {
                             "Fn::Join": [
@@ -340,7 +340,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
                         "ports:",
                         "  8080: 9000",
                         "root: True",
-                        "runtime: Docker",
+                        "runtime: 'Docker'",
                         "source:",
                         {
                             "Fn::Join": [
@@ -392,7 +392,7 @@ class CloudFormationTemplateTransformerTests(TestCase):
                     'ports': ['8000:80'],
                     'restart': 'always'}},
             'version': '2',
-            'volumes': {'db_data': None}},
+            'volumes': 'db_data'},
             'healthchecks': [
                 {'http': {'port': 8000}},
                 {'AwsElb': {'loadbalancer_name': {'Ref': 'my-alb'}}}],
@@ -413,20 +413,20 @@ class CloudFormationTemplateTransformerTests(TestCase):
                         "  services:",
                         "    db:",
                         "      environment:",
-                        "        MYSQL_DATABASE: wordpress",
-                        "        MYSQL_PASSWORD: wordpress",
-                        "        MYSQL_ROOT_PASSWORD: wordpress",
-                        "        MYSQL_USER: wordpress",
-                        "      image: mysql:5.7",
-                        "      restart: always",
+                        "        MYSQL_DATABASE: 'wordpress'",
+                        "        MYSQL_PASSWORD: 'wordpress'",
+                        "        MYSQL_ROOT_PASSWORD: 'wordpress'",
+                        "        MYSQL_USER: 'wordpress'",
+                        "      image: 'mysql:5.7'",
+                        "      restart: 'always'",
                         "      volumes:",
-                        "        -db_data:/var/lib/mysql",
+                        "        - 'db_data:/var/lib/mysql'",
                         "    wordpress:",
                         "      depends_on:",
-                        "        -db",
+                        "        - 'db'",
                         "      environment:",
-                        "        WORDPRESS_DB_HOST: db:3306",
-                        "        WORDPRESS_DB_PASSWORD: wordpress",
+                        "        WORDPRESS_DB_HOST: 'db:3306'",
+                        "        WORDPRESS_DB_PASSWORD: 'wordpress'",
                         "      image:",
                         {
                             "Fn::Join": [
@@ -448,15 +448,14 @@ class CloudFormationTemplateTransformerTests(TestCase):
                             ]
                         },
                         "      ports:",
-                        "        -8000:80",
-                        "      restart: always",
-                        "  version: 2",
-                        "  volumes:",
-                        "    db_data: None",
+                        "        - '8000:80'",
+                        "      restart: 'always'",
+                        "  version: '2'",
+                        "  volumes: 'db_data'",
                         "healthchecks:",
-                        "  -http:",
+                        "  - http:",
                         "    port: 8000",
-                        "  -AwsElb:",
+                        "  - AwsElb:",
                         "    loadbalancer_name:",
                         {
                             "Fn::Join": [
@@ -470,11 +469,11 @@ class CloudFormationTemplateTransformerTests(TestCase):
                             ]
                         },
                         "pre_start:",
-                        "  -AwsEcrLogin:",
+                        "  - AwsEcrLogin:",
                         "    account_id: 123456789123",
-                        "    region: eu-west-1",
+                        "    region: 'eu-west-1'",
                         "signals:",
-                        "  -AwsCfn:",
+                        "  - AwsCfn:",
                         "    logical_resource_id:",
                         {
                             "Fn::Join": [
@@ -487,8 +486,8 @@ class CloudFormationTemplateTransformerTests(TestCase):
                                 ]
                             ]
                         },
-                        "    region: eu-west-1",
-                        "    stack_name: my-stack"
+                        "    region: 'eu-west-1'",
+                        "    stack_name: 'my-stack'"
                     ]
                 ]
             }
@@ -535,10 +534,38 @@ class CloudFormationTemplateTransformerTests(TestCase):
                 ]
             },
             "      ports:",
-            "        -3000:3000",
-            "      restart: always",
-            "  version: 2"
+            "        - '3000:3000'",
+            "      restart: 'always'",
+            "  version: '2'"
         ]
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        print(json.dumps(result, indent=4))
+        self.assertEqual(expected, result)
+
+    def test_transform_dict_to_yaml_lines_preserves_int_values(self):
+        input = {"a": 2}
+        expected = ["a: 2"]
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        print(json.dumps(result, indent=4))
+        self.assertEqual(expected, result)
+
+    def test_transform_dict_to_yaml_lines_preserves_double_values(self):
+        input = {"a": 2.3}
+        expected = ["a: 2.3"]
+
+        result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        print(json.dumps(result, indent=4))
+        self.assertEqual(expected, result)
+
+    def test_transform_dict_to_yaml_lines_preserves_string_numbers(self):
+        input = {"a": "2"}
+        expected = ["a: '2'"]
+
+    def test_transform_dict_to_yaml_lines_preserves_boolean_values(self):
+        input = {"a": True}
+        expected = ["a: True"]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
         print(json.dumps(result, indent=4))
@@ -555,19 +582,19 @@ class CloudFormationTemplateTransformerTests(TestCase):
         expected = [
             "a:",
             "  baa:",
-            "    key: value",
+            "    key: 'value'",
             "b:",
-            "  -c: d",
-            "  -e",
-            "  -2",
+            "  - c: 'd'",
+            "  - 'e'",
+            "  - 2",
             "  -",
-            "    -1",
-            "    -2",
+            "    - 1",
+            "    - 2",
             {
                 "Fn::Join": [
                     "",
                     [
-                        "    -",
+                        "    - ",
                         {
                             "Ref": "Foo"
                         }
@@ -587,15 +614,15 @@ class CloudFormationTemplateTransformerTests(TestCase):
 
         expected = [
             "key:",
-            "  -a",
-            "  -b",
+            "  - 'a'",
+            "  - 'b'",
             "  -",
-            "    -a",
+            "    - 'a'",
             {
                 "Fn::Join": [
                     "",
                     [
-                        "    -",
+                        "    - ",
                         {
                             "Ref": "Foo"
                         }
@@ -614,9 +641,10 @@ class CloudFormationTemplateTransformerTests(TestCase):
                 "baa": {"key": "value"}
             }
         }
-        expected = ["foo:", "  baa:", "    key: value"]
+        expected = ["foo:", "  baa:", "    key: 'value'"]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
+        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_int_key_value(self):
