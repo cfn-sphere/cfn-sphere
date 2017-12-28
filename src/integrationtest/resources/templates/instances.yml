@@ -92,11 +92,12 @@ Resources:
           stack: !Ref "AWS::StackName"
         ports:
           8080: 9000
-#        list-values:
-#          - a
-#          - b
-#          - "|Ref|appVersion"
-#          - Ref: AWS::StackName
+        list-values:
+          - a
+          - b
+          - "|Ref|appVersion"
+          - Ref: appVersion
+          - 2
         root: true
         runtime: Docker
         dockercfg:
