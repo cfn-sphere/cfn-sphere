@@ -74,7 +74,7 @@ class ParameterResolverTests(TestCase):
         stack_config = Mock()
         stack_config.parameters = {'foo': None}
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(CfnSphereException):
             ParameterResolver().resolve_parameter_values('foo', stack_config)
 
     def test_resolve_parameter_values_returns_list_with_string_value(self):

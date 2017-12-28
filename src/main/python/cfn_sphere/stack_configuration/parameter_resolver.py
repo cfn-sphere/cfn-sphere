@@ -127,6 +127,8 @@ class ParameterResolver(object):
             return str(value).lower()
         elif isinstance(value, (int, float)):
             return str(value)
+        elif not value:
+            raise CfnSphereException("Parameter {0} does not seem to have a value".format(key))
         else:
             raise NotImplementedError("Cannot handle {0} type for key: {1}".format(type(value), key))
 
