@@ -251,6 +251,19 @@ class CloudFormation(object):
             return False
 
     @with_boto_retry()
+    def _set_stack_policy(self, stack):
+        """
+        Set cloudformation stack policy
+        :param stack: cfn_sphere.aws.cfn.CloudFormationStack
+        """
+        kwargs = {"StackName": stack.name}
+
+        if stack.stack_policy:
+            kwargs["StackPolicyBody"] = json.dumps(stack.stack_policy)
+
+        self.client.set_stack_policy(**kwargs)
+
+    @with_boto_retry()
     def _create_stack(self, stack):
         """
         Create cloudformation stack
@@ -297,8 +310,6 @@ class CloudFormation(object):
 
         if stack.service_role:
             kwargs["RoleARN"] = stack.service_role
-        if stack.stack_policy:
-            kwargs["StackPolicyBody"] = json.dumps(stack.stack_policy)
 
         self.client.update_stack(**kwargs)
 
@@ -346,6 +357,10 @@ class CloudFormation(object):
 
         try:
             stack_parameters_string = get_pretty_parameters_string(stack)
+
+            if stack.stack_policy:
+                self.logger.info("Setting stack policy for stack {0}".format(stack.name))
+                self._set_stack_policy(stack)
 
             try:
                 self._update_stack(stack)
