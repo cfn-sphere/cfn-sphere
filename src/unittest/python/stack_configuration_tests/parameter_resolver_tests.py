@@ -167,10 +167,9 @@ class ParameterResolverTests(TestCase):
 
     def test_handle_kms_value_handles_encryption_context_if_set(self):
         self.kms_mock.return_value.decrypt.return_value = "decryptedValue"
-        result = ParameterResolver().handle_kms_value('|kms|encryptionContext|encryptedValue')
+        result = ParameterResolver().handle_kms_value('|kms|k=v|encryptedValue')
 
-        self.kms_mock.return_value.decrypt.assert_called_once_with('encryptedValue',
-                                                                   encryption_context='encryptionContext')
+        self.kms_mock.return_value.decrypt.assert_called_once_with('encryptedValue', encryption_context={'k': 'v'})
         self.assertEqual(result, 'decryptedValue')
 
     def test_handle_kms_value_ignores_encryption_context_if_not_set(self):
@@ -182,7 +181,7 @@ class ParameterResolverTests(TestCase):
 
     def test_handle_kms_value_raises_exception_on_invalid_value_format(self):
         with self.assertRaises(CfnSphereException):
-            ParameterResolver().handle_kms_value('|kms|context|encryptedValue|something')
+            ParameterResolver().handle_kms_value('|kms|k=v|encryptedValue|something')
 
     def test_update_parameters_with_cli_parameters_with_string_param_value(self):
         result = ParameterResolver().update_parameters_with_cli_parameters(

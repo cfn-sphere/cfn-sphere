@@ -2,8 +2,6 @@ import tempfile
 
 from git import InvalidGitRepositoryError
 
-from cfn_sphere.util import get_git_repository_remote_url
-
 try:
     from unittest2 import TestCase
     from mock import patch, Mock
@@ -22,7 +20,7 @@ from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.template import CloudFormationTemplate
 
 
-class StackConfigTests(TestCase):
+class UtilTests(TestCase):
     def test_convert_yaml_to_json_string_returns_valid_json_string(self):
         data = textwrap.dedent("""
         foo:
@@ -208,13 +206,13 @@ class StackConfigTests(TestCase):
     @patch("cfn_sphere.util.Repo")
     def test_get_git_repository_remote_url_returns_none_if_no_repository_present(self, repo_mock):
         repo_mock.side_effect = InvalidGitRepositoryError
-        self.assertEqual(None, get_git_repository_remote_url(tempfile.mkdtemp()))
+        self.assertEqual(None, util.get_git_repository_remote_url(tempfile.mkdtemp()))
 
     @patch("cfn_sphere.util.Repo")
     def test_get_git_repository_remote_url_returns_repo_url(self, repo_mock):
         url = "http://config.repo.git"
         repo_mock.return_value.remotes.origin.url = url
-        self.assertEqual(url, get_git_repository_remote_url(tempfile.mkdtemp()))
+        self.assertEqual(url, util.get_git_repository_remote_url(tempfile.mkdtemp()))
 
     @patch("cfn_sphere.util.Repo")
     def test_get_git_repository_remote_url_returns_repo_url_from_parent_dir(self, repo_mock):
@@ -223,10 +221,22 @@ class StackConfigTests(TestCase):
         repo_object_mock.remotes.origin.url = url
         repo_mock.side_effect = [InvalidGitRepositoryError, repo_object_mock]
 
-        self.assertEqual(url, get_git_repository_remote_url(tempfile.mkdtemp()))
+        self.assertEqual(url, util.get_git_repository_remote_url(tempfile.mkdtemp()))
 
     def test_get_git_repository_remote_url_returns_none_for_none_working_dir(self):
-        self.assertEqual(None, get_git_repository_remote_url(None))
+        self.assertEqual(None, util.get_git_repository_remote_url(None))
 
     def test_get_git_repository_remote_url_returns_none_for_empty_string_working_dir(self):
-        self.assertEqual(None, get_git_repository_remote_url(""))
+        self.assertEqual(None, util.get_git_repository_remote_url(""))
+
+    def test_kv_list_to_dict_returns_empty_dict_for_empty_list(self):
+        result = util.kv_list_to_dict([])
+        self.assertEqual({}, result)
+
+    def test_kv_list_to_dict(self):
+        result = util.kv_list_to_dict(["k1=v1", "k2=v2"])
+        self.assertEqual({"k1": "v1", "k2": "v2"}, result)
+
+    def test_kv_list_to_dict_raises_exception_on_syntax_error(self):
+        with self.assertRaises(CfnSphereException):
+            util.kv_list_to_dict(["k1=v1", "k2:v2"])

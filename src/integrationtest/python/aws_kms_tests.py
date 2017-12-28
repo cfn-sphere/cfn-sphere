@@ -27,7 +27,7 @@ class KMSTests(unittest2.TestCase):
         key_arn = response['KeyMetadata']['Arn']
         kms_client.create_alias(AliasName=cls.key_alias, TargetKeyId=key_arn)
 
-    def test_encrypt_decrypt_unicode_data(self):
+    def test_encrypt_decrypt_with_unicode_data(self):
         before = u"abcd$%&öäüß"
         kms_client = KMS()
         ciphertext = kms_client.encrypt(self.key_alias, before)
@@ -36,8 +36,17 @@ class KMSTests(unittest2.TestCase):
 
     def test_encrypt_with_invalid_key_id(self):
         kms_client = KMS()
-        self.assertRaises(CfnSphereBotoError,
-                          kms_client.encrypt, "invalid or nonexsting ID", "x")
+        self.assertRaises(CfnSphereBotoError, kms_client.encrypt, "invalid or nonexsting ID", "x")
+
+    def test_encrypt_decrypt_with_context(self):
+        kms_client = KMS()
+
+        context = {'system': 'cfn-sphere', 'env': 'test'}
+
+        before = u"abcd$%&öäüß"
+        ciphertext = kms_client.encrypt(self.key_alias, before, context)
+        after = kms_client.decrypt(ciphertext, context)
+        self.assertEqual(before, after)
 
 
 if __name__ == "__main__":

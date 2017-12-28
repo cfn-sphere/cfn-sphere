@@ -7,7 +7,7 @@ from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.aws.kms import KMS
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
-from cfn_sphere.util import get_logger
+from cfn_sphere.util import get_logger, kv_list_string_to_dict
 
 
 class ParameterResolver(object):
@@ -136,7 +136,7 @@ class ParameterResolver(object):
         if len(parts) == 3:
             return str(self.kms.decrypt(parts[2]))
         elif len(parts) == 4:
-            return str(self.kms.decrypt(parts[3], encryption_context=parts[2]))
+            return str(self.kms.decrypt(parts[3], encryption_context=kv_list_string_to_dict(parts[2])))
         else:
             raise CfnSphereException(
                 "Invalid format for |Kms| macro, it must be |Kms[|<encryption_context>]|<ciphertext>")

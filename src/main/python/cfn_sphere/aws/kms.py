@@ -12,6 +12,9 @@ class KMS(object):
         self.client = boto3.client('kms', region_name=region)
 
     def decrypt(self, encrypted_value, encryption_context=None):
+        if encryption_context is None:
+            encryption_context = {}
+
         try:
             ciphertext_blob = base64.b64decode(encrypted_value.encode())
             response = self.client.decrypt(CiphertextBlob=ciphertext_blob, EncryptionContext=encryption_context)
@@ -22,6 +25,9 @@ class KMS(object):
             raise CfnSphereException(e)
 
     def encrypt(self, key_id, cleartext_string, encryption_context=None):
+        if encryption_context is None:
+            encryption_context = {}
+
         try:
             response = self.client.encrypt(KeyId=key_id,
                                            Plaintext=cleartext_string,

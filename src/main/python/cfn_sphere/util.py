@@ -50,6 +50,32 @@ def convert_file(file_path):
         return convert(filestream.read())
 
 
+def kv_list_to_dict(items):
+    """
+    Converts a list of strings with k=v to dict {k:v}
+    :param items: list(string)
+    :return: dict
+    """
+    result = {}
+    for item in items:
+        parts = str(item).split("=")
+        if not len(parts) == 2:
+            raise CfnSphereException("Could not parse kv pair: {0}, please ensure it is passed as k=v".format(items))
+        result[parts[0]] = parts[1]
+
+    return result
+
+
+def kv_list_string_to_dict(value):
+    """
+    Converts a string with format k1=v1,k2=v2 to dict {k1:v1, k2:v2}
+    :param items: string
+    :return: dict
+    """
+    items = value.split(",")
+    return kv_list_to_dict(items)
+
+
 def get_pretty_parameters_string(stack):
     table = PrettyTable(["Parameter", "Value"])
 

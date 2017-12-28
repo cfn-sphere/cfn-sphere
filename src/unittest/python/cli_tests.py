@@ -1,4 +1,4 @@
-from cfn_sphere.cli import get_first_account_alias_or_account_id, kv_list_to_dict
+from cfn_sphere.cli import get_first_account_alias_or_account_id
 from cfn_sphere.exceptions import CfnSphereException
 
 try:
@@ -24,15 +24,3 @@ class CliTests(TestCase):
 
         result = get_first_account_alias_or_account_id()
         self.assertEqual("ACCOUNT_ID", result)
-
-    def test_kv_list_to_dict_returns_empty_dict_for_empty_list(self):
-        result = kv_list_to_dict([])
-        self.assertEqual({}, result)
-
-    def test_kv_list_to_dict(self):
-        result = kv_list_to_dict(["k1=v1", "k2=v2"])
-        self.assertEqual({"k1": "v1", "k2": "v2"}, result)
-
-    def test_kv_list_to_dict_raises_exception_on_syntax_error(self):
-        with self.assertRaises(CfnSphereException):
-            kv_list_to_dict(["k1=v1", "k2:v2"])

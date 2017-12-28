@@ -13,7 +13,7 @@ from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.stack_configuration import Config
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
-from cfn_sphere.util import convert_file, get_logger, get_latest_version
+from cfn_sphere.util import convert_file, get_logger, get_latest_version, kv_list_to_dict
 
 LOGGER = get_logger(root=True)
 
@@ -243,17 +243,6 @@ def decrypt(region, ciphertext, context, confirm, yes):
         LOGGER.exception(e)
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
-
-
-def kv_list_to_dict(list):
-    result = {}
-    for item in list:
-        parts = str(item).split("=")
-        if not len(parts) == 2:
-            raise CfnSphereException("Could not parse kv input: {0}, please ensure it is passed as k=v".format(list))
-        result[parts[0]] = parts[1]
-
-    return result
 
 
 def main():
