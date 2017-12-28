@@ -4,6 +4,7 @@ from collections import defaultdict
 import yaml
 from yaml.scanner import ScannerError
 
+from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
 from cfn_sphere.util import get_logger
 
@@ -18,10 +19,11 @@ class Config(object):
         if isinstance(config_dict, dict):
             self.working_dir = None
         elif config_file:
-            config_dict = self._read_config_file(config_file)
             self.working_dir = os.path.dirname(os.path.realpath(config_file))
+            config_dict = FileLoader.get_yaml_or_json_file(config_file, self.working_dir)
         else:
-            raise InvalidConfigException("No config_file or valid config_dict provided")
+            raise InvalidConfigException(
+                "You need to pass either config_file (path to a file) or config_dict (python dict) property")
 
         self.cli_params = self._parse_cli_parameters(cli_params)
         self.region = config_dict.get("region")
@@ -119,21 +121,6 @@ class Config(object):
                         Use 'stack1.param=value,stack2.param=value'""")
 
         return param_dict
-
-    @staticmethod
-    def _read_config_file(config_file):
-        try:
-            with open(config_file, "r") as f:
-                config_dict = yaml.safe_load(f.read())
-                if not isinstance(config_dict, dict):
-                    raise InvalidConfigException(
-                        "Config file {0} has invalid content, top level element must be a dict".format(config_file))
-
-                return config_dict
-        except ScannerError as e:
-            raise InvalidConfigException("Could not parse {0}: {1} {2}".format(config_file, e.problem, e.problem_mark))
-        except Exception as e:
-            raise InvalidConfigException("Could not read yaml file {0}: {1}".format(config_file, e))
 
 
 class StackConfig(object):
