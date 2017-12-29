@@ -98,6 +98,11 @@ Resources:
           - "|Ref|appVersion"
           - Ref: appVersion
           - 2
+          -
+            - a
+            - b
+            - 10
+            - "|Ref|appVersion"
         root: true
         runtime: Docker
         dockercfg:

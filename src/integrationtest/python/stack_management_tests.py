@@ -173,12 +173,20 @@ class StackManagementTests(CfnSphereIntegrationTest):
 
         list_values = user_data["list-values"]
         print(list_values)
-        self.assert_equal(len(list_values), 5)
+        self.assert_equal(len(list_values), 6)
         self.assert_equal("a", list_values[0])
         self.assert_equal("b", list_values[1])
         self.assert_equal(1, list_values[2])
         self.assert_equal(1, list_values[3])
         self.assert_equal(2, list_values[4])
+        self.assert_true(isinstance(list_values[5], list))
+
+        sublist_values = list_values[5]
+        print(sublist_values)
+        self.assert_equal("a", sublist_values[0])
+        self.assert_equal("b", sublist_values[0])
+        self.assert_equal(10, sublist_values[0])
+        self.assert_equal(1, sublist_values[0])
 
         #uncomment this to test kms decryption
         #self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
