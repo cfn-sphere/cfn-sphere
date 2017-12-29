@@ -1,9 +1,6 @@
 import os
 from collections import defaultdict
 
-import yaml
-from yaml.scanner import ScannerError
-
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
 from cfn_sphere.util import get_logger
