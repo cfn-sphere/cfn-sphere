@@ -33,14 +33,14 @@ class TestCloudFormationTemplateTests(TestCase):
         }
         template = CloudFormationTemplate(template_body, 'some name')
 
-        self.assertEquals(template.template_format_version, '2010-09-09')
-        self.assertEquals(template.description, 'some description')
-        self.assertEquals(template.metadata, {'meta': 'value'})
-        self.assertEquals(template.parameters, {'parameter': 'value'})
-        self.assertEquals(template.mappings, {'mapping': 'value'})
-        self.assertEquals(template.conditions, {'condition': 'value'})
-        self.assertEquals(template.resources, {'resource': 'value'})
-        self.assertEquals(template.outputs, {'output': 'value'})
+        self.assertEqual(template.template_format_version, '2010-09-09')
+        self.assertEqual(template.description, 'some description')
+        self.assertEqual(template.metadata, {'meta': 'value'})
+        self.assertEqual(template.parameters, {'parameter': 'value'})
+        self.assertEqual(template.mappings, {'mapping': 'value'})
+        self.assertEqual(template.conditions, {'condition': 'value'})
+        self.assertEqual(template.resources, {'resource': 'value'})
+        self.assertEqual(template.outputs, {'output': 'value'})
 
     def test_get_no_echo_parameter_keys_returns_parameter_keys_with_no_echo_set(self):
         template_body = {

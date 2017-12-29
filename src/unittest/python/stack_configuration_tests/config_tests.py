@@ -250,63 +250,118 @@ class ConfigTests(TestCase):
     def test_equals_Config(self):
         config_a_I = self.create_config_object()
 
-        self.assertEquals(config_a_I, config_a_I)
-        self.assertNotEquals(config_a_I, 'any string')
+        self.assertEqual(config_a_I, config_a_I)
+        self.assertNotEqual(config_a_I, 'any string')
 
         config_a_II = self.create_config_object()
 
-        self.assertEquals(config_a_I, config_a_II)
+        self.assertEqual(config_a_I, config_a_II)
 
     def test_equals_Config_region(self):
         config_a_I = self.create_config_object()
         config_b_region = self.create_config_object()
         config_b_region.region = 'region b'
 
-        self.assertNotEquals(config_a_I, config_b_region)
+        self.assertNotEqual(config_a_I, config_b_region)
 
     def test_equals_Config_tags(self):
         config_a_I = self.create_config_object()
         config_b_tags = self.create_config_object()
         config_b_tags.default_tags = {}
 
-        self.assertNotEquals(config_a_I, config_b_tags)
+        self.assertNotEqual(config_a_I, config_b_tags)
 
     def test_equals_Config_cli_params(self):
         config_a_I = self.create_config_object()
         config_b_cli_params = self.create_config_object()
         config_b_cli_params.cli_params = {}
 
-        self.assertNotEquals(config_a_I, config_b_cli_params)
+        self.assertNotEqual(config_a_I, config_b_cli_params)
 
     def test_equals_Config_stacks(self):
         config_a_I = self.create_config_object()
         config_b_cli_stacks = self.create_config_object()
         config_b_cli_stacks.stacks = {}
 
-        self.assertNotEquals(config_a_I, config_b_cli_stacks)
+        self.assertNotEqual(config_a_I, config_b_cli_stacks)
 
     def test_equals_StackConfig(self):
         self.stack_config_a = self.create_stack_config()
 
-        self.assertEquals(self.stack_config_a == self.stack_config_a, True)
-        self.assertNotEquals(self.stack_config_a, 'any string')
+        self.assertEqual(self.stack_config_a == self.stack_config_a, True)
+        self.assertNotEqual(self.stack_config_a, 'any string')
 
         stack_config_a_II = self.create_stack_config()
 
-        self.assertEquals(self.stack_config_a, stack_config_a_II)
+        self.assertEqual(self.stack_config_a, stack_config_a_II)
 
     def test_equals_StackConfig_parameters(self):
         self.stack_config_b.parameters = {}
-        self.assertEquals(self.stack_config_a == self.stack_config_b, False)
+        self.assertEqual(self.stack_config_a == self.stack_config_b, False)
 
     def test_equals_StackConfig_tags(self):
         self.stack_config_b.tags = {}
-        self.assertEquals(self.stack_config_a == self.stack_config_b, False)
+        self.assertEqual(self.stack_config_a == self.stack_config_b, False)
 
     def test_equals_StackConfig_timeout(self):
         self.stack_config_b.timeout = 999
-        self.assertEquals(self.stack_config_a == self.stack_config_b, False)
+        self.assertEqual(self.stack_config_a == self.stack_config_b, False)
 
     def test_equals_StackConfig_working_dir(self):
         self.stack_config_b.working_dir = ''
-        self.assertEquals(self.stack_config_a == self.stack_config_b, False)
+        self.assertEqual(self.stack_config_a == self.stack_config_b, False)
+
+    def test_apply_stack_name_suffix_appends_suffix_to_all_stacks(self):
+        stacks = {
+            "stack-a": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "|ref|stack-b.a"}}),
+            "stack-b": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "foo"}})
+        }
+
+        result = Config._apply_stack_name_suffix(stacks, "-test")
+
+        self.assertEqual(result["stack-a-test"].parameters["a"], 1)
+        self.assertEqual(result["stack-a-test"].parameters["b"], "|ref|stack-b-test.a")
+        self.assertEqual(result["stack-b-test"].parameters["a"], 1)
+        self.assertEqual(result["stack-b-test"].parameters["b"], "foo")
+
+    def test_apply_stack_name_suffix_appends_number_suffix_to_all_stacks(self):
+        stacks = {
+            "stack-a": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "|ref|stack-b.a"}}),
+            "stack-b": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "foo"}})
+        }
+
+        result = Config._apply_stack_name_suffix(stacks, 3)
+
+        self.assertEqual(result["stack-a3"].parameters["a"], 1)
+        self.assertEqual(result["stack-a3"].parameters["b"], "|ref|stack-b3.a")
+        self.assertEqual(result["stack-b3"].parameters["a"], 1)
+        self.assertEqual(result["stack-b3"].parameters["b"], "foo")
+
+    def test_apply_stack_name_suffix_does_not_modify_externally_referenced_stacks(self):
+        stacks = {
+            "stack-c": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "|ref|external_stack.a"}})
+        }
+
+        result = Config._apply_stack_name_suffix(stacks, "-test")
+
+        self.assertEqual(result["stack-c-test"].parameters["a"], 1)
+        self.assertEqual(result["stack-c-test"].parameters["b"], "|ref|external_stack.a")
+
+    def test_apply_stack_name_suffix_does_not_append_none_suffix(self):
+        stacks = {
+            "stack-d": StackConfig({"template-url": "some-url"})
+        }
+
+        result = Config._apply_stack_name_suffix(stacks, None)
+        self.assertEqual(result, stacks)
+
+    def test_apply_stack_name_suffix_applies_suffix_to_sublist_items(self):
+        stacks = {
+            "stack-a": StackConfig({"template-url": "some-url", "parameters": {"alist": ["|ref|stack-b.a", "|ref|stack-b.b"]}}),
+            "stack-b": StackConfig({"template-url": "some-url"})
+        }
+
+        result = Config._apply_stack_name_suffix(stacks, "-test")
+
+        self.assertEqual(result["stack-a-test"].parameters["alist"][0], "|ref|stack-b-test.a")
+        self.assertEqual(result["stack-a-test"].parameters["alist"][1], "|ref|stack-b-test.b")

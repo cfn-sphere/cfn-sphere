@@ -53,12 +53,14 @@ def cli():
 @click.argument('config', type=click.Path(exists=True))
 @click.option('--parameter', '-p', default=None, envvar='CFN_SPHERE_PARAMETERS', type=click.STRING, multiple=True,
               help="Stack parameter to overwrite, eg: --parameter stack1.p1=v1")
+@click.option('--suffix', '-s', default=None, envvar='CFN_SPHERE_SUFFIX', type=click.STRING,
+              help="Append a suffix to all stacks within a stack config file e.g. --suffix '-dev'")
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-def sync(config, parameter, debug, confirm, yes):
+def sync(config, parameter, suffix, debug, confirm, yes):
     confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
@@ -74,7 +76,7 @@ def sync(config, parameter, debug, confirm, yes):
 
     try:
 
-        config = Config(config_file=config, cli_params=parameter)
+        config = Config(config_file=config, cli_params=parameter, stack_name_suffix=suffix)
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
@@ -90,12 +92,14 @@ def sync(config, parameter, debug, confirm, yes):
 
 @cli.command(help="Delete all stacks in a stack configuration")
 @click.argument('config', type=click.Path(exists=True))
+@click.option('--suffix', '-s', default=None, envvar='CFN_SPHERE_SUFFIX', type=click.STRING,
+              help="Append a suffix to all stacks within a stack config file e.g. --suffix '-dev'")
 @click.option('--debug', '-d', is_flag=True, default=False, envvar='CFN_SPHERE_DEBUG', help="Debug output")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-def delete(config, debug, confirm, yes):
+def delete(config, suffix, debug, confirm, yes):
     confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
@@ -109,7 +113,7 @@ def delete(config, debug, confirm, yes):
 
     try:
 
-        config = Config(config)
+        config = Config(config, stack_name_suffix=suffix)
         StackActionHandler(config).delete_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)

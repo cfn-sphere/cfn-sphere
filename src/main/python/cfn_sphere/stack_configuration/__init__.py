@@ -7,13 +7,14 @@ from yaml.scanner import ScannerError
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.exceptions import InvalidConfigException, CfnSphereException
 from cfn_sphere.util import get_logger
+from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 
 ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "timeout", "tags", "on_failure",
                        "disable_rollback"]
 
 
 class Config(object):
-    def __init__(self, config_file=None, config_dict=None, cli_params=None):
+    def __init__(self, config_file=None, config_dict=None, cli_params=None, stack_name_suffix=None):
         self.logger = get_logger()
 
         if isinstance(config_dict, dict):
@@ -27,6 +28,7 @@ class Config(object):
 
         self.cli_params = self._parse_cli_parameters(cli_params)
         self.region = config_dict.get("region")
+        self.stack_name_suffix = stack_name_suffix
 
         self.default_service_role = config_dict.get("service-role")
         self.default_stack_policy_url = config_dict.get("stack-policy-url")
@@ -35,25 +37,27 @@ class Config(object):
         self.default_failure_action = config_dict.get("on_failure", "ROLLBACK")
         self.default_disable_rollback = config_dict.get("disable_rollback", False)
 
-        self.stacks = self._parse_stack_configs(config_dict)
-        self._config_dict = config_dict
+        self._validate(config_dict)
 
-        self._validate()
+        stacks = self._parse_stack_configs(config_dict)
+        self.stacks = self._apply_stack_name_suffix(stacks, stack_name_suffix)
 
-    def _validate(self):
+    def _validate(self, config_dict):
         try:
-            for key in self._config_dict.keys():
+            for key in config_dict.keys():
                 assert str(key).lower() in ALLOWED_CONFIG_KEYS, \
                     "Invalid syntax, {0} is not allowed as top level config key".format(key)
 
             assert self.region, "Please specify region in config file"
-            assert isinstance(self.region, str), "Region must be of type str, not {0}".format(type(self.region))
+            assert isinstance(self.region, str), "Region must be a string, not {0}".format(type(self.region))
 
-            assert self.stacks, "Please specify stacks in config file"
-            assert isinstance(self.stacks, dict), "stacks must be of type dict, not {0}".format(type(self.stacks))
+            stacks = config_dict.get("stacks")
+            assert stacks, "Please specify stacks in config file"
+            assert isinstance(stacks, dict), "Stacks must be of type dict, not {0}".format(type(stacks))
 
-            for cli_stack in self.cli_params.keys():
-                assert cli_stack in self.stacks.keys(), "Stack '{0}' does not exist in config".format(cli_stack)
+            for cli_param_stack_name in self.cli_params.keys():
+                assert cli_param_stack_name in stacks.keys(), \
+                    "Stack '{0}' referenced in cli parameter does not exist in config".format(cli_param_stack_name)
 
         except AssertionError as e:
             raise InvalidConfigException(e)
@@ -99,6 +103,51 @@ class Config(object):
                 raise InvalidConfigException("Invalid config for stack {0}: {1}".format(key, e))
 
         return stacks_dict
+
+    @classmethod
+    def _apply_stack_name_suffix(cls, stacks, suffix):
+        """
+        Apply a stack name suffix to a given set of stacks
+        :param stacks: dict(stack_name -> stack_config)
+        :param suffix: str
+        :return dict(stack_name -> stack_config)
+        """
+        if not suffix:
+            return stacks
+
+        new_stacks = {}
+        managed_stack_names = stacks.keys()
+
+        for original_stack_name, stack_config in stacks.items():
+            parameters = stack_config.parameters
+
+            for key, value in parameters.items():
+                list_value = []
+                if isinstance(value, list):
+                    for item in value:
+                        list_value.append(cls._transform_value(item, suffix, managed_stack_names))
+
+                    parameters[key] = list_value
+                else:
+                    parameters[key] = cls._transform_value(value, suffix, managed_stack_names)
+
+            new_stack_name = "{0}{1}".format(original_stack_name, suffix)
+            stack_config.parameters = parameters
+
+            new_stacks[new_stack_name] = stack_config
+
+        return new_stacks
+
+    @staticmethod
+    def _transform_value(value, suffix, managed_stack_names):
+        result = value
+
+        if DependencyResolver.is_parameter_reference(value):
+            stack_name, output_name = DependencyResolver.parse_stack_reference_value(value)
+            if stack_name in managed_stack_names:
+                result = "|ref|{0}{1}.{2}".format(stack_name, suffix, output_name)
+
+        return result
 
     @staticmethod
     def _parse_cli_parameters(parameters):
