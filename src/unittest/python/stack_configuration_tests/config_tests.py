@@ -357,7 +357,8 @@ class ConfigTests(TestCase):
 
     def test_apply_stack_name_suffix_applies_suffix_to_sublist_items(self):
         stacks = {
-            "stack-a": StackConfig({"template-url": "some-url", "parameters": {"alist": ["|ref|stack-b.a", "|ref|stack-b.b"]}}),
+            "stack-a": StackConfig(
+                {"template-url": "some-url", "parameters": {"alist": ["|ref|stack-b.a", "|ref|stack-b.b"]}}),
             "stack-b": StackConfig({"template-url": "some-url"})
         }
 
@@ -365,3 +366,13 @@ class ConfigTests(TestCase):
 
         self.assertEqual(result["stack-a-test"].parameters["alist"][0], "|ref|stack-b-test.a")
         self.assertEqual(result["stack-a-test"].parameters["alist"][1], "|ref|stack-b-test.b")
+
+    @patch("cfn_sphere.stack_configuration.os.getcwd")
+    @patch("cfn_sphere.stack_configuration.FileLoader.get_yaml_or_json_file")
+    def test_config_reads_config_from_file(self, get_file_mock, getcwd_mock):
+        getcwd_mock.return_value = "/home/user/something"
+        get_file_mock.return_value = {"region": "eu-west-1", "stacks": {
+            "some-stack": {"template-url": "some-template.yml"}}}
+
+        Config("my-stacks/stacks.yml")
+        get_file_mock.assert_called_once_with("my-stacks/stacks.yml", working_dir="/home/user/something")

@@ -15,10 +15,10 @@ class Config(object):
         self.logger = get_logger()
 
         if isinstance(config_dict, dict):
-            self.working_dir = None
+            self.stack_config_base_dir = None
         elif config_file:
-            self.working_dir = os.path.dirname(os.path.realpath(config_file))
-            config_dict = FileLoader.get_yaml_or_json_file(config_file, self.working_dir)
+            self.stack_config_base_dir = os.path.dirname(os.path.realpath(config_file))
+            config_dict = FileLoader.get_yaml_or_json_file(config_file, working_dir=os.getcwd())
         else:
             raise InvalidConfigException(
                 "You need to pass either config_file (path to a file) or config_dict (python dict) property")
@@ -88,7 +88,7 @@ class Config(object):
         for key, value in config_dict.get("stacks", {}).items():
             try:
                 stacks_dict[key] = StackConfig(value,
-                                               working_dir=self.working_dir,
+                                               working_dir=self.stack_config_base_dir,
                                                default_tags=self.default_tags,
                                                default_timeout=self.default_timeout,
                                                default_service_role=self.default_service_role,

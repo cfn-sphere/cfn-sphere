@@ -19,7 +19,7 @@ description = "cfn-sphere - A CLI tool intended to simplify AWS CloudFormation h
 license = 'APACHE LICENSE, VERSION 2.0'
 summary = 'cfn-sphere AWS CloudFormation management cli'
 url = 'https://github.com/cfn-sphere/cfn-sphere'
-version = '1.0.0'
+version = '1.0.1'
 
 default_task = ['clean', 'analyze', 'package']
 
