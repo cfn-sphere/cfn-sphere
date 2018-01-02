@@ -1,4 +1,5 @@
 import os
+from six import string_types
 from collections import defaultdict
 
 from cfn_sphere.file_loader import FileLoader
@@ -24,8 +25,8 @@ class Config(object):
                 "You need to pass either config_file (path to a file) or config_dict (python dict) property")
 
         self.cli_params = self._parse_cli_parameters(cli_params)
-        self.region = str(config_dict.get("region"))
-        self.stack_name_suffix = str(stack_name_suffix)
+        self.region = config_dict.get("region")
+        self.stack_name_suffix = stack_name_suffix
 
         self.default_service_role = config_dict.get("service-role")
         self.default_stack_policy_url = config_dict.get("stack-policy-url")
@@ -46,7 +47,7 @@ class Config(object):
                     "Invalid syntax, {0} is not allowed as top level config key".format(key)
 
             assert self.region, "Please specify region in config file"
-            assert isinstance(self.region, str), "Region must be a string, not {0}".format(type(self.region))
+            assert isinstance(self.region, string_types), "Region must be a string, not {0}".format(type(self.region))
 
             stacks = config_dict.get("stacks")
             assert stacks, "Please specify stacks in config file"
@@ -206,19 +207,19 @@ class StackConfig(object):
                     "Invalid syntax, {0} is not allowed as stack config key".format(key)
 
             assert self.template_url, "Stack config needs a template-url key"
-            assert isinstance(self.template_url, str), \
+            assert isinstance(self.template_url, string_types), \
                 "template-url must be of type str, not {0}".format(type(self.template_url))
 
             assert isinstance(self.timeout, int), "timeout must be of type dict, not {0}".format(type(self.timeout))
 
             if self.service_role:
-                assert isinstance(self.service_role, str), \
+                assert isinstance(self.service_role, string_types), \
                     "service-role must be of type str, not {0}".format(type(self.template_url))
                 assert str(self.service_role).lower().startswith("arn:aws:iam:"), \
                     "service-role must start with 'arn:aws:iam:'"
 
             if self.stack_policy_url:
-                assert isinstance(self.stack_policy_url, str), \
+                assert isinstance(self.stack_policy_url, string_types), \
                     "stack-policy-url must be of type str, not {0}".format(type(self.stack_policy_url))
 
             if self.timeout:

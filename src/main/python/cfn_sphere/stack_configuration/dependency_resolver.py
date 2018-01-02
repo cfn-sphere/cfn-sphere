@@ -1,4 +1,5 @@
 import networkx
+from six import string_types
 from networkx.exception import NetworkXUnfeasible, NetworkXNoCycle
 
 from cfn_sphere.exceptions import CfnSphereException, InvalidDependencyGraphException, CyclicDependencyException
@@ -30,7 +31,7 @@ class DependencyResolver(object):
 
     @staticmethod
     def is_parameter_reference(value):
-        if not isinstance(value, str):
+        if not isinstance(value, string_types):
             return False
 
         if value.lower().startswith("|ref|"):

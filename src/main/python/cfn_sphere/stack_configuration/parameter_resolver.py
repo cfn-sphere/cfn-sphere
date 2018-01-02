@@ -1,4 +1,5 @@
 import jmespath
+from six import string_types
 from jmespath.exceptions import JMESPathError
 
 from cfn_sphere.file_loader import FileLoader
@@ -102,7 +103,7 @@ class ParameterResolver(object):
 
             return self.convert_list_to_string(value)
 
-        elif isinstance(value, str):
+        elif isinstance(value, string_types):
 
             if DependencyResolver.is_parameter_reference(value):
                 referenced_stack, output_name = DependencyResolver.parse_stack_reference_value(value)
