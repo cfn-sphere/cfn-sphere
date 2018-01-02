@@ -373,6 +373,13 @@ class ConfigTests(TestCase):
         Config("my-stacks/stacks.yml")
         get_file_mock.assert_called_once_with("my-stacks/stacks.yml", working_dir="/home/user/something")
 
+    def test_config_accepts_unicode_values(self):
+        config_dict = {u"region": u"eu-west-1", u"stacks": {
+            u"some-stack": {u"template-url": u"some-template.yml"}}}
+
+        config = Config(config_dict=config_dict)
+        self.assertEqual(config.region, "eu-west-1")
+
     @patch("cfn_sphere.stack_configuration.os.getcwd")
     def test_config_reads_config_from_example_yml_file(self, getcwd_mock):
         getcwd_mock.return_value = os.path.dirname(os.path.realpath(__file__))

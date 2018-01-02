@@ -24,8 +24,8 @@ class Config(object):
                 "You need to pass either config_file (path to a file) or config_dict (python dict) property")
 
         self.cli_params = self._parse_cli_parameters(cli_params)
-        self.region = config_dict.get("region")
-        self.stack_name_suffix = stack_name_suffix
+        self.region = str(config_dict.get("region"))
+        self.stack_name_suffix = str(stack_name_suffix)
 
         self.default_service_role = config_dict.get("service-role")
         self.default_stack_policy_url = config_dict.get("stack-policy-url")
