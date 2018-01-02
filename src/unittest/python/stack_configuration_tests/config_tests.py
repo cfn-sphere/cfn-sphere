@@ -1,15 +1,11 @@
 import os
-import tempfile
-
-import yaml
 
 try:
     from unittest2 import TestCase
 except ImportError:
     from unittest import TestCase
 
-from mock import patch, Mock
-from git.exc import InvalidGitRepositoryError
+from mock import patch
 
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.stack_configuration import Config, StackConfig, InvalidConfigException
@@ -376,3 +372,19 @@ class ConfigTests(TestCase):
 
         Config("my-stacks/stacks.yml")
         get_file_mock.assert_called_once_with("my-stacks/stacks.yml", working_dir="/home/user/something")
+
+    @patch("cfn_sphere.stack_configuration.os.getcwd")
+    def test_config_reads_config_from_example_yml_file(self, getcwd_mock):
+        getcwd_mock.return_value = os.path.dirname(os.path.realpath(__file__))
+
+        config = Config("../../resources/example-stack-config.yml")
+        self.assertEqual(config.region, "eu-west-1")
+        self.assertEqual(list(config.stacks.keys()), ["my-stack"])
+
+    @patch("cfn_sphere.stack_configuration.os.getcwd")
+    def test_config_reads_config_from_example_json_file(self, getcwd_mock):
+        getcwd_mock.return_value = os.path.dirname(os.path.realpath(__file__))
+
+        config = Config("../../resources/example-stack-config.json")
+        self.assertEqual(config.region, "eu-west-1")
+        self.assertEqual(list(config.stacks.keys()), ["my-stack"])
