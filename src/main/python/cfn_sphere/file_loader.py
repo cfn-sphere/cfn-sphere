@@ -77,9 +77,9 @@ class FileLoader(object):
 
         try:
             if url.lower().endswith(".json"):
-                return json.loads(file_content)
+                return json.loads(file_content, encoding='utf-8')
             elif url.lower().endswith(".template"):
-                return json.loads(file_content)
+                return json.loads(file_content, encoding='utf-8')
             elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                 yaml.add_multi_constructor(u"", cls.handle_yaml_constructors)
                 return yaml.load(file_content)
