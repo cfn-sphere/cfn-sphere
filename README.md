@@ -59,6 +59,8 @@ Create a YAML file containing a region and some stacks in a stacks.yml file f.e.
             template-url: app.yml
             parameters:
                 vpcID: "|ref|test-vpc.id"
+                dockerImageName: myapp
+                appVersion: 1
 
 ### 2. Write your CloudFormation templates
 Write your templates and configure them in your stacks.yml
@@ -69,9 +71,14 @@ A simple command synchronizes your definition with reality!
     cf sync myapp-test.yml
 
 #### 3.1 Update Stack with CLI Parameter
-To update parameters of a stack without having to modify the templates, simply use the `--parameter` or `-p` flag.
+To update parameters of a stack defined within myapp-test.yml without having to modify the templates, simply use the `--parameter` or `-p` flag.
 
-    cf sync --parameter "test-stack.vpcID=vpc-123" --parameter "test-stack.subnetID=subnet-234" myapp-test.yml
+    cf sync --parameter "test-stack.dockerImageName=mytestapp" --parameter "test-stack.appVersion=234" myapp-test.yml
+
+### 4. Go further
+
+Read here to see what cfn-sphere can do for you. There are a lot of things that can help you: 
+**https://github.com/cfn-sphere/cfn-sphere/wiki**
 
 ## Config Reference
 
