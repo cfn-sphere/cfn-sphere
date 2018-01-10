@@ -20,7 +20,10 @@ class FileGenerator(object):
             path = os.path.join(working_dir, file_path)
 
         try:
-            os.mkdir(os.path.dirname(path))
+            target_dir = os.path.dirname(path)
+            if not os.path.exists(target_dir):
+                os.mkdir(target_dir)
+
             with open(path, "w") as f:
                 f.write(content)
         except Exception as e:

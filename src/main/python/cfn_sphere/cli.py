@@ -225,8 +225,10 @@ def start_project(confirm, yes):
         FileGenerator(working_dir).render_file(config_source_path, config_dest_path, context)
         FileGenerator(working_dir).render_file(template_source_path, template_dest_path, {})
 
-        click.echo("I created a simple stack config (stacks.yml) and a template (templates/queue.yml).")
-        click.echo("Modify it to match your requirements and run 'cf sync stacks.yml' to create the stack(s)")
+        click.echo(
+            "I created a simple stack config ({0}) and a template ({1}).".format(config_dest_path, template_dest_path))
+        click.echo("Modify it to match your requirements and run 'cf sync {0}' to create the stack(s)".format(
+            config_dest_path))
     except CfnSphereException as e:
         LOGGER.error(e)
         sys.exit(1)
