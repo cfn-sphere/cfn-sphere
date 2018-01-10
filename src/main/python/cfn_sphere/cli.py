@@ -194,6 +194,34 @@ def validate_template(template_file, confirm, yes):
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
 
+@cli.command(help="Create a basic yaml template sceleton")
+@click.argument('path', type=click.Path(exists=False))
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def create_template(path, confirm, yes):
+    confirm = confirm or yes
+    if not confirm:
+        check_update_available()
+
+    try:
+        working_dir = os.getcwd()
+        resources_dir = get_resources_dir()
+        template_source_path = os.path.join(resources_dir, "template-sceleton.yml")
+
+        description = click.prompt('Stack description to be used in the template', type=str)
+        FileGenerator(working_dir).render_file(template_source_path, path, {"description": description})
+
+        click.echo("Template created at {0}".format(path))
+    except CfnSphereException as e:
+        LOGGER.error(e)
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.error("Failed with unexpected error")
+        LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
+        sys.exit(1)
 
 @cli.command(help="Start a new project with simple config and an example template")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
