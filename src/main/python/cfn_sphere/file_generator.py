@@ -1,5 +1,4 @@
 from jinja2 import Template
-from yaml.scanner import ScannerError
 
 from cfn_sphere import FileLoader
 import os
@@ -21,6 +20,7 @@ class FileGenerator(object):
             path = os.path.join(working_dir, file_path)
 
         try:
+            os.mkdir(os.path.dirname(path))
             with open(path, "w") as f:
                 f.write(content)
         except Exception as e:
@@ -37,7 +37,8 @@ class FileGenerator(object):
     def _is_valid_yaml(content):
         try:
             yaml.safe_load(content)
-        except ScannerError as e:
+        except yaml.YAMLError as e:
+            print(content)
             raise CfnSphereException("Rendered file does not make valid yaml: {0}".format(e))
 
     def render_file(self, source_url, destination_url, context):

@@ -1,6 +1,6 @@
 import logging
 import sys
-
+import os
 import boto3
 import click
 from botocore.exceptions import ClientError, BotoCoreError
@@ -10,10 +10,11 @@ from cfn_sphere import __version__
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.kms import KMS
 from cfn_sphere.exceptions import CfnSphereException
+from cfn_sphere.file_generator import FileGenerator
 from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.stack_configuration import Config
 from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
-from cfn_sphere.util import convert_file, get_logger, get_latest_version, kv_list_to_dict
+from cfn_sphere.util import convert_file, get_logger, get_latest_version, kv_list_to_dict, get_resources_dir
 
 LOGGER = get_logger(root=True)
 
@@ -194,22 +195,38 @@ def validate_template(template_file, confirm, yes):
         sys.exit(1)
 
 
-@cli.command(help="Start a new project")
+@cli.command(help="Start a new project with simple config and an example template")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-def validate_template(template_file, confirm, yes):
+def start_project(confirm, yes):
     confirm = confirm or yes
     if not confirm:
         check_update_available()
 
     try:
-        loader = FileLoader()
-        template = loader.get_cloudformation_template(template_file, None)
-        template = CloudFormationTemplateTransformer.transform_template(template)
-        CloudFormation().validate_template(template)
-        click.echo("Template is valid")
+        region = click.prompt('AWS Region?', type=str, default="eu-west-1")
+        subdir = click.prompt('Project dir? (leave empty to use current dir)', type=str, default=".")
+
+        working_dir = os.getcwd()
+        resources_dir = get_resources_dir()
+        config_source_path = os.path.join(resources_dir, "stack_config.yml.jinja2")
+        config_dest_path = os.path.join(subdir, "stacks.yml")
+
+        template_source_path = os.path.join(resources_dir, "queue.yml")
+        template_dest_path = os.path.join(subdir, "templates", "queue.yml")
+
+        context = {
+            "region": region,
+            "template_url": "templates/queue.yml"
+        }
+
+        FileGenerator(working_dir).render_file(config_source_path, config_dest_path, context)
+        FileGenerator(working_dir).render_file(template_source_path, template_dest_path, {})
+
+        click.echo("I created a simple stack config (stacks.yml) and a template (templates/queue.yml).")
+        click.echo("Modify it to match your requirements and run 'cf sync stacks.yml' to create the stack(s)")
     except CfnSphereException as e:
         LOGGER.error(e)
         sys.exit(1)

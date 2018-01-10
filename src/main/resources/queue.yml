@@ -19,19 +19,19 @@ Resources:
 
   queuePolicy:
     Type: "AWS::SQS::QueuePolicy"
-      Queues:
-        - "|Ref|queue"
-      Properties:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: "*"
-            Action: "sqs:SendMessage"
-            Condition":
-              ArnEquals":
-                aws:SourceArn: "|Ref|topic"
-            Resource: "*"
+    Queues:
+      - "|Ref|queue"
+    Properties:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: Allow
+          Principal:
+            AWS: "*"
+          Action: "sqs:SendMessage"
+          Condition":
+            ArnEquals":
+              aws:SourceArn: "|Ref|topic"
+          Resource: "*"
 
 Outputs:
   topicArn:

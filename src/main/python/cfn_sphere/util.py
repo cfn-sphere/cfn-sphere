@@ -198,5 +198,10 @@ def get_git_repository_remote_url(working_dir):
             return None
 
 
+def get_resources_dir():
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    return os.path.realpath(os.path.join(script_dir, "../../resources"))
+
+
 if __name__ == "__main__":
-    pass
+    print(get_resources_dir())
