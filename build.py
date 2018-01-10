@@ -37,6 +37,7 @@ def set_properties(project):
     project.depends_on('prettytable')
     project.depends_on('gitpython')
     project.depends_on('jmespath')
+    project.depends_on('jinja2')
     project.set_property('integrationtest_inherit_environment', True)
     project.set_property('coverage_break_build', False)
     project.set_property('install_dependencies_upgrade', True)

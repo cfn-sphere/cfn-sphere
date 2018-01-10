@@ -194,6 +194,32 @@ def validate_template(template_file, confirm, yes):
         sys.exit(1)
 
 
+@cli.command(help="Start a new project")
+@click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes")
+@click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
+              help="Override user confirm dialog with yes (alias for -c/--confirm")
+def validate_template(template_file, confirm, yes):
+    confirm = confirm or yes
+    if not confirm:
+        check_update_available()
+
+    try:
+        loader = FileLoader()
+        template = loader.get_cloudformation_template(template_file, None)
+        template = CloudFormationTemplateTransformer.transform_template(template)
+        CloudFormation().validate_template(template)
+        click.echo("Template is valid")
+    except CfnSphereException as e:
+        LOGGER.error(e)
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.error("Failed with unexpected error")
+        LOGGER.exception(e)
+        LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
+        sys.exit(1)
+
+
 @cli.command(help="Encrypt a given string with AWS Key Management Service")
 @click.argument('region', type=str)
 @click.argument('keyid', type=str)
