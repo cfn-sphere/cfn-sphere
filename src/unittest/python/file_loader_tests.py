@@ -268,6 +268,14 @@ class FileLoaderTests(TestCase):
         response = FileLoader.handle_yaml_constructors(loader_mock, "!select", node_mock)
         self.assertEqual({'Fn::Select': ["index", "list"]}, response)
 
+    def test_handle_yaml_constructors_converts_split(self):
+        loader_mock = Mock()
+        loader_mock.construct_scalar.return_value = ["delimiter", "string"]
+        node_mock = Mock(spec=yaml.ScalarNode)
+
+        response = FileLoader.handle_yaml_constructors(loader_mock, "!split", node_mock)
+        self.assertEqual({'Fn::Split': ["delimiter", "string"]}, response)
+
     def test_handle_yaml_constructors_converts_sub(self):
         loader_mock = Mock()
         loader_mock.construct_scalar.return_value = ["string", {"key": "value"}]
