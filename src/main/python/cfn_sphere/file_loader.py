@@ -45,6 +45,7 @@ class FileLoader(object):
             "!or": ("Fn::Or", lambda x: x),
             "!ref": ("Ref", lambda x: x),
             "!select": ("Fn::Select", lambda x: x),
+            "!split": ("Fn::Split", lambda x: x),
             "!sub": ("Fn::Sub", lambda x: x),
         }
         try:
