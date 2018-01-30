@@ -236,6 +236,7 @@ class CloudFormationApiTests(TestCase):
         stack.stack_policy = None
         stack.failure_action = None
         stack.disable_rollback = False
+        stack.termination_protection = False
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -264,6 +265,7 @@ class CloudFormationApiTests(TestCase):
         stack.stack_policy = None
         stack.failure_action = None
         stack.disable_rollback = False
+        stack.termination_protection = False
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -293,6 +295,7 @@ class CloudFormationApiTests(TestCase):
         stack.stack_policy = "{foo:baa}"
         stack.failure_action = None
         stack.disable_rollback = False
+        stack.termination_protection = False
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -322,6 +325,7 @@ class CloudFormationApiTests(TestCase):
         stack.stack_policy = "{foo:baa}"
         stack.failure_action = "DO_NOTHING"
         stack.disable_rollback = False
+        stack.termination_protection = False
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -352,6 +356,7 @@ class CloudFormationApiTests(TestCase):
         stack.stack_policy = "{foo:baa}"
         stack.failure_action = "DO_NOTHING"
         stack.disable_rollback = "True"
+        stack.termination_protection = False
         stack.timeout = 42
 
         cfn = CloudFormation()
@@ -382,6 +387,7 @@ class CloudFormationApiTests(TestCase):
         stack.service_role = None
         stack.stack_policy = None
         stack.disable_rollback = False
+        stack.termination_protection = False
         stack.timeout = 42
 
         cfn = CloudFormation()

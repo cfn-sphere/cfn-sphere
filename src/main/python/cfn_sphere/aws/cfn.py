@@ -11,7 +11,7 @@ logging.getLogger('boto').setLevel(logging.FATAL)
 
 class CloudFormationStack(object):
     def __init__(self, template, parameters, name, region, timeout=600, tags=None, service_role=None,
-                 stack_policy=None, failure_action=None, disable_rollback=False):
+                 stack_policy=None, failure_action=None, disable_rollback=False, termination_protection=False):
         self.template = template
         self.parameters = parameters
         self.tags = {} if tags is None else tags
@@ -22,6 +22,7 @@ class CloudFormationStack(object):
         self.stack_policy = stack_policy
         self.failure_action = failure_action
         self.disable_rollback = disable_rollback
+        self.termination_protection = termination_protection
 
     def __str__(self):
         return str(vars(self))
@@ -288,6 +289,8 @@ class CloudFormation(object):
             kwargs["OnFailure"] = stack.failure_action
         if stack.disable_rollback:
             kwargs["DisableRollback"] = bool(stack.disable_rollback)
+        if stack.termination_protection:
+            kwargs["EnableTerminationProtection"] = bool(stack.termination_protection)
 
         self.client.create_stack(**kwargs)
 

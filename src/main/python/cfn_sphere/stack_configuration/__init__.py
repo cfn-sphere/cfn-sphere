@@ -34,6 +34,7 @@ class Config(object):
         self.default_tags = config_dict.get("tags", {})
         self.default_failure_action = config_dict.get("on_failure", "ROLLBACK")
         self.default_disable_rollback = config_dict.get("disable_rollback", False)
+        self.default_termination_protection = config_dict.get("termination_protection", False)
 
         self._validate(config_dict)
 
@@ -71,6 +72,8 @@ class Config(object):
                 and self.default_stack_policy_url == other.default_stack_policy_url
                 and self.default_timeout == other.default_timeout
                 and self.default_tags == other.default_tags
+                and self.default_disable_rollback == other.default_disable_rollback
+                and self.default_termination_protection == other.default_termination_protection
                 and stacks_equal):
                 return True
         except AttributeError:
@@ -95,7 +98,8 @@ class Config(object):
                                                default_service_role=self.default_service_role,
                                                default_stack_policy_url=self.default_stack_policy_url,
                                                default_failure_action=self.default_failure_action,
-                                               default_disable_rollback=self.default_disable_rollback)
+                                               default_disable_rollback=self.default_disable_rollback,
+                                               default_termination_protection=self.default_termination_protection)
 
             except InvalidConfigException as e:
                 raise InvalidConfigException("Invalid config for stack {0}: {1}".format(key, e))
@@ -175,7 +179,7 @@ class StackConfig(object):
 
     def __init__(self, stack_config_dict, working_dir=None, default_tags=None, default_timeout=600,
                  default_service_role=None, default_stack_policy_url=None, default_failure_action="ROLLBACK",
-                 default_disable_rollback=False):
+                 default_disable_rollback=False, default_termination_protection=False):
 
         if not stack_config_dict or not isinstance(stack_config_dict, dict):
             raise InvalidConfigException("Stack configuration must not be empty")
@@ -194,6 +198,7 @@ class StackConfig(object):
         self.timeout = stack_config_dict.get("timeout", default_timeout)
         self.failure_action = stack_config_dict.get("on_failure", default_failure_action)
         self.disable_rollback = stack_config_dict.get("disable_rollback", default_disable_rollback)
+        self.termination_protection = stack_config_dict.get("termination_protection", default_termination_protection)
 
         self.working_dir = working_dir
         self._stack_config_dict = stack_config_dict

@@ -47,7 +47,8 @@ class StackActionHandler(object):
                                         timeout=stack_config.timeout,
                                         service_role=stack_config.service_role,
                                         stack_policy=stack_policy,
-                                        failure_action=stack_config.failure_action)
+                                        failure_action=stack_config.failure_action,
+                                        termination_protection=stack_config.termination_protection)
 
             if stack_name in existing_stacks:
 
