@@ -446,17 +446,14 @@ class CloudFormationApiTests(TestCase):
         cfn = CloudFormation()
         cfn.update_stack(stack)
 
-        cloudformation_mock.return_value.set_stack_policy.assert_called_once_with(
-            StackName='stack-name',
-            StackPolicyBody='"{foo:baa}"'
-        )
-
         cloudformation_mock.return_value.update_stack.assert_called_once_with(
             Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             Parameters=[('a', 'b')],
             StackName='stack-name',
             Tags=[('any-tag', 'any-tag-value')],
-            TemplateBody={'key': 'value'}
+            TemplateBody={'key': 'value'},
+            StackPolicyBody='"{foo:baa}"',
+            StackPolicyDuringUpdateBody='"{foo:baa}"'
         )
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')

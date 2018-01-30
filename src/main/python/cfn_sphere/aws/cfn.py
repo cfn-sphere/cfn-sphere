@@ -313,6 +313,10 @@ class CloudFormation(object):
 
         if stack.service_role:
             kwargs["RoleARN"] = stack.service_role
+        if stack.stack_policy:
+            stack_policy = json.dumps(stack.stack_policy)
+            kwargs["StackPolicyBody"] = stack_policy
+            kwargs["StackPolicyDuringUpdateBody"] = stack_policy
 
         self.client.update_stack(**kwargs)
 
@@ -360,10 +364,6 @@ class CloudFormation(object):
 
         try:
             stack_parameters_string = get_pretty_parameters_string(stack)
-
-            if stack.stack_policy:
-                self.logger.info("Setting stack policy for stack {0}".format(stack.name))
-                self._set_stack_policy(stack)
 
             try:
                 self._update_stack(stack)

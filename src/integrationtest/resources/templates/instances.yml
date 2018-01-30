@@ -110,6 +110,7 @@ Resources:
             auth: "my-secret-string"
             email: "test@example.com"
         environment:
+          SOME_VALUE_FROM_TEXTFILE: "|Ref|textFileParameter"
           DYNAMO_DB_PREFIX: "|Ref|AWS::StackName"
           JOB_QUEUE_URL: "|Ref|jobQueue"
           SOME_COMBINED_VALUE:
