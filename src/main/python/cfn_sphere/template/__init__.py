@@ -22,7 +22,7 @@ class CloudFormationTemplate(object):
 
     def get_template_body_dict(self):
         body_dict = {
-            'AWSTemplateFormatVersion': self.template_format_version,
+            'AWSTemplateFormatVersion': str(self.template_format_version),
             'Description': self.description,
             'Metadata': self.metadata,
             'Parameters': self.parameters,
