@@ -194,6 +194,7 @@ def validate_template(template_file, confirm, yes):
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
 
+
 @cli.command(help="Create a basic yaml template sceleton")
 @click.argument('path', type=click.Path(exists=False))
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
@@ -208,7 +209,11 @@ def create_template(path, confirm, yes):
     try:
         working_dir = os.getcwd()
         resources_dir = get_resources_dir()
-        template_source_path = os.path.join(resources_dir, "template-sceleton.yml")
+
+        if str(path).lower().endswith("json"):
+            template_source_path = os.path.join(resources_dir, "template-sceleton.json")
+        else:
+            template_source_path = os.path.join(resources_dir, "template-sceleton.yml")
 
         description = click.prompt('Stack description to be used in the template', type=str)
         FileGenerator(working_dir).render_file(template_source_path, path, {"description": description})
@@ -222,6 +227,7 @@ def create_template(path, confirm, yes):
         LOGGER.exception(e)
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
+
 
 @cli.command(help="Start a new project with simple config and an example template")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
