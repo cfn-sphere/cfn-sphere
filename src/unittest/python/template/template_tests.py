@@ -30,3 +30,25 @@ class CloudFormationTemplateTests(TestCase):
         template_version = result["AWSTemplateFormatVersion"]
         self.assertIsInstance(template_version, string_types)
         self.assertEqual(result["AWSTemplateFormatVersion"], "2010-09-09")
+
+    def test_get_no_echo_parameter_keys(self):
+        template_dict = {
+            'Parameters': {
+                "a": {"Description": "param a", "Type": "String", "NoEcho": True},
+                "b": {"Description": "param a", "Type": "String"},
+                "c": {"Description": "param a", "Type": "String"},
+                "d": {"Description": "param a", "Type": "String", "NoEcho": "true"},
+                "e": {"Description": "param a", "Type": "String", "NoEcho": "True"},
+                "f": {"Description": "param a", "Type": "String", "NoEcho": None},
+                "g": {"Description": "param a", "Type": "String", "noecho": True},
+            }
+        }
+
+        result = CloudFormationTemplate(template_dict, "Something").get_no_echo_parameter_keys()
+        self.assertEqual(result, ['a', 'd', 'e'])
+
+    def test_get_no_echo_parameter_keys_for_empty_parameters(self):
+        template_dict = {}
+
+        result = CloudFormationTemplate(template_dict, "Something").get_no_echo_parameter_keys()
+        self.assertEqual(result, [])
