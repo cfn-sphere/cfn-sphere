@@ -403,7 +403,7 @@ class CloudFormation(object):
             self._delete_stack(stack)
 
             try:
-                self.wait_for_stack_action_to_complete(stack.name, "delete", 600)
+                self.wait_for_stack_action_to_complete(stack.name, "delete", stack.timeout)
             except CfnSphereBotoError as e:
                 if self.is_boto_stack_does_not_exist_exception(e.boto_exception):
                     pass

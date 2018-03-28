@@ -374,6 +374,24 @@ class CloudFormationApiTests(TestCase):
         )
 
     @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation._create_stack')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
+    def test_create_stack_calls_wait_properly(self, wait_mock, _a, _b):
+        stack = Mock(spec=CloudFormationStack)
+        stack.name = "stack-name"
+        stack.get_parameters_list.return_value = []
+        stack.parameters = {}
+        stack.template = Mock(spec=CloudFormationTemplate)
+        stack.template.name = "template-name"
+
+        stack.timeout = 42
+
+        cfn = CloudFormation()
+        cfn.create_stack(stack)
+
+        wait_mock.assert_called_once_with(stack.name, 'create', stack.timeout)
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
     @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
     def test_update_stack_calls_cloudformation_api_properly(self, _, cloudformation_mock):
         stack = Mock(spec=CloudFormationStack)
@@ -455,6 +473,62 @@ class CloudFormationApiTests(TestCase):
             StackPolicyBody='"{foo:baa}"',
             StackPolicyDuringUpdateBody='"{foo:baa}"'
         )
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation._update_stack')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
+    def test_create_stack_calls_wait_properly(self, wait_mock, _a, _b):
+        stack = Mock(spec=CloudFormationStack)
+        stack.name = "stack-name"
+        stack.get_parameters_list.return_value = []
+        stack.parameters = {}
+        stack.template = Mock(spec=CloudFormationTemplate)
+        stack.template.name = "template-name"
+
+        stack.timeout = 42
+
+        cfn = CloudFormation()
+        cfn.update_stack(stack)
+
+        wait_mock.assert_called_once_with(stack.name, 'update', stack.timeout)
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
+    def test_delete_stack_calls_cloudformation_api_properly(self, _, cloudformation_mock):
+        stack = Mock(spec=CloudFormationStack)
+        stack.name = "stack-name"
+        stack.get_parameters_list.return_value = [('a', 'b')]
+        stack.get_tags_list.return_value = [('any-tag', 'any-tag-value')]
+        stack.parameters = {}
+        stack.template = Mock(spec=CloudFormationTemplate)
+        stack.template.name = "template-name"
+        stack.template.get_template_json.return_value = {'key': 'value'}
+        stack.service_role = None
+        stack.stack_policy = "{foo:baa}"
+        stack.timeout = 42
+
+        cfn = CloudFormation()
+        cfn.delete_stack(stack)
+
+        cloudformation_mock.return_value.delete_stack.assert_called_once_with(StackName=stack.name)
+
+    @patch('cfn_sphere.aws.cfn.boto3.client')
+    @patch('cfn_sphere.aws.cfn.CloudFormation._delete_stack')
+    @patch('cfn_sphere.aws.cfn.CloudFormation.wait_for_stack_action_to_complete')
+    def test_delete_stack_calls_wait_properly(self, wait_mock, _a, _b):
+        stack = Mock(spec=CloudFormationStack)
+        stack.name = "stack-name"
+        stack.get_parameters_list.return_value = []
+        stack.parameters = {}
+        stack.template = Mock(spec=CloudFormationTemplate)
+        stack.template.name = "template-name"
+
+        stack.timeout = 42
+
+        cfn = CloudFormation()
+        cfn.delete_stack(stack)
+
+        wait_mock.assert_called_once_with(stack.name, 'delete', stack.timeout)
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     def test_validate_stack_is_ready_for_action_raises_exception_on_unknown_stack_state(self, get_stack_mock):
