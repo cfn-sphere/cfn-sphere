@@ -45,7 +45,7 @@ class CloudFormationTemplateTests(TestCase):
         }
 
         result = CloudFormationTemplate(template_dict, "Something").get_no_echo_parameter_keys()
-        self.assertEqual(result, ['a', 'd', 'e'])
+        self.assertEqual(sorted(result), ['a', 'd', 'e'])
 
     def test_get_no_echo_parameter_keys_for_empty_parameters(self):
         template_dict = {}
