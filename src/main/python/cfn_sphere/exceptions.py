@@ -10,7 +10,7 @@ class CfnSphereException(Exception):
         try:
             self.request_id = boto_exception.request_id
             self.str += " (Request ID: {0})".format(self.request_id)
-        except:
+        except Exception:
             pass
 
     def __str__(self):

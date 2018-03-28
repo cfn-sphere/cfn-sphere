@@ -1,5 +1,4 @@
 from cfn_sphere.template.template_handler import TemplateHandler
-from cfn_sphere.template.transformer import CloudFormationTemplateTransformer
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
 from cfn_sphere.aws.cfn import CloudFormation

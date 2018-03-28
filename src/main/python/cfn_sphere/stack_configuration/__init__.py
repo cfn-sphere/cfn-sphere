@@ -66,15 +66,15 @@ class Config(object):
             stacks_equal = self.stacks == other.stacks
 
             if (self.cli_params == other.cli_params
-                and self.region == other.region
-                and self.default_tags == other.default_tags
-                and self.default_service_role == other.default_service_role
-                and self.default_stack_policy_url == other.default_stack_policy_url
-                and self.default_timeout == other.default_timeout
-                and self.default_tags == other.default_tags
-                and self.default_disable_rollback == other.default_disable_rollback
-                and self.default_termination_protection == other.default_termination_protection
-                and stacks_equal):
+                    and self.region == other.region
+                    and self.default_tags == other.default_tags
+                    and self.default_service_role == other.default_service_role
+                    and self.default_stack_policy_url == other.default_stack_policy_url
+                    and self.default_timeout == other.default_timeout
+                    and self.default_tags == other.default_tags
+                    and self.default_disable_rollback == other.default_disable_rollback
+                    and self.default_termination_protection == other.default_termination_protection
+                    and stacks_equal):
                 return True
         except AttributeError:
             return False
@@ -244,13 +244,13 @@ class StackConfig(object):
     def __eq__(self, other):
         try:
             if (self.parameters == other.parameters
-                and self.tags == other.tags
-                and self.timeout == other.timeout
-                and self.working_dir == other.working_dir
-                and self.service_role == other.service_role
-                and self.stack_policy_url == other.stack_policy_url
-                and self.template_url == other.template_url
-                and self.failure_action == other.failure_action):
+                    and self.tags == other.tags
+                    and self.timeout == other.timeout
+                    and self.working_dir == other.working_dir
+                    and self.service_role == other.service_role
+                    and self.stack_policy_url == other.stack_policy_url
+                    and self.template_url == other.template_url
+                    and self.failure_action == other.failure_action):
                 return True
         except AttributeError:
             return False
