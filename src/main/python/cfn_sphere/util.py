@@ -126,7 +126,7 @@ def convert_dict_to_json_string(data):
 
 
 def get_cfn_api_server_time():
-    url = "http://aws.amazon.com"
+    url = "https://aws.amazon.com"
 
     try:
         header_date = urllib2.urlopen(url).info().get('Date')
