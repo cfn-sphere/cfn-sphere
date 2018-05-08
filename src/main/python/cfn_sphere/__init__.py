@@ -69,7 +69,13 @@ class StackActionHandler(object):
             stack_config = self.config.stacks.get(stack_name)
 
             if stack_name in existing_stacks:
-                stack = CloudFormationStack(None, None, stack_name, None, None, service_role=stack_config.service_role)
+                stack = CloudFormationStack(template=None,
+                                            parameters=None,
+                                            name=stack_name,
+                                            region=self.config.region,
+                                            timeout=stack_config.timeout,
+                                            service_role=stack_config.service_role)
+
                 self.cfn.validate_stack_is_ready_for_action(stack)
                 self.cfn.delete_stack(stack)
             else:

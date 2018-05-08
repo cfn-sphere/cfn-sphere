@@ -31,9 +31,9 @@ class StackActionHandlerTests(TestCase):
         stack_c = CloudFormationStack('', [], 'c', '')
 
         def stack_side_effect(*args, **kwargs):
-            if args[2] == 'a':
+            if kwargs["name"] == 'a':
                 return stack_a
-            if args[2] == 'c':
+            if kwargs["name"] == 'c':
                 return stack_c
             return None
 
@@ -63,9 +63,9 @@ class StackActionHandlerTests(TestCase):
         stack_c = CloudFormationStack('', [], 'c', '')
 
         def stack_side_effect(*args, **kwargs):
-            if args[2] == 'a':
+            if kwargs["name"] == 'a':
                 return stack_a
-            if args[2] == 'c':
+            if kwargs["name"] == 'c':
                 return stack_c
             return None
 

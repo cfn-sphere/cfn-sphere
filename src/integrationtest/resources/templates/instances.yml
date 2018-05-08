@@ -32,7 +32,7 @@ Resources:
   jobQueue:
     Type: "AWS::SQS::Queue"
     Properties:
-      QueueName: "CfnSphereIntegrationtest"
+      QueueName: "|Ref|AWS::StackName"
   secGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:

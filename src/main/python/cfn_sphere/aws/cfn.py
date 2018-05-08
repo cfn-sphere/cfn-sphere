@@ -1,9 +1,8 @@
-from datetime import timedelta
-
 import time
 import json
 import boto3
 import logging
+from datetime import timedelta, datetime
 from botocore.exceptions import BotoCoreError, ClientError
 
 from cfn_sphere.exceptions import CfnStackActionFailedException
@@ -459,8 +458,8 @@ class CloudFormation(object):
                                                                           valid_from_timestamp))
 
         seen_event_ids = []
-        start = time.time()
-        while time.time() < (start + timeout):
+        start = datetime.now()
+        while datetime.now() < (start + timedelta(seconds=int(timeout))):
 
             events = self.get_stack_events(stack_name)
             events.reverse()
