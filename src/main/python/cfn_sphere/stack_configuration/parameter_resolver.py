@@ -6,6 +6,7 @@ from cfn_sphere.file_loader import FileLoader
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.aws.kms import KMS
+from cfn_sphere.aws.ssm import SSM
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.stack_configuration.dependency_resolver import DependencyResolver
 from cfn_sphere.util import get_logger, kv_list_string_to_dict
@@ -21,6 +22,7 @@ class ParameterResolver(object):
         self.cfn = CloudFormation(region)
         self.ec2 = Ec2Api(region)
         self.kms = KMS(region)
+        self.ssm = SSM(region)
 
     @staticmethod
     def convert_list_to_string(value):
@@ -59,6 +61,10 @@ class ParameterResolver(object):
     @staticmethod
     def is_kms(value):
         return value.lower().startswith('|kms|')
+
+    @staticmethod
+    def is_ssm(value):
+        return value.lower().startswith('|ssm|')
 
     @staticmethod
     def get_default_from_keep_value(value):
@@ -118,6 +124,9 @@ class ParameterResolver(object):
             elif self.is_kms(value):
                 return self.handle_kms_value(value)
 
+            elif self.is_ssm(value):
+                return self.handle_ssm_value(value)
+
             elif self.is_file(value):
                 return self.handle_file_value(value, stack_config.working_dir)
 
@@ -132,6 +141,14 @@ class ParameterResolver(object):
             raise CfnSphereException("Parameter {0} does not seem to have a value".format(key))
         else:
             raise NotImplementedError("Cannot handle {0} type for key: {1}".format(type(value), key))
+
+    def handle_ssm_value(self, value):
+        parts = value.split('|')
+        if len(parts) == 3:
+            return str(self.ssm.get_parameter(parts[2]))
+        
+        raise CfnSphereException(
+                "Invalid format for |ssm| macro, it must be |ssm|/path/to/parameter")
 
     def handle_kms_value(self, value):
         parts = value.split('|')

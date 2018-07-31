@@ -13,6 +13,10 @@ from cfn_sphere.stack_configuration import Config
 
 logging.getLogger('cfn_sphere').setLevel(logging.DEBUG)
 
+SSM_INTEGRATION_PLAIN_PATH = '/test-cfn-sphere/plain_parameter'
+SSM_INTEGRATION_PLAIN_VALUE = 'testplainparameterssm'
+SSM_INTEGRATION_ENCRYPTED_PATH = '/test-cfn-sphere/encrypted_parameter'
+SSM_INTEGRATION_ENCRYPTED_VALUE = 'testencryptedparameterssm'
 
 class CfnSphereIntegrationTest(object):
     def __init__(self, stack_name_suffix=None):
@@ -21,6 +25,7 @@ class CfnSphereIntegrationTest(object):
         self.test_resources_dir = self._get_resources_dir()
         self.cfn_conn = boto3.client('cloudformation', region_name='eu-west-1')
         self.kms_conn = boto3.client('kms', region_name='eu-west-1')
+        self.ssm_conn = boto3.client('ssm', region_name='eu-west-1')
         self.config = Config(config_file=os.path.join(self.test_resources_dir, "stacks.yml"),
                              stack_name_suffix=stack_name_suffix)
 
@@ -192,6 +197,10 @@ class StackManagementTests(CfnSphereIntegrationTest):
         # uncomment this to test kms decryption
         # self.assert_equal("myCleartextString", user_data["kms_encrypted_value"])
 
+        # test ssm configuration
+        self.assert_equal(SSM_INTEGRATION_PLAIN_VALUE, user_data["ssm_plain_value"])
+        self.assert_equal(SSM_INTEGRATION_ENCRYPTED_VALUE, user_data["ssm_encrypted_value"])
+
     def test_instance_stack_uses_file_parameter(self):
         instance_stack = self.get_stack_description("cfn-sphere-test-instances")
         instance_stack_parameters = self.get_parameter_dict_from_stack(instance_stack)
@@ -218,6 +227,10 @@ class StackManagementTests(CfnSphereIntegrationTest):
         try:
             if setup:
                 self.logger.info("### Preparing tests ###")
+                self.ssm_conn.put_parameter(Name=SSM_INTEGRATION_PLAIN_PATH, Type='String',
+                                            Value=SSM_INTEGRATION_PLAIN_VALUE)
+                self.ssm_conn.put_parameter(Name=SSM_INTEGRATION_ENCRYPTED_PATH, Type='SecureString',
+                                            Value=SSM_INTEGRATION_ENCRYPTED_VALUE)
                 self.delete_stacks()
                 self.verify_stacks_are_gone()
                 self.sync_stacks()
@@ -245,6 +258,8 @@ class StackManagementTests(CfnSphereIntegrationTest):
                 self.logger.info("### Cleaning up environment ###")
                 self.delete_stacks()
                 self.verify_stacks_are_gone()
+                self.ssm_conn.delete_parameter(Name=SSM_INTEGRATION_PLAIN_PATH)
+                self.ssm_conn.delete_parameter(Name=SSM_INTEGRATION_ENCRYPTED_PATH)
 
 
 class StackSuffixingTests(CfnSphereIntegrationTest):
@@ -270,6 +285,10 @@ class StackSuffixingTests(CfnSphereIntegrationTest):
         try:
             if setup:
                 self.logger.info("### Preparing tests ###")
+                self.ssm_conn.put_parameter(Name=SSM_INTEGRATION_PLAIN_PATH, Type='String',
+                                            Value=SSM_INTEGRATION_PLAIN_VALUE)
+                self.ssm_conn.put_parameter(Name=SSM_INTEGRATION_ENCRYPTED_PATH, Type='SecureString',
+                                            Value=SSM_INTEGRATION_ENCRYPTED_VALUE)
                 self.delete_stacks()
                 self.verify_stacks_are_gone()
                 self.sync_stacks()
@@ -282,6 +301,8 @@ class StackSuffixingTests(CfnSphereIntegrationTest):
                 self.logger.info("### Cleaning up environment ###")
                 self.delete_stacks()
                 self.verify_stacks_are_gone()
+                self.ssm_conn.delete_parameter(Name=SSM_INTEGRATION_PLAIN_PATH)
+                self.ssm_conn.delete_parameter(Name=SSM_INTEGRATION_ENCRYPTED_PATH)
 
 
 if __name__ == "__main__":

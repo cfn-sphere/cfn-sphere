@@ -19,3 +19,5 @@ stacks:
       appVersion: "|keepOrUse|1"
       kmsEncryptedValue: "Place |kms|<ciphertext> value here to test decryption"
       textFileParameter: "|File|my-text-file-parameter.txt"
+      ssmPlainValue: "|ssm|/test-cfn-sphere/plain_parameter"
+      ssmEncryptedValue: "|ssm|/test-cfn-sphere/encrypted_parameter"
