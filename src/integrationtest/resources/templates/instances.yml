@@ -16,6 +16,12 @@ Parameters:
   kmsEncryptedValue:
     Description: "A string encrypted at rest with kms to be decrypted by cfn-sphere before handing it over to cfn"
     Type: "String"
+  ssmPlainValue:
+    Description: "A stringwith ssm to be loaded by cfn-sphere before handling it over to cfn"
+    Type: "String"
+  ssmEncryptedValue:
+    Description: "A string encrypted at rest with ssm to be decrypted by cfn-sphere before handling it over to cfn"
+    Type: "String"
   textFileParameter:
     Description: "A parameter to be filled by a text file with |File|my-file.txt"
     Type: "String"
@@ -120,3 +126,5 @@ Resources:
                 b: !Ref someParameterB
                 c: "foo"
         kms_encrypted_value: "|Ref|kmsEncryptedValue"
+        ssm_plain_value: "|Ref|ssmPlainValue"
+        ssm_encrypted_value: "|Ref|ssmEncryptedValue"
