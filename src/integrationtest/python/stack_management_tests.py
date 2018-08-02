@@ -290,6 +290,11 @@ class StackSuffixingTests(CfnSphereIntegrationTest):
         try:
             if setup:
                 self.logger.info("### Preparing tests ###")
+                self.ssm_conn.put_parameter(Name=SSM_INTEGRATION_PLAIN_PATH, Type='String',
+                                            Value=SSM_INTEGRATION_PLAIN_VALUE)
+                self.ssm_conn.put_parameter(Name=SSM_INTEGRATION_ENCRYPTED_PATH, Type='SecureString',
+                                            Value=SSM_INTEGRATION_ENCRYPTED_VALUE)
+
                 self.delete_stacks()
                 self.verify_stacks_are_gone()
                 self.sync_stacks()
@@ -302,6 +307,8 @@ class StackSuffixingTests(CfnSphereIntegrationTest):
                 self.logger.info("### Cleaning up environment ###")
                 self.delete_stacks()
                 self.verify_stacks_are_gone()
+                self.ssm_conn.delete_parameter(Name=SSM_INTEGRATION_PLAIN_PATH)
+                self.ssm_conn.delete_parameter(Name=SSM_INTEGRATION_ENCRYPTED_PATH)
 
 
 if __name__ == "__main__":
