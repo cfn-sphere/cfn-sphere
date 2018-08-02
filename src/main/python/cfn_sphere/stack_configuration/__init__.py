@@ -24,7 +24,11 @@ class Config(object):
             raise InvalidConfigException(
                 "You need to pass either config_file (path to a file) or config_dict (python dict) property")
 
-        self.cli_params = self._parse_cli_parameters(cli_params)
+        self._validate(config_dict)
+
+        cli_parameters = self._parse_cli_parameters(cli_params)
+        self.cli_params = self._apply_stack_name_suffix_to_cli_parameters(cli_parameters, stack_name_suffix)
+
         self.region = config_dict.get("region")
         self.stack_name_suffix = stack_name_suffix
 
@@ -36,30 +40,43 @@ class Config(object):
         self.default_disable_rollback = config_dict.get("disable_rollback", False)
         self.default_termination_protection = config_dict.get("termination_protection", False)
 
-        self._validate(config_dict)
-
         stacks = self._parse_stack_configs(config_dict)
-        self.stacks = self._apply_stack_name_suffix(stacks, stack_name_suffix)
+        self.stacks = self._apply_stack_name_suffix_to_stacks(stacks, stack_name_suffix)
 
-    def _validate(self, config_dict):
+        self._validate_cli_params(self.cli_params, self.stacks)
+
+    @staticmethod
+    def _validate(config_dict):
         try:
             for key in config_dict.keys():
                 assert str(key).lower() in ALLOWED_CONFIG_KEYS, \
                     "Invalid syntax, {0} is not allowed as top level config key".format(key)
 
-            assert self.region, "Please specify region in config file"
-            assert isinstance(self.region, string_types), "Region must be a string, not {0}".format(type(self.region))
+            region = config_dict.get("region")
+            assert region, "Please specify region in config file"
+            assert isinstance(region, string_types), "Region must be a string, not {0}".format(type(region))
 
             stacks = config_dict.get("stacks")
             assert stacks, "Please specify stacks in config file"
             assert isinstance(stacks, dict), "Stacks must be of type dict, not {0}".format(type(stacks))
 
-            for cli_param_stack_name in self.cli_params.keys():
-                assert cli_param_stack_name in stacks.keys(), \
-                    "Stack '{0}' referenced in cli parameter does not exist in config".format(cli_param_stack_name)
+            service_role = config_dict.get("service-role")
+            if service_role:
+                assert isinstance(service_role, string_types), "service-role must be of type str, not {0}".format(type(service_role))
+                assert service_role.startswith("arn:aws:iam"), "service role must be an AWS ARN like arn:aws:iam::123456789:role/my-role"
 
         except AssertionError as e:
             raise InvalidConfigException(e)
+
+    @staticmethod
+    def _validate_cli_params(cli_params, stacks):
+        try:
+            for cli_param_stack_name in cli_params.keys():
+                assert cli_param_stack_name in stacks.keys(), \
+                    "Stack '{0}' referenced in cli parameter does not exist in config".format(cli_param_stack_name)
+        except AssertionError as e:
+            raise InvalidConfigException(e)
+
 
     def __eq__(self, other):
         try:
@@ -107,7 +124,18 @@ class Config(object):
         return stacks_dict
 
     @classmethod
-    def _apply_stack_name_suffix(cls, stacks, suffix):
+    def _apply_stack_name_suffix_to_cli_parameters(cls, cli_parameters, suffix):
+        if not suffix:
+            return cli_parameters
+
+        result = {}
+        for stack_name, parameter in cli_parameters.items():
+            result[stack_name + suffix] = parameter
+
+        return result
+
+    @classmethod
+    def _apply_stack_name_suffix_to_stacks(cls, stacks, suffix):
         """
         Apply a stack name suffix to a given set of stacks
         :param stacks: dict(stack_name -> stack_config)

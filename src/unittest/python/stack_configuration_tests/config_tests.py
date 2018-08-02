@@ -167,47 +167,48 @@ class ConfigTests(TestCase):
 
     def test_validate_raises_exception_on_invalid_service_role_value(self):
         with self.assertRaises(InvalidConfigException):
-            Config(config_dict={'region': 'eu-west-q',
-                                'service-role': 'arn:aws:iam::123456789:role/my-role',
-                                'stacks': {'any-stack': {'template': 'foo.json'}}})
+            Config._validate(config_dict={'region': 'eu-west-1',
+                                          'service-role': 'my-role',
+                                          'stacks': {'any-stack': {'template': 'foo.json'}}})
 
     def test_validate_passes_on_valid_service_role_value(self):
-        with self.assertRaises(InvalidConfigException):
-            Config(config_dict={'region': 'eu-west-q',
-                                'service-role': 'some-role',
-                                'stacks': {'any-stack': {'template': 'foo.json'}}})
+        Config._validate(config_dict={'region': 'eu-west-1',
+                                      'service-role': 'arn:aws:iam::123456789:role/my-role',
+                                      'stacks': {'any-stack': {'template': 'foo.json'}}})
 
     def test_validate_raises_exception_if_no_region_key(self):
         with self.assertRaises(InvalidConfigException):
-            Config(config_dict={'foo': '', 'stacks': {'any-stack': {'template': 'foo.json'}}})
+            Config._validate(config_dict={'foo': '', 'stacks': {'any-stack': {'template': 'foo.json'}}})
 
     def test_validate_raises_exception_if_no_stacks_key(self):
         with self.assertRaises(InvalidConfigException):
-            Config(config_dict={'region': 'eu-west-1'})
-
-    def test_validate_raises_exception_for_cli_param_on_non_configured_stack(self):
-        with self.assertRaises(InvalidConfigException):
-            Config(cli_params=("stack1.p1=v1",),
-                   config_dict={'region': 'eu-west-1', 'stacks': {'stack2': {'template-url': 'foo.json'}}})
+            Config._validate(config_dict={'region': 'eu-west-1'})
 
     def test_validate_raises_exception_for_invalid_config_key(self):
         with self.assertRaises(InvalidConfigException):
-            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
-                                'stacks': {'stack2': {'template-url': 'foo.json'}}})
+            Config._validate(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                          'stacks': {'stack2': {'template-url': 'foo.json'}}})
 
     def test_validate_raises_exception_for_invalid_stack_config_key(self):
         with self.assertRaises(InvalidConfigException):
-            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
-                                'stacks': {'stack2': {'invalid-key': 'some-value'}}})
+            Config._validate(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                          'stacks': {'stack2': {'invalid-key': 'some-value'}}})
 
     def test_validate_raises_exception_for_empty_stack_config(self):
         with self.assertRaises(InvalidConfigException):
-            Config(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
-                                'stacks': {'stack2': None}})
+            Config._validate(config_dict={'invalid-key': 'some-value', 'region': 'eu-west-1',
+                                          'stacks': {'stack2': None}})
 
-    def test_validate_raises_exception_if_only_cli_params_given(self):
+    def test_validate_raises_exception_for_cli_param_on_non_configured_stack(self):
         with self.assertRaises(InvalidConfigException):
-            Config(cli_params="foo")
+            Config._validate_cli_params(cli_params={"stack1": {"p1": "v1"}}, stacks={"stack2": {}})
+
+    def test_config_verifies_cli_parameters_correctly_when_suffix_is_set(self):
+        result = Config(cli_params=("stack.p1=v1",),
+                        config_dict={'region': 'eu-west-1', 'stacks': {'stack': {'template-url': 'foo.json'}}},
+                        stack_name_suffix="-suffix")
+
+        self.assertIsNotNone(result.stacks.get("stack-suffix"))
 
     def test_parse_cli_parameters(self):
         config = Config(cli_params=("stack1.p1=v1", "stack1.p2=v2"),
@@ -307,58 +308,68 @@ class ConfigTests(TestCase):
         self.stack_config_b.working_dir = ''
         self.assertEqual(self.stack_config_a == self.stack_config_b, False)
 
-    def test_apply_stack_name_suffix_appends_suffix_to_all_stacks(self):
+    def test_apply_stack_name_suffix_to_cli_parameters_appends_suffix_to_all_stack_names(self):
+        cli_parameters = {'stack1': {'p1': 'v1', 'p2': 'v2'}, 'stack2': {'p1': 'v1'}}
+        result = Config._apply_stack_name_suffix_to_cli_parameters(cli_parameters, "-test")
+        self.assertEqual(list(result.keys()), ['stack1-test', 'stack2-test'])
+
+    def test_apply_stack_name_suffix_to_cli_parameters_does_not_append_none_suffix(self):
+        cli_parameters = {'stack1': {'p1': 'v1', 'p2': 'v2'}, 'stack2': {'p1': 'v1'}}
+        result = Config._apply_stack_name_suffix_to_cli_parameters(cli_parameters, None)
+        self.assertEqual(list(result.keys()), ['stack1', 'stack2'])
+
+    def test_apply_stack_name_suffix_to_stacks_appends_suffix_to_all_stacks(self):
         stacks = {
             "stack-a": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "|ref|stack-b.a"}}),
             "stack-b": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "foo"}})
         }
 
-        result = Config._apply_stack_name_suffix(stacks, "-test")
+        result = Config._apply_stack_name_suffix_to_stacks(stacks, "-test")
 
         self.assertEqual(result["stack-a-test"].parameters["a"], 1)
         self.assertEqual(result["stack-a-test"].parameters["b"], "|ref|stack-b-test.a")
         self.assertEqual(result["stack-b-test"].parameters["a"], 1)
         self.assertEqual(result["stack-b-test"].parameters["b"], "foo")
 
-    def test_apply_stack_name_suffix_appends_number_suffix_to_all_stacks(self):
+    def test_apply_stack_name_suffix_to_stacks_appends_number_suffix_to_all_stacks(self):
         stacks = {
             "stack-a": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "|ref|stack-b.a"}}),
             "stack-b": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "foo"}})
         }
 
-        result = Config._apply_stack_name_suffix(stacks, 3)
+        result = Config._apply_stack_name_suffix_to_stacks(stacks, 3)
 
         self.assertEqual(result["stack-a3"].parameters["a"], 1)
         self.assertEqual(result["stack-a3"].parameters["b"], "|ref|stack-b3.a")
         self.assertEqual(result["stack-b3"].parameters["a"], 1)
         self.assertEqual(result["stack-b3"].parameters["b"], "foo")
 
-    def test_apply_stack_name_suffix_does_not_modify_externally_referenced_stacks(self):
+    def test_apply_stack_name_suffix_to_stacks_does_not_modify_externally_referenced_stacks(self):
         stacks = {
             "stack-c": StackConfig({"template-url": "some-url", "parameters": {"a": 1, "b": "|ref|external_stack.a"}})
         }
 
-        result = Config._apply_stack_name_suffix(stacks, "-test")
+        result = Config._apply_stack_name_suffix_to_stacks(stacks, "-test")
 
         self.assertEqual(result["stack-c-test"].parameters["a"], 1)
         self.assertEqual(result["stack-c-test"].parameters["b"], "|ref|external_stack.a")
 
-    def test_apply_stack_name_suffix_does_not_append_none_suffix(self):
+    def test_apply_stack_name_suffix_to_stacks_does_not_append_none_suffix(self):
         stacks = {
             "stack-d": StackConfig({"template-url": "some-url"})
         }
 
-        result = Config._apply_stack_name_suffix(stacks, None)
+        result = Config._apply_stack_name_suffix_to_stacks(stacks, None)
         self.assertEqual(result, stacks)
 
-    def test_apply_stack_name_suffix_applies_suffix_to_sublist_items(self):
+    def test_apply_stack_name_suffix_to_stacks_applies_suffix_to_sublist_items(self):
         stacks = {
             "stack-a": StackConfig(
                 {"template-url": "some-url", "parameters": {"alist": ["|ref|stack-b.a", "|ref|stack-b.b"]}}),
             "stack-b": StackConfig({"template-url": "some-url"})
         }
 
-        result = Config._apply_stack_name_suffix(stacks, "-test")
+        result = Config._apply_stack_name_suffix_to_stacks(stacks, "-test")
 
         self.assertEqual(result["stack-a-test"].parameters["alist"][0], "|ref|stack-b-test.a")
         self.assertEqual(result["stack-a-test"].parameters["alist"][1], "|ref|stack-b-test.b")

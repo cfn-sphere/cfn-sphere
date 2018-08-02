@@ -367,7 +367,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_taupage_user_data_key("@taupageUserData@", input)
-        print(json.dumps(value, indent=4))
         self.assertEqual("UserData", key)
         self.assertEqual(expected, value)
 
@@ -494,7 +493,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         }
 
         key, value = CloudFormationTemplateTransformer.transform_yaml_user_data_key("@YamlUserData@", input)
-        print(json.dumps(value, indent=4))
         self.assertEqual("UserData", key)
         self.assertEqual(expected, value)
 
@@ -540,7 +538,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         ]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_preserves_int_values(self):
@@ -548,7 +545,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         expected = ["a: 2"]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_preserves_double_values(self):
@@ -556,7 +552,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         expected = ["a: 2.3"]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_preserves_string_numbers(self):
@@ -568,7 +563,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         expected = ["a: True"]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
     def test_transform_dict(self):
@@ -604,7 +598,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         ]
 
         result = CloudFormationTemplateTransformer._transform_dict(input)
-        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
     def test_transform_dict_with_ref_in_nested_list(self):
@@ -632,7 +625,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         ]
 
         result = CloudFormationTemplateTransformer._transform_dict(input)
-        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_multiple_sub_dicts(self):
@@ -644,7 +636,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         expected = ["foo:", "  baa:", "    key: 'value'"]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
     def test_transform_dict_to_yaml_lines_list_accepts_int_key_value(self):
@@ -687,7 +678,6 @@ class CloudFormationTemplateTransformerTests(TestCase):
         ]
 
         result = CloudFormationTemplateTransformer.transform_dict_to_yaml_lines_list(input)
-        print(json.dumps(result, indent=4))
         self.assertEqual(expected, result)
 
 
