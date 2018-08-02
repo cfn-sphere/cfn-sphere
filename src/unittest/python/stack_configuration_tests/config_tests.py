@@ -311,12 +311,16 @@ class ConfigTests(TestCase):
     def test_apply_stack_name_suffix_to_cli_parameters_appends_suffix_to_all_stack_names(self):
         cli_parameters = {'stack1': {'p1': 'v1', 'p2': 'v2'}, 'stack2': {'p1': 'v1'}}
         result = Config._apply_stack_name_suffix_to_cli_parameters(cli_parameters, "-test")
-        self.assertEqual(list(result.keys()), ['stack1-test', 'stack2-test'])
+        stack_names = list(result.keys())
+        stack_names.sort()
+        self.assertEqual(stack_names, ['stack1-test', 'stack2-test'])
 
     def test_apply_stack_name_suffix_to_cli_parameters_does_not_append_none_suffix(self):
         cli_parameters = {'stack1': {'p1': 'v1', 'p2': 'v2'}, 'stack2': {'p1': 'v1'}}
         result = Config._apply_stack_name_suffix_to_cli_parameters(cli_parameters, None)
-        self.assertEqual(list(result.keys()), ['stack1', 'stack2'])
+        stack_names = list(result.keys())
+        stack_names.sort()
+        self.assertEqual(stack_names, ['stack1', 'stack2'])
 
     def test_apply_stack_name_suffix_to_stacks_appends_suffix_to_all_stacks(self):
         stacks = {
