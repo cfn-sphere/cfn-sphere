@@ -82,8 +82,12 @@ class FileLoader(object):
             elif url.lower().endswith(".template"):
                 return json.loads(file_content, encoding='utf-8')
             elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
-                yaml.add_multi_constructor(u"", cls.handle_yaml_constructors)
-                return yaml.load(file_content)
+                if hasattr(yaml, 'FullLoader'):
+                    loader = yaml.FullLoader
+                else:
+                    loader = yaml.Loader
+                yaml.add_multi_constructor(u"", cls.handle_yaml_constructors, Loader=loader)
+                return yaml.load(file_content, Loader=loader)
             else:
                 raise CfnSphereException(
                     "Invalid suffix, use [json|template|yml|yaml]")
