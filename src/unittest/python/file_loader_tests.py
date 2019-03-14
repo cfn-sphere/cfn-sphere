@@ -78,7 +78,12 @@ class FileLoaderTests(TestCase):
         get_file_mock.return_value = get_file_return_value
 
         FileLoader.get_yaml_or_json_file('foo.yaml', 'baa')
-        yaml_mock.load.assert_called_once_with(get_file_return_value)
+        if hasattr(yaml_mock, 'FullLoader'):
+            loader = yaml_mock.FullLoader
+        else:
+            loader = yaml_mock.Loader
+
+        yaml_mock.load.assert_called_once_with(get_file_return_value, Loader=loader)
 
     @patch("cfn_sphere.file_loader.yaml")
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
@@ -87,7 +92,12 @@ class FileLoaderTests(TestCase):
         get_file_mock.return_value = get_file_return_value
 
         FileLoader.get_yaml_or_json_file('foo.yml', 'baa')
-        yaml_mock.load.assert_called_once_with(get_file_return_value)
+        if hasattr(yaml_mock, 'FullLoader'):
+            loader = yaml_mock.FullLoader
+        else:
+            loader = yaml_mock.Loader
+
+        yaml_mock.load.assert_called_once_with(get_file_return_value, Loader=loader)
 
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
     def test_get_yaml_or_json_file_raises_exception_invalid_file_extension(self, _):
