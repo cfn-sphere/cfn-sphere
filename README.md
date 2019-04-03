@@ -3,8 +3,6 @@ A CLI tool intended to simplify AWS CloudFormation handling.
 
 [![Build Status](https://travis-ci.org/cfn-sphere/cfn-sphere.svg?branch=master)](https://travis-ci.org/cfn-sphere/cfn-sphere)
 
-[![Code Health](https://landscape.io/github/cfn-sphere/cfn-sphere/master/landscape.svg?style=flat)](https://landscape.io/github/cfn-sphere/cfn-sphere/master)
-
 ## Features
 - cfn templates in yml or json
 - build for human interaction and automation (run 'cf sync stacks.yml' triggered by a git push if you dare ;-)
