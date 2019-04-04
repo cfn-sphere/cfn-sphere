@@ -30,7 +30,7 @@ def set_properties(project):
     project.build_depends_on("mock")
     project.build_depends_on("moto")
     project.depends_on('six')
-    project.depends_on("click")
+    project.depends_on("click", version="<7.0.0")
     project.depends_on("boto3", version=">=1.4.1")
     project.depends_on("pyyaml")
     project.depends_on("networkx")
