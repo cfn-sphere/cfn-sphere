@@ -46,7 +46,7 @@ def check_update_available():
 @click.group(help="This tool manages AWS CloudFormation templates "
                   "and stacks by providing an application scope and useful tooling.")
 @click.version_option(version=__version__)
-def cli():
+def cli(name=None):
     pass
 
 
@@ -151,7 +151,7 @@ def convert(template_file, debug, confirm, yes):
         sys.exit(1)
 
 
-@cli.command(help="Render template as it would be used to create/update a stack")
+@cli.command(name='render_template', help="Render template as it would be used to create/update a stack")
 @click.argument('template_file', type=click.Path(exists=True))
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
@@ -168,7 +168,7 @@ def render_template(template_file, confirm, yes):
     click.echo(template.get_pretty_template_json())
 
 
-@cli.command(help="Validate template with CloudFormation API")
+@cli.command(name='validate_template', help="Validate template with CloudFormation API", )
 @click.argument('template_file', type=click.Path(exists=True))
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
@@ -195,7 +195,7 @@ def validate_template(template_file, confirm, yes):
         sys.exit(1)
 
 
-@cli.command(help="Create a basic yaml template sceleton")
+@cli.command(name='create_template', help="Create a basic yaml template sceleton")
 @click.argument('path', type=click.Path(exists=False))
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
@@ -229,7 +229,7 @@ def create_template(path, confirm, yes):
         sys.exit(1)
 
 
-@cli.command(help="Start a new project with simple config and an example template")
+@cli.command('start_project', help="Start a new project with simple config and an example template")
 @click.option('--confirm', '-c', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
