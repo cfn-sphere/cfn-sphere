@@ -18,7 +18,6 @@ class StackActionHandler(object):
         self.cli_parameters = config.cli_params
 
     def create_or_update_stacks(self):
-        existing_stacks = self.cfn.get_stack_names()
         desired_stacks = self.config.stacks
         stack_processing_order = DependencyResolver().get_stack_order(desired_stacks)
 
@@ -49,8 +48,7 @@ class StackActionHandler(object):
                                         failure_action=stack_config.failure_action,
                                         termination_protection=stack_config.termination_protection)
 
-            if stack_name in existing_stacks:
-
+            if self.cfn.stack_exists(stack_name):
                 self.cfn.validate_stack_is_ready_for_action(stack)
                 self.cfn.update_stack(stack)
             else:
