@@ -18,7 +18,6 @@ from cfn_sphere.util import convert_file, get_logger, get_latest_version, kv_lis
 
 LOGGER = get_logger(root=True)
 
-
 def get_first_account_alias_or_account_id():
     try:
         return boto3.client('iam').list_account_aliases()["AccountAliases"][0]
@@ -33,21 +32,27 @@ def get_first_account_alias_or_account_id():
         LOGGER.info("Please report at https://github.com/cfn-sphere/cfn-sphere/issues!")
         sys.exit(1)
 
+class UpdateCheck(object):
+    disabled = False
 
-def check_update_available():
-    latest_version = get_latest_version()
-    if latest_version and __version__ != latest_version:
-        click.confirm(
-            "There is an update available (v: {0}).\n"
-            "Changelog: https://github.com/cfn-sphere/cfn-sphere/issues?q=milestone%3A{0}+\n"
-            "Do you want to continue?".format(latest_version), abort=True)
+    @staticmethod
+    def check_update_available():
+        if not UpdateCheck.disabled:
+            latest_version = get_latest_version()
+            if latest_version and __version__ != latest_version:
+                click.confirm(
+                    "There is an update available (v: {0}).\n"
+                    "Changelog: https://github.com/cfn-sphere/cfn-sphere/issues?q=milestone%3A{0}+\n"
+                    "Do you want to continue?".format(latest_version), abort=True)
+
 
 
 @click.group(help="This tool manages AWS CloudFormation templates "
                   "and stacks by providing an application scope and useful tooling.")
+@click.option('--disableupdatecheck', is_flag=True, default=False, envvar='CFN_SPHERE_DISABLEUPDATECHECK')
 @click.version_option(version=__version__)
-def cli(name=None):
-    pass
+def cli(disableupdatecheck, name=None):
+    UpdateCheck.disabled = disableupdatecheck
 
 
 @cli.command(help="Sync AWS resources with definition file")
@@ -71,7 +76,7 @@ def sync(config, parameter, suffix, debug, confirm, yes):
         LOGGER.setLevel(logging.INFO)
 
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
         click.confirm('This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
             get_first_account_alias_or_account_id()), abort=True)
 
@@ -108,7 +113,7 @@ def delete(config, suffix, debug, confirm, yes):
         LOGGER.setLevel(logging.INFO)
 
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
         click.confirm('This action will delete all stacks in {0} from account: {1}\nAre you sure?'.format(
             config, get_first_account_alias_or_account_id()), abort=True)
 
@@ -138,7 +143,7 @@ def delete(config, suffix, debug, confirm, yes):
 def convert(template_file, debug, confirm, yes):
     confirm = confirm or yes
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
 
     if debug:
         LOGGER.setLevel(logging.DEBUG)
@@ -160,7 +165,7 @@ def convert(template_file, debug, confirm, yes):
 def render_template(template_file, confirm, yes):
     confirm = confirm or yes
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
 
     loader = FileLoader()
     template = loader.get_cloudformation_template(template_file, None)
@@ -177,7 +182,7 @@ def render_template(template_file, confirm, yes):
 def validate_template(template_file, confirm, yes):
     confirm = confirm or yes
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
 
     try:
         loader = FileLoader()
@@ -204,7 +209,7 @@ def validate_template(template_file, confirm, yes):
 def create_template(path, confirm, yes):
     confirm = confirm or yes
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
 
     try:
         working_dir = os.getcwd()
@@ -237,7 +242,7 @@ def create_template(path, confirm, yes):
 def start_project(confirm, yes):
     confirm = confirm or yes
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
 
     try:
         region = click.prompt('AWS Region?', type=str, default="eu-west-1")
@@ -286,7 +291,7 @@ def start_project(confirm, yes):
 def encrypt(region, keyid, cleartext, context, confirm, yes):
     confirm = confirm or yes
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
 
     try:
         cipertext = KMS(region).encrypt(keyid, cleartext, kv_list_to_dict(context))
@@ -313,7 +318,7 @@ def encrypt(region, keyid, cleartext, context, confirm, yes):
 def decrypt(region, ciphertext, context, confirm, yes):
     confirm = confirm or yes
     if not confirm:
-        check_update_available()
+        UpdateCheck.check_update_available()
 
     try:
         cleartext = KMS(region).decrypt(ciphertext, kv_list_to_dict(context))
