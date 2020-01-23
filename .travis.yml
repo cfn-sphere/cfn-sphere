@@ -2,7 +2,6 @@ sudo: false
 language: python
 python:
   - '2.7'
-  - '3.4'
   - '3.5'
   - '3.6'
   - "pypy"
@@ -27,4 +26,4 @@ deploy:
   on:
     repo: cfn-sphere/cfn-sphere
     branch: stable
-    python: '3.5'
+    python: '3.6'
