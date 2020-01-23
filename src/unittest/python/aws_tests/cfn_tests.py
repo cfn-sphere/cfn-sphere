@@ -622,6 +622,18 @@ class CloudFormationApiTests(TestCase):
         cfn.validate_stack_is_ready_for_action(stack)
 
     @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
+    def test_validate_stack_is_ready_for_action_passes_if_stack_is_in_import_complete_state(self, get_stack_mock):
+        stack_mock = Mock()
+        stack_mock.stack_name = "my-stack"
+        stack_mock.stack_status = "IMPORT_COMPLETE"
+        get_stack_mock.return_value = stack_mock
+
+        stack = CloudFormationStack('', [], 'my-stack', 'my-region')
+
+        cfn = CloudFormation()
+        cfn.validate_stack_is_ready_for_action(stack)
+
+    @patch('cfn_sphere.aws.cfn.CloudFormation.get_stack')
     def test_validate_stack_is_ready_for_action_passes_if_stack_is_in_rollback_complete_state(self, get_stack_mock):
         stack_mock = Mock()
         stack_mock.stack_name = "my-stack"

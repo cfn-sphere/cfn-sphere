@@ -193,7 +193,7 @@ class CloudFormation(object):
         """
         cfn_stack = self.get_stack(stack.name)
 
-        valid_states = ["CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"]
+        valid_states = ["CREATE_COMPLETE", "UPDATE_COMPLETE", "IMPORT_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"]
 
         if cfn_stack.stack_status not in valid_states:
             raise CfnStackActionFailedException(
