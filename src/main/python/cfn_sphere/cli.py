@@ -3,7 +3,7 @@ import sys
 import os
 import boto3
 import click
-from botocore.exceptions import ClientError, BotoCoreError
+from botocore.exceptions import ClientError, BotoCoreError, ProfileNotFound
 
 from cfn_sphere import StackActionHandler
 from cfn_sphere import __version__
@@ -24,6 +24,12 @@ def get_first_account_alias_or_account_id():
         return boto3.client('iam').list_account_aliases()["AccountAliases"][0]
     except IndexError:
         return boto3.client('sts').get_caller_identity()["Arn"].split(":")[4]
+    except ProfileNotFound:
+
+        LOGGER.error(
+            "The AWS_PROFILE env var is set to '{0}' but this profile is not found in your ~/.aws/config".format(
+                os.environ.get("AWS_PROFILE")))
+        sys.exit(1)
     except (BotoCoreError, ClientError) as e:
         LOGGER.error(e)
         sys.exit(1)
@@ -70,7 +76,10 @@ def sync(config, parameter, suffix, debug, confirm, yes):
     else:
         LOGGER.setLevel(logging.INFO)
 
-    if not confirm:
+    if confirm:
+        LOGGER.info("This action will modify AWS infrastructure in account: {0}".format(
+            get_first_account_alias_or_account_id()))
+    else:
         check_update_available()
         click.confirm('This action will modify AWS infrastructure in account: {0}\nAre you sure?'.format(
             get_first_account_alias_or_account_id()), abort=True)
