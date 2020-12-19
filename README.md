@@ -1,7 +1,6 @@
 # cfn-sphere
 A CLI tool intended to simplify AWS CloudFormation handling.
-
-[![Build Status](https://travis-ci.org/cfn-sphere/cfn-sphere.svg?branch=master)](https://travis-ci.org/cfn-sphere/cfn-sphere)
+[![Build Status](https://www.travis-ci.com/cfn-sphere/cfn-sphere.svg?branch=master)](https://www.travis-ci.com/cfn-sphere/cfn-sphere)
 
 ## Features
 - cfn templates in yml or json
