@@ -9,7 +9,7 @@ python:
 before_install:
   - git fetch --unshallow
 install:
-  - pip install pip poetry coveralls --upgrade
+  - pip install pip pybuilder coveralls --upgrade
   - pyb install_dependencies
 script: 
   - pyb -X run_unit_tests
