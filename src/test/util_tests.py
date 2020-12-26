@@ -1,13 +1,7 @@
 import tempfile
 
 from git import InvalidGitRepositoryError
-
-try:
-    from unittest2 import TestCase
-    from mock import patch, Mock
-except ImportError:
-    from unittest import TestCase
-    from mock import patch, Mock
+from unittest import TestCase
 
 import textwrap
 from datetime import datetime
