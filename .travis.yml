@@ -11,9 +11,7 @@ install:
   - pip install pip poetry coveralls --upgrade
   - poetry install
 script: 
-  - poetry run test
-after_success:
-  - coveralls --verbose
+  - nose2 -v
 before_deploy:
   - poetry build
 deploy:
