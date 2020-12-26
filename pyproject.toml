@@ -5,7 +5,7 @@ description = ""
 authors = ["Marco Hoyer"]
 license = "Apache License 2.0"
 packages = [
-    { include = "src/main/python/cfn_sphere" },
+    { include = "src/cfn_sphere" },
 ]
 
 [tool.poetry.scripts]
