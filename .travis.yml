@@ -10,13 +10,13 @@ before_install:
   - git fetch --unshallow
 install:
   - pip install pip poetry coveralls --upgrade
-  - poetry install
+  - pyb install_dependencies
 script: 
-  - poetry run test
+  - pyb -X run_unit_tests
 after_success:
   - coveralls --verbose
 before_deploy:
-  - poetry build
+  - pyb -X package
 deploy:
   provider: pypi
   user: marco-hoyer
