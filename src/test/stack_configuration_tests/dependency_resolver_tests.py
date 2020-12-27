@@ -1,7 +1,4 @@
-try:
-    from unittest2 import TestCase
-except ImportError:
-    from unittest import TestCase
+from unittest import TestCase
 
 from cfn_sphere.exceptions import CfnSphereException, CyclicDependencyException
 from cfn_sphere.stack_configuration import StackConfig

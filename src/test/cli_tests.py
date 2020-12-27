@@ -1,12 +1,8 @@
-from cfn_sphere.cli import get_first_account_alias_or_account_id
-from cfn_sphere.exceptions import CfnSphereException
+from unittest import TestCase
 
-try:
-    from unittest2 import TestCase
-    from mock import patch, Mock
-except ImportError:
-    from unittest import TestCase
-    from mock import patch, Mock
+from mock import patch
+
+from cfn_sphere.cli import get_first_account_alias_or_account_id
 
 
 class CliTests(TestCase):

@@ -1,14 +1,9 @@
-try:
-    from unittest2 import TestCase
-    from mock import Mock, patch
-except ImportError:
-    from unittest import TestCase
-    from mock import Mock, patch
-
 import datetime
+from unittest import TestCase
 
 from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
+from mock import patch, Mock
 
 from cfn_sphere.aws.cfn import CloudFormation
 from cfn_sphere.aws.cfn import CloudFormationStack

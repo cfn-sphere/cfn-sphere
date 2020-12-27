@@ -1,13 +1,7 @@
-import json
-
-try:
-    from unittest2 import TestCase
-    from mock import Mock
-except ImportError:
-    from unittest import TestCase
-    from mock import Mock
+from unittest import TestCase
 
 import mock
+from mock import Mock
 
 from cfn_sphere.exceptions import TemplateErrorException
 from cfn_sphere.template import CloudFormationTemplate

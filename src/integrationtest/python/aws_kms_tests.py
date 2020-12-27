@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import unittest
+from unittest import TestCase
+
 import boto3
-import unittest2
 
 from cfn_sphere.aws.kms import KMS
 from cfn_sphere.exceptions import CfnSphereBotoError
 
 
-class KMSTests(unittest2.TestCase):
+class KMSTests(TestCase):
     @classmethod
     def setUpClass(cls):
         # Create a KMS key, unless it already exists. Simple create&delete is
@@ -50,4 +52,4 @@ class KMSTests(unittest2.TestCase):
 
 
 if __name__ == "__main__":
-    unittest2.main()
+    unittest.main()

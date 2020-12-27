@@ -1,12 +1,7 @@
+from unittest import TestCase
+
 import yaml
-
-try:
-    from unittest2 import TestCase
-    from mock import patch, Mock
-except ImportError:
-    from unittest import TestCase
-    from mock import patch, Mock
-
+from mock import patch, Mock
 from yaml.scanner import ScannerError
 
 from cfn_sphere.exceptions import TemplateErrorException, CfnSphereException, CfnSphereBotoError
@@ -69,7 +64,7 @@ class FileLoaderTests(TestCase):
         get_file_mock.return_value = get_file_return_value
 
         FileLoader.get_yaml_or_json_file('foo.json', 'baa')
-        json_mock.loads.assert_called_once_with(get_file_return_value, encoding="utf-8")
+        json_mock.loads.assert_called_once_with(get_file_return_value)
 
     @patch("cfn_sphere.file_loader.yaml")
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
@@ -115,6 +110,7 @@ class FileLoaderTests(TestCase):
     @patch("cfn_sphere.file_loader.json")
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
     def test_get_yaml_or_json_file_raises_exception_on_json_error(self, _, json_mock):
+        print(json_mock)
         json_mock.loads.side_effect = ValueError()
 
         with self.assertRaises(CfnSphereException):

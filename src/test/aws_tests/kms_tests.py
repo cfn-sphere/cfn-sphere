@@ -1,13 +1,7 @@
-try:
-    from unittest2 import TestCase
-    from mock import patch
-except ImportError:
-    from unittest import TestCase
-    from mock import patch
-
 import base64
-
 from cfn_sphere.aws.kms import KMS
+from unittest.mock import patch
+from unittest import TestCase
 
 
 class KMSTests(TestCase):

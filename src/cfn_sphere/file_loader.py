@@ -78,9 +78,9 @@ class FileLoader(object):
 
         try:
             if url.lower().endswith(".json"):
-                return json.loads(file_content, encoding='utf-8')
+                return json.loads(file_content)
             elif url.lower().endswith(".template"):
-                return json.loads(file_content, encoding='utf-8')
+                return json.loads(file_content)
             elif url.lower().endswith(".yml") or url.lower().endswith(".yaml"):
                 if hasattr(yaml, 'FullLoader'):
                     loader = yaml.FullLoader

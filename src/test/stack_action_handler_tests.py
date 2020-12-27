@@ -1,11 +1,8 @@
-try:
-    from unittest2 import TestCase
-    from mock import patch, Mock, call
-except ImportError:
-    from unittest import TestCase
-    from mock import patch, Mock, call
+from unittest import TestCase
+from unittest.mock import call
 
 import six
+from mock import patch, Mock
 
 from cfn_sphere import StackActionHandler
 from cfn_sphere.aws.cfn import CloudFormationStack

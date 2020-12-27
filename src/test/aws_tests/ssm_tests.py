@@ -1,9 +1,6 @@
-try:
-    from unittest2 import TestCase
-    from mock import patch
-except ImportError:
-    from unittest import TestCase
-    from mock import patch
+from unittest import TestCase
+
+from mock import patch
 
 from cfn_sphere.aws.ssm import SSM
 

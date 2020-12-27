@@ -1,9 +1,6 @@
-try:
-    from unittest2 import TestCase
-    from mock import patch, Mock
-except ImportError:
-    from unittest import TestCase
-    from mock import patch, Mock
+
+from unittest import TestCase
+from unittest.mock import patch, Mock
 
 from cfn_sphere.exceptions import CfnSphereException, CfnSphereBotoError
 from cfn_sphere.stack_configuration.parameter_resolver import ParameterResolver
@@ -262,19 +259,17 @@ class ParameterResolverTests(TestCase):
         with self.assertRaises(CfnSphereException):
             ParameterResolver.handle_file_value("|file", None)
 
+    def test_update_parameters_with_cli_parameters_does_not_affect_other_stacks(self):
+        result = ParameterResolver().update_parameters_with_cli_parameters(
+            parameters={'foo': "foo"}, cli_parameters={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
+        self.assertEqual({'foo': 'foo'}, result)
 
-def test_update_parameters_with_cli_parameters_does_not_affect_other_stacks(self):
-    result = ParameterResolver().update_parameters_with_cli_parameters(
-        parameters={'foo': "foo"}, cli_parameters={'stack1': {'foo': 'foobar'}}, stack_name='stack2')
-    self.assertEqual({'foo': 'foo'}, result)
+    @patch('cfn_sphere.stack_configuration.parameter_resolver.FileLoader.get_file')
+    def test_resolve_value_from_file(self, get_file_mock):
+        get_file_mock.return_value = "line1\nline2"
 
+        stack_config = Mock()
+        stack_config.parameters = {'foo': "|file|abc.txt"}
 
-@patch('cfn_sphere.stack_configuration.parameter_resolver.FileLoader.get_file')
-def test_resolve_value_from_file(self, get_file_mock):
-    get_file_mock.return_value = "line1\nline2"
-
-    stack_config = Mock()
-    stack_config.parameters = {'foo': "|file|abc.txt"}
-
-    result = ParameterResolver().resolve_parameter_values('foo', stack_config)
-    self.assertEqual({'foo': 'line1\nline2'}, result)
+        result = ParameterResolver().resolve_parameter_values('foo', stack_config)
+        self.assertEqual({'foo': 'line1\nline2'}, result)

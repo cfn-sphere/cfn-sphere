@@ -1,9 +1,5 @@
 import os
-
-try:
-    from unittest2 import TestCase
-except ImportError:
-    from unittest import TestCase
+from unittest import TestCase
 
 from mock import patch
 
@@ -399,7 +395,7 @@ class ConfigTests(TestCase):
     def test_config_reads_config_from_example_yml_file(self, getcwd_mock):
         getcwd_mock.return_value = os.path.dirname(os.path.realpath(__file__))
 
-        config = Config("../../resources/example-stack-config.yml")
+        config = Config("../resources/example-stack-config.yml")
         self.assertEqual(config.region, "eu-west-1")
         self.assertEqual(list(config.stacks.keys()), ["my-stack"])
 
@@ -407,6 +403,6 @@ class ConfigTests(TestCase):
     def test_config_reads_config_from_example_json_file(self, getcwd_mock):
         getcwd_mock.return_value = os.path.dirname(os.path.realpath(__file__))
 
-        config = Config("../../resources/example-stack-config.json")
+        config = Config("../resources/example-stack-config.json")
         self.assertEqual(config.region, "eu-west-1")
         self.assertEqual(list(config.stacks.keys()), ["my-stack"])

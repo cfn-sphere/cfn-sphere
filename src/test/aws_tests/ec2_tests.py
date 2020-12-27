@@ -1,11 +1,7 @@
-try:
-    from unittest2 import TestCase
-    from mock import Mock, patch
-except ImportError:
-    from unittest import TestCase
-    from mock import Mock, patch
-
 import datetime
+from unittest import TestCase
+
+from mock import patch
 
 from cfn_sphere.aws.ec2 import Ec2Api
 from cfn_sphere.exceptions import CfnSphereException
