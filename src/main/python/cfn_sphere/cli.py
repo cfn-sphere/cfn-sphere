@@ -67,7 +67,8 @@ def cli(name=None):
               help="Override user confirm dialog with yes")
 @click.option('--yes', '-y', is_flag=True, default=False, envvar='CFN_SPHERE_CONFIRM',
               help="Override user confirm dialog with yes (alias for -c/--confirm")
-def sync(config, parameter, suffix, debug, confirm, yes):
+@click.option('--tags', default=None, envvar='CFN_SPHERE_STACK_TAGS', type=click.STRING)
+def sync(config, parameter, suffix, debug, confirm, yes, tags):
     confirm = confirm or yes
     if debug:
         LOGGER.setLevel(logging.DEBUG)
@@ -85,8 +86,7 @@ def sync(config, parameter, suffix, debug, confirm, yes):
             get_first_account_alias_or_account_id()), abort=True)
 
     try:
-
-        config = Config(config_file=config, cli_params=parameter, stack_name_suffix=suffix)
+        config = Config(config_file=config, cli_params=parameter, cli_tags=tags, stack_name_suffix=suffix)
         StackActionHandler(config).create_or_update_stacks()
     except CfnSphereException as e:
         LOGGER.error(e)
