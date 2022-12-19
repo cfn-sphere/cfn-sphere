@@ -1,7 +1,7 @@
 import os
 
 try:
-    from unittest2 import TestCase
+    from unittest import TestCase
 except ImportError:
     from unittest import TestCase
 

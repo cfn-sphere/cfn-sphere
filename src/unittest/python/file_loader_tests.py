@@ -1,7 +1,7 @@
 import yaml
 
 try:
-    from unittest2 import TestCase
+    from unittest import TestCase
     from mock import patch, Mock
 except ImportError:
     from unittest import TestCase

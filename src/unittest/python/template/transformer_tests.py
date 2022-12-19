@@ -1,7 +1,7 @@
 import json
 
 try:
-    from unittest2 import TestCase
+    from unittest import TestCase
     from mock import Mock
 except ImportError:
     from unittest import TestCase
