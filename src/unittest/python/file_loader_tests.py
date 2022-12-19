@@ -69,7 +69,7 @@ class FileLoaderTests(TestCase):
         get_file_mock.return_value = get_file_return_value
 
         FileLoader.get_yaml_or_json_file('foo.json', 'baa')
-        json_mock.loads.assert_called_once_with(get_file_return_value, encoding="utf-8")
+        json_mock.loads.assert_called_once_with(get_file_return_value)
 
     @patch("cfn_sphere.file_loader.yaml")
     @patch("cfn_sphere.file_loader.FileLoader.get_file")
