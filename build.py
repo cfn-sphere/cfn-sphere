@@ -19,14 +19,13 @@ description = "cfn-sphere - A CLI tool intended to simplify AWS CloudFormation h
 license = 'APACHE LICENSE, VERSION 2.0'
 summary = 'cfn-sphere AWS CloudFormation management cli'
 url = 'https://github.com/cfn-sphere/cfn-sphere'
-version = '1.0.6'
+version = '1.1.0'
 
 default_task = ['clean', 'analyze', 'package']
 
 
 @init
 def set_properties(project):
-    project.build_depends_on("unittest2")
     project.build_depends_on("mock")
     project.build_depends_on("moto")
     project.depends_on('six')

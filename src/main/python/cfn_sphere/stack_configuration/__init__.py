@@ -12,7 +12,7 @@ ALLOWED_CONFIG_KEYS = ["region", "stacks", "service-role", "stack-policy-url", "
 
 
 class Config(object):
-    def __init__(self, config_file=None, config_dict=None, cli_params=None, stack_name_suffix=None):
+    def __init__(self, config_file=None, config_dict=None, cli_params=None, cli_tags=None, stack_name_suffix=None):
         self.logger = get_logger()
 
         if isinstance(config_dict, dict):
@@ -29,6 +29,8 @@ class Config(object):
         cli_parameters = self._parse_cli_parameters(cli_params)
         self.cli_params = self._apply_stack_name_suffix_to_cli_parameters(cli_parameters, stack_name_suffix)
 
+        self.cli_tags = self._parse_cli_tags(cli_tags)
+
         self.region = config_dict.get("region")
         self.stack_name_suffix = stack_name_suffix
 
@@ -36,6 +38,7 @@ class Config(object):
         self.default_stack_policy_url = config_dict.get("stack-policy-url")
         self.default_timeout = config_dict.get("timeout", 600)
         self.default_tags = config_dict.get("tags", {})
+        self.default_tags.update(self.cli_tags)
         self.default_failure_action = config_dict.get("on_failure", "ROLLBACK")
         self.default_disable_rollback = config_dict.get("disable_rollback", False)
         self.default_termination_protection = config_dict.get("termination_protection", False)
@@ -88,7 +91,6 @@ class Config(object):
                     and self.default_service_role == other.default_service_role
                     and self.default_stack_policy_url == other.default_stack_policy_url
                     and self.default_timeout == other.default_timeout
-                    and self.default_tags == other.default_tags
                     and self.default_disable_rollback == other.default_disable_rollback
                     and self.default_termination_protection == other.default_termination_protection
                     and stacks_equal):
@@ -98,6 +100,21 @@ class Config(object):
 
     def __ne__(self, other):
         return not self == other
+
+    @staticmethod
+    def _parse_cli_tags(cli_tags):
+        tags = {}
+        if not cli_tags:
+            return tags
+        pairs = cli_tags.split(" ")
+        for pair in pairs:
+            k, p, v = pair.partition("=")
+            if p != '=':
+                raise CfnSphereException("Invalid cli tag detected: " + pair)
+            tags[k] = v
+        return tags
+
+        
 
     def _parse_stack_configs(self, config_dict):
         """

@@ -1,4 +1,4 @@
-from unittest2 import TestCase
+from unittest import TestCase
 
 from cfn_sphere.exceptions import CfnSphereException
 from cfn_sphere.file_generator import FileGenerator
